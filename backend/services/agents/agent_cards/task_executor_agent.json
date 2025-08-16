@@ -1,0 +1,215 @@
+{
+  "id": "task-executor-agent",
+  "name": "TaskExecutorAgent",
+  "description": "Specialized agent for executing complex tasks using Gemini AI. Designed for structured task execution, data processing, and workflow automation.",
+  "version": "1.0.0",
+  "category": "task_executor",
+  "url": "http://localhost:8002/a2a/agents/task",
+  "health_url": "http://localhost:8002/health",
+  "dns_name": "agent-service.lcnc.local",
+  "card_url": "http://localhost:8002/a2a/cards/task-executor-agent",
+  "default_input_modes": ["text", "json", "file"],
+  "default_output_modes": ["text", "json", "data"],
+  "capabilities": {
+    "streaming": true,
+    "batch_processing": true,
+    "file_upload": true,
+    "multi_modal": true,
+    "external_apis": false
+  },
+  "input_signature": {
+    "schema": {
+      "type": "object",
+      "properties": {
+        "task_type": {
+          "type": "string",
+          "description": "Type of task to execute",
+          "enum": ["analysis", "transformation", "calculation", "report", "workflow"],
+          "example": "analysis"
+        },
+        "task_definition": {
+          "type": "object",
+          "description": "Detailed task definition",
+          "properties": {
+            "steps": {"type": "array"},
+            "input_data": {"type": "object"},
+            "expected_output": {"type": "string"}
+          }
+        },
+        "execution_parameters": {
+          "type": "object",
+          "description": "Task execution parameters",
+          "properties": {
+            "timeout": {"type": "integer", "default": 300},
+            "priority": {"type": "string", "enum": ["low", "normal", "high"], "default": "normal"},
+            "output_format": {"type": "string", "enum": ["json", "text", "csv"], "default": "json"}
+          }
+        },
+        "context": {
+          "type": "object",
+          "description": "Execution context and metadata",
+          "properties": {
+            "user_id": {"type": "string"},
+            "session_id": {"type": "string"},
+            "workspace": {"type": "string"}
+          }
+        }
+      },
+      "required": ["task_type", "task_definition"]
+    },
+    "content_types": ["application/json", "text/plain", "multipart/form-data"],
+    "size_limits": {
+      "max_payload_size": "50MB",
+      "max_file_size": "100MB"
+    }
+  },
+  "output_signature": {
+    "schema": {
+      "type": "object",
+      "properties": {
+        "task_id": {"type": "string"},
+        "status": {
+          "type": "string",
+          "enum": ["completed", "failed", "partial"]
+        },
+        "result": {
+          "type": "object|string|array",
+          "description": "Task execution result"
+        },
+        "execution_summary": {
+          "type": "object",
+          "properties": {
+            "steps_completed": {"type": "integer"},
+            "execution_time": {"type": "number"},
+            "resources_used": {"type": "object"}
+          }
+        },
+        "artifacts": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {"type": "string"},
+              "type": {"type": "string"},
+              "url": {"type": "string"},
+              "metadata": {"type": "object"}
+            }
+          }
+        },
+        "errors": {
+          "type": "array",
+          "items": {"type": "string"}
+        }
+      }
+    },
+    "content_types": ["application/json", "text/plain", "application/octet-stream"]
+  },
+  "skills": [
+    {
+      "id": "task_execution",
+      "name": "Task Execution",
+      "description": "Executes complex multi-step tasks with structured outputs and error handling",
+      "tags": ["tasks", "execution", "structured", "workflow", "automation"],
+      "examples": [
+        {
+          "description": "Execute multi-step workflows",
+          "input": {
+            "task_type": "workflow",
+            "task_definition": {
+              "steps": [
+                {"action": "data_validation", "input": "dataset.csv"},
+                {"action": "analysis", "parameters": {"method": "statistical"}},
+                {"action": "report_generation", "format": "pdf"}
+              ]
+            }
+          },
+          "output": {
+            "task_id": "task_123",
+            "status": "completed",
+            "result": {"workflow_completed": true, "artifacts_generated": 3}
+          }
+        },
+        {
+          "description": "Process structured data with validation",
+          "input": {
+            "task_type": "transformation",
+            "task_definition": {
+              "input_data": {"format": "csv", "columns": ["name", "age", "email"]},
+              "transformations": ["validate_emails", "normalize_names"]
+            }
+          },
+          "output": {
+            "status": "completed",
+            "result": {"processed_records": 1000, "validation_errors": 5}
+          }
+        }
+      ],
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "task_timeout": {
+            "type": "integer",
+            "default": 300,
+            "description": "Task execution timeout in seconds"
+          },
+          "output_format": {
+            "type": "string",
+            "default": "json",
+            "enum": ["json", "text", "csv"],
+            "description": "Preferred output format"
+          }
+        }
+      }
+    },
+    {
+      "id": "data_processing",
+      "name": "Data Processing",
+      "description": "Processes and transforms data using AI capabilities",
+      "tags": ["data", "processing", "transformation", "analysis"],
+      "examples": [
+        {
+          "description": "Transform data between formats",
+          "input": {
+            "task_type": "transformation",
+            "task_definition": {"source_format": "csv", "target_format": "json", "schema_mapping": "auto"}
+          },
+          "output": {"status": "completed", "result": {"transformed_records": 500}}
+        },
+        {
+          "description": "Clean and validate datasets",
+          "input": {
+            "task_type": "analysis",
+            "task_definition": {"operation": "data_cleaning", "rules": ["remove_duplicates", "validate_types"]}
+          },
+          "output": {"status": "completed", "result": {"clean_records": 950, "removed_duplicates": 50}}
+        }
+      ]
+    }
+  ],
+  "tags": ["tasks", "execution", "gemini", "specialized", "workflow", "automation"],
+  "search_keywords": ["tasks", "execution", "workflow", "automation", "processing", "structured"],
+  "ai_provider": "gemini",
+  "model_name": "gemini-1.5-pro",
+  "model_config": {
+    "temperature": 0.3,
+    "max_tokens": 4096,
+    "top_p": 0.9
+  },
+  "health_check": {
+    "endpoint": "/health",
+    "interval_seconds": 30,
+    "timeout_seconds": 5,
+    "required_fields": ["status", "version", "task_queue_size"]
+  },
+  "usage_metrics": {
+    "total_executions": 0,
+    "success_rate": 1.0,
+    "avg_execution_time": 0.0,
+    "last_executed": null
+  },
+  "author": "LCNC Platform",
+  "organization": "LCNC Platform",
+  "environment": "development",
+  "created_at": "2024-01-01T00:00:00Z",
+  "updated_at": "2024-08-14T15:30:00Z"
+}

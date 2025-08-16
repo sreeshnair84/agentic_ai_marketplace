@@ -1,0 +1,181 @@
+"""
+Main application entrypoint for the API Gateway
+"""
+
+from fastapi import FastAPI, Request, status
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.trustedhost import TrustedHostMiddleware
+from fastapi.responses import JSONResponse
+from fastapi.exceptions import RequestValidationError
+from sqlalchemy.exc import SQLAlchemyError
+import logging
+import traceback
+from contextlib import asynccontextmanager
+
+from .core.config import get_settings
+from .core.database import init_db
+from .api.v1.auth import router as auth_router
+from .api.v1.proxy import router as proxy_router
+from .api.v1.health import router as health_router
+from .api.v1.projects import router as projects_router
+from .api.v1.stats import router as stats_router
+from .api.sample_queries import router as sample_queries_router
+from .api.agents import router as agents_router
+from .api.tools import router as tools_router
+from .api.workflows import router as workflows_router
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+)
+logger = logging.getLogger(__name__)
+
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Application lifespan events"""
+    # Startup
+    logger.info("Starting API Gateway...")
+    settings = get_settings()
+    
+    # Initialize database
+    try:
+        await init_db()
+        logger.info("Database initialized successfully")
+    except Exception as e:
+        logger.error(f"Failed to initialize database: {e}")
+        raise
+    
+    yield
+    
+    # Shutdown
+    logger.info("Shutting down API Gateway...")
+
+
+def create_application() -> FastAPI:
+    """Create and configure the FastAPI application"""
+    
+    settings = get_settings()
+    
+    app = FastAPI(
+        title=settings.PROJECT_NAME,
+        description="API Gateway for Agentic AI Acceleration",
+        version=settings.VERSION,
+        openapi_url=f"{settings.API_V1_STR}/openapi.json",
+        lifespan=lifespan
+    )
+    
+    # Security middleware
+    app.add_middleware(
+        TrustedHostMiddleware,
+        allowed_hosts=settings.ALLOWED_HOSTS
+    )
+    
+    # CORS middleware
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=settings.CORS_ORIGINS,
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+    
+    # API routers
+    app.include_router(
+        auth_router, 
+        prefix=f"{settings.API_V1_STR}/auth", 
+        tags=["authentication"]
+    )
+    app.include_router(
+        proxy_router, 
+        prefix=f"{settings.API_V1_STR}/services", 
+        tags=["services"]
+    )
+    app.include_router(
+        projects_router, 
+        prefix=f"{settings.API_V1_STR}", 
+        tags=["projects"]
+    )
+    app.include_router(
+        stats_router, 
+        prefix=f"{settings.API_V1_STR}", 
+        tags=["statistics"]
+    )
+    app.include_router(
+        health_router, 
+        prefix="", 
+        tags=["health"]
+    )
+    app.include_router(
+        sample_queries_router, 
+        prefix=f"{settings.API_V1_STR}", 
+        tags=["sample-queries"]
+    )
+    app.include_router(
+        agents_router, 
+        prefix=f"{settings.API_V1_STR}", 
+        tags=["agents"]
+    )
+    app.include_router(
+        tools_router, 
+        prefix=f"{settings.API_V1_STR}", 
+        tags=["tools"]
+    )
+    # Also mount tools router under /api/tools for frontend compatibility
+    app.include_router(
+        tools_router, 
+        prefix="/api", 
+        tags=["tools-legacy"]
+    )
+    app.include_router(
+        workflows_router, 
+        prefix=f"{settings.API_V1_STR}", 
+        tags=["workflows"]
+    )
+    
+    # Global exception handlers
+    @app.exception_handler(RequestValidationError)
+    async def validation_exception_handler(request: Request, exc: RequestValidationError):
+        logger.warning(f"Validation error for {request.url}: {exc}")
+        return JSONResponse(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            content={
+                "detail": "Validation error",
+                "errors": exc.errors(),
+                "body": exc.body
+            }
+        )
+    
+    @app.exception_handler(SQLAlchemyError)
+    async def sqlalchemy_exception_handler(request: Request, exc: SQLAlchemyError):
+        logger.error(f"Database error for {request.url}: {exc}")
+        return JSONResponse(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content={"detail": "Database error occurred"}
+        )
+    
+    @app.exception_handler(Exception)
+    async def general_exception_handler(request: Request, exc: Exception):
+        logger.error(f"Unexpected error for {request.url}: {exc}")
+        logger.error(traceback.format_exc())
+        return JSONResponse(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content={"detail": "Internal server error"}
+        )
+    
+    # Root endpoint
+    @app.get("/")
+    async def root():
+        return {
+            "message": "Agentic AI Acceleration API Gateway",
+            "version": settings.VERSION,
+            "docs": f"{settings.API_V1_STR}/docs"
+        }
+    
+    return app
+
+
+# Create application instance
+app = create_application()

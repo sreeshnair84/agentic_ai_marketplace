@@ -1,0 +1,125 @@
+openapi: 3.0.0
+info:
+  title: RAG API
+  description: API for managing RAG (Retrieval-Augmented Generation) functionalities.
+  version: 1.0.0
+servers:
+  - url: http://localhost:3000/api/rag
+paths:
+  /documents:
+    post:
+      summary: Upload a new document
+      operationId: uploadDocument
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+                metadata:
+                  type: object
+                  additionalProperties:
+                    type: string
+      responses:
+        '200':
+          description: Document uploaded successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Document uploaded successfully
+                  documentId:
+                    type: string
+                    example: "12345"
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: Invalid file format
+
+    get:
+      summary: List all documents
+      operationId: listDocuments
+      responses:
+        '200':
+          description: A list of documents
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    documentId:
+                      type: string
+                      example: "12345"
+                    filename:
+                      type: string
+                      example: "example.pdf"
+                    uploadedAt:
+                      type: string
+                      format: date-time
+                      example: "2023-10-01T12:00:00Z"
+
+  /query:
+    post:
+      summary: Query the RAG index
+      operationId: queryIndex
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                query:
+                  type: string
+                  example: "What is the impact of climate change?"
+                top_k:
+                  type: integer
+                  example: 5
+      responses:
+        '200':
+          description: Query results
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  results:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        documentId:
+                          type: string
+                          example: "12345"
+                        score:
+                          type: number
+                          format: float
+                          example: 0.95
+                        snippet:
+                          type: string
+                          example: "Climate change affects weather patterns..."
+        '400':
+          description: Invalid query
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: Invalid query format

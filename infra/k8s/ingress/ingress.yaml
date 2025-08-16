@@ -1,0 +1,57 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: lcnc-multiagent-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+spec:
+  rules:
+    - host: your-domain.com
+      http:
+        paths:
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: api-gateway-svc
+                port:
+                  number: 80
+          - path: /agents
+            pathType: Prefix
+            backend:
+              service:
+                name: agents-svc
+                port:
+                  number: 80
+          - path: /tools
+            pathType: Prefix
+            backend:
+              service:
+                name: tools-svc
+                port:
+                  number: 80
+          - path: /rag
+            pathType: Prefix
+            backend:
+              service:
+                name: rag-svc
+                port:
+                  number: 80
+          - path: /observability
+            pathType: Prefix
+            backend:
+              service:
+                name: observability-svc
+                port:
+                  number: 80
+          - path: /workflows
+            pathType: Prefix
+            backend:
+              service:
+                name: workflow-engine-svc
+                port:
+                  number: 80
+  tls:
+    - hosts:
+        - your-domain.com
+      secretName: tls-secret

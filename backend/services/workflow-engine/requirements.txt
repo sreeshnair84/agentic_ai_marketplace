@@ -1,0 +1,27 @@
+# Workflow Engine Service Dependencies
+
+fastapi
+uvicorn[standard]
+pydantic
+pydantic-settings
+
+# Database
+sqlalchemy[asyncio]
+asyncpg
+alembic
+
+# Redis for state management
+redis[hiredis]>=4.5.0
+# aioredis  # Removed due to Python 3.11 compatibility issues
+
+# HTTP client for external calls
+httpx
+
+# Additional dependencies
+python-multipart
+croniter
+python-dotenv
+
+# Development
+pytest
+pytest-asyncio

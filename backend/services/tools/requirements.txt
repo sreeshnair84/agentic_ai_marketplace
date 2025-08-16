@@ -1,0 +1,55 @@
+# FastAPI and ASGI server
+fastapi[all]
+uvicorn[standard]
+
+# Database
+sqlalchemy[asyncio]
+asyncpg
+alembic
+
+# HTTP client
+httpx
+aiohttp
+
+# Validation and serialization
+pydantic[email]
+pydantic-settings
+
+# MCP (Model Context Protocol) client
+mcp-client
+websockets
+
+# Redis for tool state and caching
+aioredis
+
+# Standard tools
+requests
+beautifulsoup4
+pandas
+numpy
+Pillow
+
+# File handling
+python-multipart
+aiofiles
+
+# Process execution
+# subprocess32 # For Windows compatibility - not needed in Python 3.3+
+
+# Observability
+opentelemetry-api
+opentelemetry-sdk
+opentelemetry-instrumentation-fastapi
+prometheus-client
+
+# Utilities
+python-dotenv
+tenacity
+structlog
+click
+
+# Development
+pytest
+pytest-asyncio
+black
+isort

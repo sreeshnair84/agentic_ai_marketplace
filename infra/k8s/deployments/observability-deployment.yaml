@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: observability
+  namespace: lcnc-multiagent-platform
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: observability
+  template:
+    metadata:
+      labels:
+        app: observability
+    spec:
+      containers:
+        - name: observability
+          image: your-docker-registry/observability:latest
+          ports:
+            - containerPort: 3000
+          env:
+            - name: NODE_ENV
+              value: production
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: observability-db-secret
+                  key: database-url
+            - name: LOG_LEVEL
+              value: info
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "500m"
+            limits:
+              memory: "512Mi"
+              cpu: "1"
+      imagePullSecrets:
+        - name: regcred
+      restartPolicy: Always

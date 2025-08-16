@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rag-deployment
+  namespace: lcnc-multiagent-platform
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: rag
+  template:
+    metadata:
+      labels:
+        app: rag
+    spec:
+      containers:
+        - name: rag-container
+          image: your-docker-registry/rag:latest
+          ports:
+            - containerPort: 8080
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: rag-database-secret
+                  key: database-url
+            - name: RAG_SERVICE_URL
+              value: "http://rag-service:8080"
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "500m"
+            limits:
+              memory: "1Gi"
+              cpu: "1"
+      imagePullSecrets:
+        - name: regcred
+      restartPolicy: Always

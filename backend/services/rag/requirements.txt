@@ -1,0 +1,30 @@
+# RAG Service Dependencies
+
+fastapi
+uvicorn[standard]
+pydantic
+pydantic-settings
+
+# PGVector and vector processing
+pgvector
+psycopg2-binary
+asyncpg
+sqlalchemy[asyncio]
+sentence-transformers
+numpy
+
+# OpenAI for embeddings
+openai
+
+# Google AI integration
+google-generativeai
+google-ai-generativelanguage
+
+# Document processing
+pypdf
+python-docx
+python-multipart
+
+# Additional dependencies
+httpx
+aiofiles

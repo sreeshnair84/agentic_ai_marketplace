@@ -1,0 +1,203 @@
+{
+  "id": "tools-agent",
+  "name": "ToolsAgent",
+  "description": "Tool execution agent that provides access to various tools and utilities through MCP protocol. Specializes in tool discovery, execution, and integration.",
+  "version": "1.0.0",
+  "category": "tool_executor",
+  "url": "http://localhost:8003/tools",
+  "health_url": "http://localhost:8003/health",
+  "dns_name": "tools-service.lcnc.local",
+  "card_url": "http://localhost:8003/a2a/cards/tools-agent",
+  "default_input_modes": ["text", "json", "file"],
+  "default_output_modes": ["text", "json", "data", "file"],
+  "capabilities": {
+    "streaming": true,
+    "batch_processing": true,
+    "file_upload": true,
+    "multi_modal": false,
+    "external_apis": true
+  },
+  "input_signature": {
+    "schema": {
+      "type": "object",
+      "properties": {
+        "tool_name": {
+          "type": "string",
+          "description": "Name of the tool to execute",
+          "example": "file_reader"
+        },
+        "action": {
+          "type": "string",
+          "description": "Action to perform",
+          "enum": ["execute", "list", "describe", "validate"],
+          "example": "execute"
+        },
+        "parameters": {
+          "type": "object",
+          "description": "Tool execution parameters",
+          "example": {"file_path": "/path/to/file.txt"}
+        },
+        "options": {
+          "type": "object",
+          "description": "Execution options",
+          "properties": {
+            "timeout": {"type": "integer", "default": 30},
+            "async": {"type": "boolean", "default": false}
+          }
+        }
+      },
+      "required": ["tool_name", "action"]
+    },
+    "content_types": ["application/json", "text/plain", "multipart/form-data"],
+    "size_limits": {
+      "max_payload_size": "10MB",
+      "max_file_size": "100MB"
+    }
+  },
+  "output_signature": {
+    "schema": {
+      "type": "object",
+      "properties": {
+        "success": {"type": "boolean"},
+        "result": {
+          "type": "object|string|array",
+          "description": "Tool execution result"
+        },
+        "metadata": {
+          "type": "object",
+          "properties": {
+            "execution_time": {"type": "number"},
+            "tool_version": {"type": "string"},
+            "output_format": {"type": "string"}
+          }
+        },
+        "errors": {
+          "type": "array",
+          "items": {"type": "string"}
+        },
+        "artifacts": {
+          "type": "array",
+          "description": "Generated files or data artifacts"
+        }
+      }
+    },
+    "content_types": ["application/json", "text/plain", "application/octet-stream"]
+  },
+  "skills": [
+    {
+      "id": "tool_execution",
+      "name": "Tool Execution",
+      "description": "Executes various tools and utilities with parameter validation and error handling",
+      "tags": ["tools", "execution", "utilities", "mcp"],
+      "examples": [
+        {
+          "description": "Execute file operations (read, write, list)",
+          "input": {
+            "tool_name": "file_operations",
+            "action": "execute",
+            "parameters": {"operation": "read", "file_path": "/data/report.txt"}
+          },
+          "output": {
+            "success": true,
+            "result": {"content": "File content here..."},
+            "metadata": {"execution_time": 0.5}
+          }
+        },
+        {
+          "description": "Perform web scraping and data fetching",
+          "input": {
+            "tool_name": "web_scraper",
+            "action": "execute",
+            "parameters": {"url": "https://example.com", "selector": ".data"}
+          },
+          "output": {
+            "success": true,
+            "result": {"scraped_data": ["item1", "item2"]},
+            "metadata": {"execution_time": 2.3}
+          }
+        }
+      ],
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "tool_timeout": {
+            "type": "integer",
+            "default": 30,
+            "description": "Tool execution timeout in seconds"
+          },
+          "max_concurrent": {
+            "type": "integer",
+            "default": 5,
+            "description": "Maximum concurrent tool executions"
+          }
+        }
+      }
+    },
+    {
+      "id": "mcp_integration",
+      "name": "MCP Integration",
+      "description": "Integrates with Model Context Protocol for tool discovery and execution",
+      "tags": ["mcp", "protocol", "integration", "discovery"],
+      "examples": [
+        {
+          "description": "Discover available MCP tools",
+          "input": {"action": "list", "tool_name": "mcp_tools"},
+          "output": {"success": true, "result": {"tools": ["tool1", "tool2", "tool3"]}}
+        },
+        {
+          "description": "Execute MCP tool functions",
+          "input": {"tool_name": "mcp_calculator", "action": "execute", "parameters": {"operation": "add", "a": 5, "b": 3}},
+          "output": {"success": true, "result": {"answer": 8}}
+        }
+      ]
+    },
+    {
+      "id": "data_tools",
+      "name": "Data Tools",
+      "description": "Specialized tools for data processing and transformation",
+      "tags": ["data", "processing", "csv", "json", "transformation"],
+      "examples": [
+        {
+          "description": "Convert CSV to JSON and vice versa",
+          "input": {"tool_name": "data_converter", "action": "execute", "parameters": {"input_format": "csv", "output_format": "json"}},
+          "output": {"success": true, "result": {"converted_data": "JSON data structure"}}
+        },
+        {
+          "description": "Generate data summaries and statistics",
+          "input": {"tool_name": "data_analyzer", "action": "execute", "parameters": {"data": "sample_data"}},
+          "output": {"success": true, "result": {"summary": "Data summary", "statistics": "Statistical analysis"}}
+        }
+      ]
+    }
+  ],
+  "tags": ["tools", "mcp", "execution", "utilities", "data"],
+  "search_keywords": ["tools", "utilities", "execution", "mcp", "files", "data", "processing"],
+  "ai_provider": "tools",
+  "model_name": null,
+  "external_services": [
+    {
+      "name": "MCP Tool Server",
+      "dns_name": "mcp-tools.lcnc.local",
+      "health_url": "http://mcp-tools.lcnc.local:8080/health",
+      "api_version": "v1",
+      "authentication": "api_key"
+    }
+  ],
+  "health_check": {
+    "endpoint": "/health",
+    "interval_seconds": 60,
+    "timeout_seconds": 10,
+    "required_fields": ["status", "version", "tools_count"]
+  },
+  "usage_metrics": {
+    "total_executions": 0,
+    "success_rate": 1.0,
+    "avg_execution_time": 0.0,
+    "last_executed": null
+  },
+  "author": "LCNC Platform",
+  "organization": "LCNC Platform",
+  "environment": "development",
+  "created_at": "2024-01-01T00:00:00Z",
+  "updated_at": "2024-08-14T15:30:00Z"
+}

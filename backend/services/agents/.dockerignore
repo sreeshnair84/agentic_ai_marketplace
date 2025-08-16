@@ -1,0 +1,51 @@
+# Git
+.git
+.gitignore
+README.md
+*.md
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.venv/
+venv/
+env/
+
+# Environment
+.env
+.env.*
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Testing
+.pytest_cache/
+.coverage
+test/
+tests/
+
+# Logs
+*.log
+logs/
+
+# Development files
+.mypy_cache/
+build/
+dist/
+*.egg-info/
+
+# Agent specific
+agent_data/
+models/
+checkpoints/
+tmp/
+temp/

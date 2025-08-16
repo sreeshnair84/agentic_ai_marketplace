@@ -1,0 +1,175 @@
+{
+  "id": "conversation-agent",
+  "name": "ConversationAgent",
+  "description": "Conversational AI agent with context awareness powered by Gemini. Specialized in maintaining conversation flow, context management, and personalized interactions.",
+  "version": "1.0.0",
+  "category": "conversational",
+  "url": "http://localhost:8002/a2a/agents/conversation",
+  "health_url": "http://localhost:8002/health",
+  "dns_name": "agent-service.lcnc.local",
+  "card_url": "http://localhost:8002/a2a/cards/conversation-agent",
+  "default_input_modes": ["text", "json"],
+  "default_output_modes": ["text", "json", "stream"],
+  "capabilities": {
+    "streaming": true,
+    "batch_processing": false,
+    "file_upload": false,
+    "multi_modal": true,
+    "external_apis": false
+  },
+  "input_signature": {
+    "schema": {
+      "type": "object",
+      "properties": {
+        "message": {
+          "type": "string",
+          "description": "User message in conversation",
+          "example": "I need help with my project planning"
+        },
+        "conversation_context": {
+          "type": "object",
+          "description": "Conversation history and context",
+          "properties": {
+            "session_id": {"type": "string"},
+            "user_id": {"type": "string"},
+            "previous_messages": {"type": "array"},
+            "conversation_topic": {"type": "string"}
+          }
+        },
+        "preferences": {
+          "type": "object",
+          "description": "User preferences for conversation style",
+          "properties": {
+            "personality": {"type": "string", "enum": ["helpful", "formal", "casual", "technical"]},
+            "context_window": {"type": "integer", "default": 10}
+          }
+        }
+      },
+      "required": ["message"]
+    },
+    "content_types": ["application/json", "text/plain"],
+    "size_limits": {
+      "max_payload_size": "2MB"
+    }
+  },
+  "output_signature": {
+    "schema": {
+      "type": "object",
+      "properties": {
+        "response": {
+          "type": "string",
+          "description": "Conversational response"
+        },
+        "conversation_state": {
+          "type": "object",
+          "description": "Updated conversation state",
+          "properties": {
+            "topic": {"type": "string"},
+            "context_summary": {"type": "string"},
+            "next_suggested_actions": {"type": "array"}
+          }
+        },
+        "metadata": {
+          "type": "object",
+          "properties": {
+            "confidence": {"type": "number"},
+            "conversation_turn": {"type": "integer"}
+          }
+        }
+      }
+    },
+    "content_types": ["application/json", "text/plain", "text/event-stream"]
+  },
+  "skills": [
+    {
+      "id": "conversation_management",
+      "name": "Conversation Management",
+      "description": "Manages conversational interactions with context awareness and personalization",
+      "tags": ["conversation", "dialogue", "context", "personalization"],
+      "examples": [
+        {
+          "description": "Maintain conversation context across turns",
+          "input": {
+            "message": "What did we discuss about the budget?",
+            "conversation_context": {"previous_messages": ["We talked about project planning"], "session_id": "sess123"}
+          },
+          "output": {
+            "response": "Earlier we discussed project planning. Regarding the budget, would you like me to help you create a budget plan for your project?",
+            "conversation_state": {"topic": "budget planning"}
+          }
+        },
+        {
+          "description": "Provide contextual responses based on history",
+          "input": {
+            "message": "Can you elaborate on that?",
+            "conversation_context": {"conversation_topic": "machine learning models"}
+          },
+          "output": {
+            "response": "Regarding machine learning models, I can provide more details about the different types like supervised, unsupervised, and reinforcement learning...",
+            "conversation_state": {"topic": "ML model types"}
+          }
+        }
+      ],
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "context_window": {
+            "type": "integer",
+            "default": 10,
+            "description": "Number of previous messages to consider"
+          },
+          "personality": {
+            "type": "string",
+            "default": "helpful",
+            "enum": ["helpful", "formal", "casual", "technical"],
+            "description": "Conversation personality"
+          }
+        }
+      }
+    },
+    {
+      "id": "context_awareness",
+      "name": "Context Awareness",
+      "description": "Maintains awareness of conversation context and user intent",
+      "tags": ["context", "awareness", "memory", "understanding"],
+      "examples": [
+        {
+          "description": "Remember previous conversation topics",
+          "input": {"message": "Let's continue where we left off"},
+          "output": {"response": "We were discussing your project timeline. Would you like to continue with the milestone planning?"}
+        },
+        {
+          "description": "Understand implicit references",
+          "input": {"message": "How long will that take?"},
+          "output": {"response": "Based on our discussion about the data analysis phase, it typically takes 2-3 weeks depending on data complexity."}
+        }
+      ]
+    }
+  ],
+  "tags": ["conversation", "dialogue", "gemini", "context", "personalization"],
+  "search_keywords": ["conversation", "chat", "dialogue", "context", "personalized", "interactive"],
+  "ai_provider": "gemini",
+  "model_name": "gemini-1.5-pro",
+  "model_config": {
+    "temperature": 0.8,
+    "max_tokens": 2048,
+    "top_p": 0.9
+  },
+  "health_check": {
+    "endpoint": "/health",
+    "interval_seconds": 30,
+    "timeout_seconds": 5,
+    "required_fields": ["status", "version", "dependencies"]
+  },
+  "usage_metrics": {
+    "total_executions": 0,
+    "success_rate": 1.0,
+    "avg_execution_time": 0.0,
+    "last_executed": null
+  },
+  "author": "LCNC Platform",
+  "organization": "LCNC Platform",
+  "environment": "development",
+  "created_at": "2024-01-01T00:00:00Z",
+  "updated_at": "2024-08-14T15:30:00Z"
+}

@@ -1,0 +1,16 @@
+# Observability Service Dependencies
+
+fastapi
+uvicorn[standard]
+pydantic
+pydantic-settings
+
+# Monitoring and metrics
+prometheus-client
+psutil
+
+# HTTP client
+httpx
+
+# Additional dependencies
+python-multipart

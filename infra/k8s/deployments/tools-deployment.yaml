@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tools-deployment
+  labels:
+    app: tools
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: tools
+  template:
+    metadata:
+      labels:
+        app: tools
+    spec:
+      containers:
+        - name: tools
+          image: your-docker-image:latest
+          ports:
+            - containerPort: 3000
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: db-secret
+                  key: database-url
+            - name: MCP_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: mcp-secret
+                  key: api-key
+            - name: RAG_API_URL
+              value: "http://rag-service:4000"
+            - name: SQL_TOOL_API_URL
+              value: "http://sqltool-service:5000"
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "500m"
+            limits:
+              memory: "512Mi"
+              cpu: "1"
+      imagePullSecrets:
+        - name: regcred
+      restartPolicy: Always

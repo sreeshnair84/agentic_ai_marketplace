@@ -1,0 +1,323 @@
+services:
+  # Frontend - Next.js Web Application
+  web:
+    build:
+      context: ./frontend/
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - NEXT_PUBLIC_API_BASE_URL=http://localhost:8000/api
+      - NEXT_PUBLIC_API_URL=http://localhost:8000
+      - NEXT_PUBLIC_GATEWAY_URL=http://localhost:8000
+      - INTERNAL_GATEWAY_URL=http://gateway:8000
+    depends_on:
+      - gateway
+    networks:
+      - lcnc-network
+
+  # API Gateway - FastAPI
+  gateway:
+    build:
+      context: ./backend/services/gateway
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - ENVIRONMENT=development
+      - DATABASE_URL=postgresql+asyncpg://lcnc_user:lcnc_password@postgres:5432/lcnc_platform
+      - REDIS_URL=redis://redis:6379/0
+      - JWT_SECRET_KEY=your-secret-key-here
+      - CORS_ORIGINS=http://localhost:3000,http://web:3000,http://127.0.0.1:3000
+      - ORCHESTRATOR_URL=http://orchestrator:8003
+      - AGENTS_URL=http://agents:8002
+      - TOOLS_URL=http://tools:8005
+      - RAG_URL=http://rag:8004
+      - SQLTOOL_URL=http://sqltool:8006
+      - WORKFLOW_URL=http://workflow:8007
+      - OBSERVABILITY_URL=http://observability:8008
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - lcnc-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Agents Service - FastAPI with A2A Protocol
+  agents:
+    build:
+      context: ./backend/services/agents
+      dockerfile: Dockerfile
+    ports:
+      - "8002:8002"
+    environment:
+      - ENVIRONMENT=development
+      - DATABASE_URL=postgresql+asyncpg://lcnc_user:lcnc_password@postgres:5432/lcnc_platform
+      - REDIS_URL=redis://redis:6379/2
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - TOOLS_URL=http://tools:8005
+      - ORCHESTRATOR_URL=http://orchestrator:8003
+      - A2A_PROTOCOL_ENABLED=true
+      - MCP_SERVER_ENABLED=true
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - lcnc-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8002/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Multi-Agent Orchestrator - FastAPI with A2A Protocol
+  orchestrator:
+    build:
+      context: ./backend/services/orchestrator
+      dockerfile: Dockerfile
+    ports:
+      - "8003:8003"
+    environment:
+      - ENVIRONMENT=development
+      - DATABASE_URL=postgresql+asyncpg://lcnc_user:lcnc_password@postgres:5432/lcnc_platform
+      - REDIS_URL=redis://redis:6379/1
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY}
+      - AGENTS_URL=http://agents:8002
+      - TOOLS_URL=http://tools:8005
+      - RAG_URL=http://rag:8004
+      - WORKFLOW_URL=http://workflow:8007
+      - A2A_PROTOCOL_ENABLED=true
+      - REMOTE_AGENTS=http://agents:8002,http://rag:8004,http://tools:8005
+      - HOST=0.0.0.0
+      - PORT=8003
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - lcnc-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8003/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # RAG Service - FastAPI with A2A Protocol
+  rag:
+    build:
+      context: ./backend/services/rag
+      dockerfile: Dockerfile
+    ports:
+      - "8004:8004"
+    environment:
+      - ENVIRONMENT=development
+      - DATABASE_URL=postgresql+asyncpg://lcnc_user:lcnc_password@postgres:5432/lcnc_platform
+      - REDIS_URL=redis://redis:6379/4
+      - VECTOR_STORE_TYPE=pgvector
+      - PGVECTOR_DATABASE_URL=postgresql+asyncpg://lcnc_user:lcnc_password@postgres:5432/lcnc_platform
+      - A2A_PROTOCOL_ENABLED=true
+      - HOST=0.0.0.0
+      - PORT=8004
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - lcnc-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8004/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Tool Integration Service - FastAPI with A2A Protocol
+  tools:
+    build:
+      context: ./backend/services/tools
+      dockerfile: Dockerfile
+    ports:
+      - "8005:8005"
+    environment:
+      - ENVIRONMENT=development
+      - DATABASE_URL=postgresql+asyncpg://lcnc_user:lcnc_password@postgres:5432/lcnc_platform
+      - REDIS_URL=redis://redis:6379/3
+      - MCP_SERVER_REGISTRY_URL=http://mcp-registry:9000
+      - A2A_PROTOCOL_ENABLED=true
+      - HOST=0.0.0.0
+      - PORT=8005
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - lcnc-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8005/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # SQL Tool Service - FastAPI
+  sqltool:
+    build:
+      context: ./backend/services/sqltool
+      dockerfile: Dockerfile
+    ports:
+      - "8006:8006"
+    environment:
+      - ENVIRONMENT=development
+      - DATABASE_URL=postgresql+asyncpg://lcnc_user:lcnc_password@postgres:5432/lcnc_platform
+      - REDIS_URL=redis://redis:6379/5
+      - ALLOWED_DB_TYPES=postgresql,mysql,sqlite,mssql
+      - MAX_QUERY_EXECUTION_TIME=30
+      - HOST=0.0.0.0
+      - PORT=8006
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - lcnc-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8006/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Workflow Engine - FastAPI
+  workflow:
+    build:
+      context: ./backend/services/workflow-engine
+      dockerfile: Dockerfile
+    ports:
+      - "8007:8007"
+    environment:
+      - ENVIRONMENT=development
+      - DATABASE_URL=postgresql+asyncpg://lcnc_user:lcnc_password@postgres:5432/lcnc_platform
+      - REDIS_URL=redis://redis:6379/6
+      - ORCHESTRATOR_URL=http://orchestrator:8003
+      - AGENTS_URL=http://agents:8002
+      - TOOLS_URL=http://tools:8005
+      - HOST=0.0.0.0
+      - PORT=8007
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - lcnc-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8007/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Observability Service - FastAPI
+  observability:
+    build:
+      context: ./backend/services/observability
+      dockerfile: Dockerfile
+    ports:
+      - "8008:8008"
+    environment:
+      - ENVIRONMENT=development
+      - DATABASE_URL=postgresql+asyncpg://lcnc_user:lcnc_password@postgres:5432/lcnc_platform
+      - REDIS_URL=redis://redis:6379/7
+      - JAEGER_ENDPOINT=http://jaeger:14268/api/traces
+      - PROMETHEUS_GATEWAY=http://prometheus:9091
+      - HOST=0.0.0.0
+      - PORT=8008
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - lcnc-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8008/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # PostgreSQL Database with PGVector Extension
+  postgres:
+    image: pgvector/pgvector:pg16
+    restart: always
+    environment:
+      POSTGRES_USER: lcnc_user
+      POSTGRES_PASSWORD: lcnc_password
+      POSTGRES_DB: lcnc_platform
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=C"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./infra/migrations:/docker-entrypoint-initdb.d/
+    ports:
+      - "5432:5432"
+    networks:
+      - lcnc-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U lcnc_user -d lcnc_platform"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis Cache and Message Broker
+  redis:
+    image: redis:7-alpine
+    restart: always
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    networks:
+      - lcnc-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Jaeger Tracing (Optional for development)
+  jaeger:
+    image: jaegertracing/all-in-one:1.57
+    restart: always
+    environment:
+      - COLLECTOR_ZIPKIN_HOST_PORT=:9411
+      - JAEGER_DISABLED=false
+    ports:
+      - "16686:16686"
+      - "14268:14268"
+      - "6831:6831/udp"
+      - "6832:6832/udp"
+    networks:
+      - lcnc-network
+
+  # Prometheus Monitoring (Optional for development)
+  prometheus:
+    image: prom/prometheus:latest
+    restart: always
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=200h'
+      - '--web.enable-lifecycle'
+    volumes:
+      - ./infra/monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    ports:
+      - "9090:9090"
+    networks:
+      - lcnc-network
+
+networks:
+  lcnc-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  redis_data:
+  prometheus_data:

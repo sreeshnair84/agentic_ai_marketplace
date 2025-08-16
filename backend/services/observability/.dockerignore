@@ -1,0 +1,53 @@
+# Git
+.git
+.gitignore
+README.md
+*.md
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.venv/
+venv/
+env/
+
+# Environment
+.env
+.env.*
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Testing
+.pytest_cache/
+.coverage
+test/
+tests/
+
+# Logs
+*.log
+logs/
+
+# Development files
+.mypy_cache/
+build/
+dist/
+*.egg-info/
+
+# Observability specific
+metrics/
+traces/
+prometheus_data/
+grafana_data/
+jaeger_data/
+tmp/
+temp/

@@ -1,0 +1,92 @@
+# Git
+.git
+.gitignore
+
+# Documentation
+README.md
+*.md
+docs/
+
+# Python cache and compiled files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Development dependencies (will be installed in container)
+.venv/
+venv/
+env/
+ENV/
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# IDE and editors
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Testing
+.pytest_cache/
+.tox/
+.nox/
+.coverage
+htmlcov/
+coverage.xml
+*.cover
+test/
+tests/
+*test.py
+*test*.py
+
+# Logs
+logs/
+*.log
+
+# Database development files
+*.db
+*.sqlite
+*.sqlite3
+alembic/versions/
+migrations/
+
+# Build artifacts
+build/
+dist/
+*.egg-info/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Cache
+.cache/
+
+# Development tools
+.mypy_cache/
+.dmypy.json
+dmypy.json
+.pyre/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Documentation build
+docs/_build/
+
+# Package files
+*.egg
+*.whl
+
+# Virtual environments
+pip-wheel-metadata/

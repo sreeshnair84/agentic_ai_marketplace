@@ -1,0 +1,247 @@
+{
+  "id": "rag-agent",
+  "name": "RAGAgent",
+  "description": "Retrieval Augmented Generation agent that combines document retrieval with AI generation using Gemini. Provides context-aware responses based on indexed knowledge.",
+  "version": "1.0.0",
+  "category": "rag",
+  "url": "http://localhost:8004",
+  "health_url": "http://localhost:8004/health",
+  "dns_name": "rag-service.lcnc.local",
+  "card_url": "http://localhost:8004/a2a/cards/rag-agent",
+  "default_input_modes": ["text", "json", "file"],
+  "default_output_modes": ["text", "json", "stream"],
+  "capabilities": {
+    "streaming": true,
+    "batch_processing": true,
+    "file_upload": true,
+    "multi_modal": true,
+    "external_apis": false
+  },
+  "input_signature": {
+    "schema": {
+      "type": "object",
+      "properties": {
+        "query": {
+          "type": "string",
+          "description": "Search query for knowledge retrieval",
+          "example": "What are the benefits of microservices architecture?"
+        },
+        "collection": {
+          "type": "string",
+          "description": "Knowledge collection to search in",
+          "example": "architecture_docs"
+        },
+        "retrieval_options": {
+          "type": "object",
+          "description": "Retrieval configuration",
+          "properties": {
+            "k": {"type": "integer", "default": 5},
+            "similarity_threshold": {"type": "number", "default": 0.7},
+            "include_metadata": {"type": "boolean", "default": true}
+          }
+        },
+        "generation_options": {
+          "type": "object",
+          "description": "Generation configuration",
+          "properties": {
+            "max_tokens": {"type": "integer", "default": 1000},
+            "temperature": {"type": "number", "default": 0.7},
+            "include_citations": {"type": "boolean", "default": true}
+          }
+        }
+      },
+      "required": ["query"]
+    },
+    "content_types": ["application/json", "text/plain", "multipart/form-data"],
+    "size_limits": {
+      "max_payload_size": "5MB",
+      "max_file_size": "50MB"
+    }
+  },
+  "output_signature": {
+    "schema": {
+      "type": "object",
+      "properties": {
+        "answer": {
+          "type": "string",
+          "description": "Generated answer based on retrieved context"
+        },
+        "sources": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "document_id": {"type": "string"},
+              "chunk_text": {"type": "string"},
+              "similarity_score": {"type": "number"},
+              "metadata": {"type": "object"}
+            }
+          }
+        },
+        "confidence": {
+          "type": "number",
+          "description": "Confidence score for the answer"
+        },
+        "metadata": {
+          "type": "object",
+          "properties": {
+            "retrieval_time": {"type": "number"},
+            "generation_time": {"type": "number"},
+            "total_documents_searched": {"type": "integer"}
+          }
+        }
+      }
+    },
+    "content_types": ["application/json", "text/plain", "text/event-stream"]
+  },
+  "skills": [
+    {
+      "id": "document_retrieval",
+      "name": "Document Retrieval",
+      "description": "Retrieves relevant documents and context for queries using semantic search",
+      "tags": ["retrieval", "search", "semantic", "documents", "context"],
+      "examples": [
+        {
+          "description": "Search knowledge base for relevant information",
+          "input": {
+            "query": "How to implement authentication in microservices?",
+            "collection": "architecture_docs",
+            "retrieval_options": {"k": 3, "similarity_threshold": 0.8}
+          },
+          "output": {
+            "sources": [
+              {"document_id": "auth_guide_1", "similarity_score": 0.92, "chunk_text": "Authentication in microservices..."}
+            ]
+          }
+        },
+        {
+          "description": "Retrieve document chunks based on similarity",
+          "input": {
+            "query": "database performance optimization",
+            "retrieval_options": {"k": 5}
+          },
+          "output": {
+            "sources": [
+              {"document_id": "perf_guide", "similarity_score": 0.85, "chunk_text": "Database optimization techniques..."}
+            ]
+          }
+        }
+      ],
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "k": {
+            "type": "integer",
+            "default": 5,
+            "description": "Number of documents to retrieve"
+          },
+          "similarity_threshold": {
+            "type": "number",
+            "default": 0.7,
+            "description": "Minimum similarity score for retrieval"
+          }
+        }
+      }
+    },
+    {
+      "id": "augmented_generation",
+      "name": "Augmented Generation",
+      "description": "Generates responses using retrieved context and Gemini AI",
+      "tags": ["generation", "rag", "context", "ai", "gemini"],
+      "examples": [
+        {
+          "description": "Generate answers based on retrieved documents",
+          "input": {
+            "query": "Explain REST API best practices",
+            "sources": [{"chunk_text": "REST APIs should follow stateless principles..."}]
+          },
+          "output": {
+            "answer": "Based on the documentation, REST API best practices include following stateless principles, using proper HTTP methods, and implementing consistent error handling...",
+            "confidence": 0.9
+          }
+        },
+        {
+          "description": "Synthesize information from multiple sources",
+          "input": {
+            "query": "Compare SQL vs NoSQL databases",
+            "sources": [
+              {"chunk_text": "SQL databases provide ACID compliance..."},
+              {"chunk_text": "NoSQL databases offer horizontal scaling..."}
+            ]
+          },
+          "output": {
+            "answer": "SQL and NoSQL databases each have distinct advantages. SQL databases provide ACID compliance and structured data handling, while NoSQL databases offer horizontal scaling and flexibility...",
+            "confidence": 0.85
+          }
+        }
+      ]
+    },
+    {
+      "id": "knowledge_indexing",
+      "name": "Knowledge Indexing",
+      "description": "Indexes documents and content for retrieval",
+      "tags": ["indexing", "embeddings", "vector", "knowledge"],
+      "examples": [
+        {
+          "description": "Index new documents and content",
+          "input": {
+            "action": "index",
+            "documents": [{"id": "doc1", "content": "Technical documentation content"}],
+            "collection": "tech_docs"
+          },
+          "output": {
+            "success": true,
+            "indexed_count": 1,
+            "collection": "tech_docs"
+          }
+        },
+        {
+          "description": "Generate embeddings for semantic search",
+          "input": {
+            "action": "embed",
+            "text": "machine learning algorithms"
+          },
+          "output": {
+            "embeddings": "vector_representation",
+            "dimensions": 768
+          }
+        }
+      ]
+    }
+  ],
+  "tags": ["rag", "retrieval", "generation", "gemini", "knowledge", "search"],
+  "search_keywords": ["rag", "retrieval", "knowledge", "search", "documents", "context", "generation"],
+  "ai_provider": "gemini",
+  "model_name": "gemini-1.5-pro",
+  "model_config": {
+    "temperature": 0.7,
+    "max_tokens": 2048,
+    "top_p": 0.9
+  },
+  "external_services": [
+    {
+      "name": "Vector Database",
+      "dns_name": "vector-db.lcnc.local",
+      "health_url": "http://vector-db.lcnc.local:6333/health",
+      "api_version": "v1",
+      "authentication": "api_key"
+    }
+  ],
+  "health_check": {
+    "endpoint": "/health",
+    "interval_seconds": 30,
+    "timeout_seconds": 5,
+    "required_fields": ["status", "version", "collections", "embeddings_model"]
+  },
+  "usage_metrics": {
+    "total_executions": 0,
+    "success_rate": 1.0,
+    "avg_execution_time": 0.0,
+    "last_executed": null
+  },
+  "author": "LCNC Platform",
+  "organization": "LCNC Platform",
+  "environment": "development",
+  "created_at": "2024-01-01T00:00:00Z",
+  "updated_at": "2024-08-14T15:30:00Z"
+}

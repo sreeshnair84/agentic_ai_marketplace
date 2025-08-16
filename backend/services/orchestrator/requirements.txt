@@ -1,0 +1,68 @@
+# FastAPI and ASGI server
+fastapi[all]
+uvicorn[standard]
+
+# Database
+sqlalchemy[asyncio]
+asyncpg
+alembic
+
+# Redis and task queue
+aioredis
+celery[redis]
+redis
+
+# HTTP client for service communication
+httpx
+aiohttp
+
+# Validation and serialization
+pydantic[email]
+pydantic-settings
+
+# A2A Protocol and agent communication
+langchain
+langchain-core
+langchain-community
+# AI Providers (Default: Gemini)
+langchain-google-genai
+langchain-openai
+langchain-anthropic
+
+# Workflow engine
+temporalio
+prefect
+
+# Message queuing
+pika # RabbitMQ client
+
+# Observability and monitoring
+opentelemetry-api
+opentelemetry-sdk
+opentelemetry-instrumentation-fastapi
+opentelemetry-instrumentation-sqlalchemy
+opentelemetry-instrumentation-redis
+opentelemetry-exporter-jaeger
+prometheus-client
+
+# Logging and structured data
+structlog
+python-json-logger
+
+# Utilities
+python-dotenv
+click
+rich
+tenacity # Retry logic
+croniter # Cron scheduling
+
+# Testing (development)
+pytest
+pytest-asyncio
+pytest-mock
+
+# Code quality (development)
+black
+isort
+flake8
+mypy

@@ -1,0 +1,61 @@
+import asyncio
+import asyncpg
+
+async def insert_sample_data():
+    try:
+        db_config = {
+            'host': 'localhost',
+            'port': 5432,
+            'user': 'lcnc_user',
+            'password': 'lcnc_password',
+            'database': 'lcnc_platform'
+        }
+        
+        print('Connecting to database...')
+        conn = await asyncpg.connect(**db_config)
+        
+        # Sample tool instances
+        await conn.execute("""
+            INSERT INTO tool_instances (name, display_name, template_name, status, configuration, created_by) 
+            VALUES ('postgres-prod', 'Production PostgreSQL', 'postgres-query-tool', 'active', '{"host": "prod-db.example.com", "port": 5432}', 'admin@lcnc.com')
+            ON CONFLICT (name) DO NOTHING
+        """)
+        
+        await conn.execute("""
+            INSERT INTO tool_instances (name, display_name, template_name, status, configuration, created_by) 
+            VALUES ('redis-cache', 'Redis Cache Instance', 'redis-tool', 'active', '{"host": "redis.example.com", "port": 6379}', 'admin@lcnc.com')
+            ON CONFLICT (name) DO NOTHING
+        """)
+        
+        await conn.execute("""
+            INSERT INTO tool_instances (name, display_name, template_name, status, configuration, created_by) 
+            VALUES ('email-service', 'Email Service Instance', 'email-sender-tool', 'active', '{"smtp_host": "smtp.example.com", "port": 587}', 'admin@lcnc.com')
+            ON CONFLICT (name) DO NOTHING
+        """)
+        print('✅ Inserted tool instances')
+        
+        # Sample LLM model
+        await conn.execute("""
+            INSERT INTO llm_models (name, display_name, provider, model_type, api_endpoint, status, capabilities, health_url, dns_name) 
+            VALUES ('gpt-4o', 'GPT-4 Omni', 'OpenAI', 'text-generation', 'https://api.openai.com/v1/chat/completions', 'active', 
+                   '{"max_tokens": 128000, "supports_functions": true}', 'https://status.openai.com/api/v2/status.json', 'api.openai.com')
+            ON CONFLICT (name) DO NOTHING
+        """)
+        print('✅ Inserted LLM models')
+        
+        # Sample embedding model  
+        await conn.execute("""
+            INSERT INTO embedding_models (name, display_name, provider, model_type, api_endpoint, status, capabilities, health_url, dns_name) 
+            VALUES ('text-embedding-3-large', 'OpenAI Text Embedding 3 Large', 'OpenAI', 'embedding', 'https://api.openai.com/v1/embeddings', 'active',
+                   '{"dimensions": 3072, "max_input_tokens": 8191}', 'https://status.openai.com/api/v2/status.json', 'api.openai.com')
+            ON CONFLICT (name) DO NOTHING
+        """)
+        print('✅ Inserted embedding models')
+        
+        await conn.close()
+        
+    except Exception as e:
+        print(f'❌ Data insertion failed: {e}')
+
+if __name__ == "__main__":
+    asyncio.run(insert_sample_data())

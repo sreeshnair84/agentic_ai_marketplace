@@ -1,0 +1,16 @@
+# SQL Tool Service Dependencies
+
+fastapi
+uvicorn[standard]
+pydantic
+pydantic-settings
+
+# Database drivers and ORM
+sqlalchemy[asyncio]
+asyncpg         # PostgreSQL
+aiomysql         # MySQL
+aiosqlite       # SQLite
+
+# Additional dependencies
+python-multipart
+python-jose[cryptography]

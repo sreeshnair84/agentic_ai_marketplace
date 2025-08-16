@@ -1,0 +1,119 @@
+# Git
+.git
+.gitignore
+
+# Documentation
+README.md
+docs/
+*.md
+
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.npm
+.yarn-integrity
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.pytest_cache/
+.tox/
+.coverage
+htmlcov/
+.nox/
+venv/
+env/
+ENV/
+.venv/
+.env/
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# IDE and editors
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Logs
+logs/
+*.log
+
+# Test files and reports
+tests/
+test/
+*.test.*
+*test*.json
+service_test_results.json
+endpoint_test_report_*.json
+
+# Build artifacts (keep what's needed for runtime)
+.next/
+out/
+build/
+dist/
+coverage/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Docker volumes and development data
+__queuestorage__/
+__azurite_db_queue__.json
+__azurite_db_queue_extent__.json
+
+# Infrastructure and deployment
+.terraform/
+*.tfstate
+*.tfstate.*
+.terraform.lock.hcl
+k8s/
+infra/
+deployment/
+scripts/
+
+# Development tools
+.eslintcache
+.prettier*
+.editorconfig
+
+# OS files
+Thumbs.db
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+
+# Backup files
+*.bak
+*.backup
+*.orig
+
+# IDE settings
+.vscode/
+.idea/
+*.sublime-workspace
+*.sublime-project
+
+# Local development files
+docker-compose.override.yml
+docker-compose.local.yml

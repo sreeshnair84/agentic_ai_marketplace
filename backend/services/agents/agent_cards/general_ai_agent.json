@@ -1,0 +1,138 @@
+{
+  "id": "general-ai-agent",
+  "name": "GeneralAIAgent",
+  "description": "General purpose AI assistant powered by Gemini AI for various tasks and queries. Provides comprehensive assistance with analysis, reasoning, and problem-solving across multiple domains.",
+  "version": "1.0.0",
+  "category": "general",
+  "url": "http://localhost:8002/a2a/agents/general",
+  "health_url": "http://localhost:8002/health",
+  "dns_name": "agent-service.lcnc.local",
+  "card_url": "http://localhost:8002/a2a/cards/general-ai-agent",
+  "default_input_modes": ["text", "json"],
+  "default_output_modes": ["text", "json", "stream"],
+  "capabilities": {
+    "streaming": true,
+    "batch_processing": true,
+    "file_upload": false,
+    "multi_modal": true,
+    "external_apis": false
+  },
+  "input_signature": {
+    "schema": {
+      "type": "object",
+      "properties": {
+        "query": {
+          "type": "string",
+          "description": "Primary input query or command",
+          "example": "Analyze the customer feedback data"
+        },
+        "context": {
+          "type": "object",
+          "description": "Additional context data",
+          "properties": {
+            "session_id": {"type": "string"},
+            "user_preferences": {"type": "object"}
+          }
+        },
+        "options": {
+          "type": "object",
+          "description": "Processing options",
+          "properties": {
+            "max_tokens": {"type": "integer", "default": 1000},
+            "temperature": {"type": "number", "default": 0.7}
+          }
+        }
+      },
+      "required": ["query"]
+    },
+    "content_types": ["application/json", "text/plain"],
+    "size_limits": {
+      "max_payload_size": "1MB"
+    }
+  },
+  "output_signature": {
+    "schema": {
+      "type": "object",
+      "properties": {
+        "result": {
+          "type": "string",
+          "description": "Primary response content"
+        },
+        "confidence": {
+          "type": "number",
+          "description": "Confidence score (0-1)"
+        },
+        "metadata": {
+          "type": "object",
+          "description": "Additional response metadata",
+          "properties": {
+            "execution_time": {"type": "number"},
+            "tokens_used": {"type": "integer"}
+          }
+        }
+      }
+    },
+    "content_types": ["application/json", "text/plain", "text/event-stream"]
+  },
+  "skills": [
+    {
+      "id": "general_ai_assistant",
+      "name": "General AI Assistant",
+      "description": "Provides general AI assistance using Gemini AI with capabilities for analysis, reasoning, and problem-solving",
+      "tags": ["ai", "general", "assistant", "gemini", "analysis", "reasoning"],
+      "examples": [
+        {
+          "description": "Answer questions on various topics",
+          "input": {"query": "What are the benefits of renewable energy?"},
+          "output": {"result": "Renewable energy offers multiple benefits including environmental protection, cost savings, and energy independence..."}
+        },
+        {
+          "description": "Help with analysis and reasoning",
+          "input": {"query": "Analyze the pros and cons of remote work"},
+          "output": {"result": "Remote work analysis: Pros include flexibility and cost savings, while cons include communication challenges..."}
+        }
+      ],
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "max_tokens": {
+            "type": "integer",
+            "default": 1000,
+            "description": "Maximum tokens for response"
+          },
+          "temperature": {
+            "type": "number",
+            "default": 0.7,
+            "description": "Response creativity level"
+          }
+        }
+      }
+    }
+  ],
+  "tags": ["ai", "general", "gemini", "assistant", "multi-purpose"],
+  "search_keywords": ["general", "assistant", "ai", "analysis", "reasoning", "questions"],
+  "ai_provider": "gemini",
+  "model_name": "gemini-1.5-pro",
+  "model_config": {
+    "temperature": 0.7,
+    "max_tokens": 2048,
+    "top_p": 0.9
+  },
+  "health_check": {
+    "endpoint": "/health",
+    "interval_seconds": 30,
+    "timeout_seconds": 5,
+    "required_fields": ["status", "version", "dependencies"]
+  },
+  "usage_metrics": {
+    "total_executions": 0,
+    "success_rate": 1.0,
+    "avg_execution_time": 0.0,
+    "last_executed": null
+  },
+  "author": "LCNC Platform",
+  "organization": "LCNC Platform",
+  "environment": "development",
+  "created_at": "2024-01-01T00:00:00Z",
+  "updated_at": "2024-08-14T15:30:00Z"
+}
