@@ -1,0 +1,701 @@
+# Frontend UI - Technical Specifications & Requirements
+
+## Overview
+
+The Enterprise AI Platform frontend is built with Next.js 15.4.0, TypeScript, and modern React patterns. It provides a comprehensive interface for managing AI agents, workflows, and monitoring agent interactions with real-time A2A protocol visualization.
+
+## Technology Stack
+
+### Core Framework
+| Technology | Version | Purpose | Health Check |
+|------------|---------|---------|--------------|
+| Next.js | 15.4.0 | React framework with App Router | `http://localhost:3000/api/health` |
+| React | 19.1.0 | UI library with concurrent features | Built into Next.js |
+| TypeScript | 5.7.3 | Type safety and developer experience | Compile-time |
+| Tailwind CSS | 3.4.17 | Utility-first CSS framework | Build-time |
+
+### UI Component Library
+```json
+{
+  "ui-components": {
+    "@radix-ui/react-accordion": "^1.1.2",
+    "@radix-ui/react-alert-dialog": "^1.0.5",
+    "@radix-ui/react-avatar": "^1.0.4",
+    "@radix-ui/react-checkbox": "^1.0.4",
+    "@radix-ui/react-dialog": "^1.0.5",
+    "@radix-ui/react-dropdown-menu": "^2.0.6",
+    "@radix-ui/react-hover-card": "^1.0.7",
+    "@radix-ui/react-label": "^2.0.2",
+    "@radix-ui/react-popover": "^1.0.7",
+    "@radix-ui/react-select": "^2.0.0",
+    "@radix-ui/react-separator": "^1.0.3",
+    "@radix-ui/react-slider": "^1.1.2",
+    "@radix-ui/react-switch": "^1.0.3",
+    "@radix-ui/react-tabs": "^1.0.4",
+    "@radix-ui/react-toast": "^1.1.5",
+    "@radix-ui/react-tooltip": "^1.0.7"
+  }
+}
+```
+
+### State Management & Data Fetching
+```json
+{
+  "state-management": {
+    "zustand": "^4.5.0",
+    "@tanstack/react-query": "^5.28.0",
+    "@tanstack/react-query-devtools": "^5.28.0",
+    "axios": "^1.6.0"
+  }
+}
+```
+
+### Visualization & Interactive Components
+```json
+{
+  "visualization": {
+    "recharts": "^2.12.0",
+    "d3": "^7.9.0",
+    "reactflow": "^11.11.0",
+    "@xyflow/react": "^12.0.0",
+    "cytoscape": "^3.28.0",
+    "mermaid": "^10.9.0"
+  }
+}
+```
+
+## Project Structure
+
+```
+frontend/
+├── public/                          # Static assets
+│   ├── icons/                      # Application icons
+│   ├── images/                     # Images and graphics
+│   └── favicon.ico
+├── src/
+│   ├── app/                        # Next.js App Router
+│   │   ├── globals.css            # Global styles
+│   │   ├── layout.tsx             # Root layout
+│   │   ├── page.tsx               # Home page
+│   │   ├── loading.tsx            # Global loading UI
+│   │   ├── error.tsx              # Global error UI
+│   │   ├── not-found.tsx          # 404 page
+│   │   ├── (auth)/                # Auth group
+│   │   │   ├── login/
+│   │   │   ├── register/
+│   │   │   └── callback/
+│   │   ├── dashboard/             # Dashboard pages
+│   │   │   ├── page.tsx
+│   │   │   └── loading.tsx
+│   │   ├── agents/                # Agent management
+│   │   │   ├── page.tsx
+│   │   │   ├── [id]/
+│   │   │   └── create/
+│   │   ├── workflows/             # Workflow management
+│   │   │   ├── page.tsx
+│   │   │   ├── [id]/
+│   │   │   ├── create/
+│   │   │   └── designer/
+│   │   ├── tools/                 # Tool management
+│   │   │   ├── page.tsx
+│   │   │   ├── [id]/
+│   │   │   └── create/
+│   │   ├── rag/                   # RAG management
+│   │   │   ├── page.tsx
+│   │   │   ├── documents/
+│   │   │   └── query/
+│   │   ├── observability/         # Monitoring
+│   │   │   ├── page.tsx
+│   │   │   ├── traces/
+│   │   │   ├── metrics/
+│   │   │   └── a2a/
+│   │   └── api/                   # API routes
+│   │       ├── auth/
+│   │       ├── health/
+│   │       └── proxy/
+│   ├── components/                # React components
+│   │   ├── layout/               # Layout components
+│   │   │   ├── Sidebar.tsx
+│   │   │   ├── Header.tsx
+│   │   │   ├── PageLayout.tsx
+│   │   │   └── Navigation.tsx
+│   │   ├── agents/               # Agent-specific components
+│   │   │   ├── AgentList.tsx
+│   │   │   ├── AgentCard.tsx
+│   │   │   ├── AgentForm.tsx
+│   │   │   ├── AgentDetails.tsx
+│   │   │   └── AgentExecutor.tsx
+│   │   ├── workflows/            # Workflow components
+│   │   │   ├── WorkflowList.tsx
+│   │   │   ├── WorkflowDesigner.tsx
+│   │   │   ├── WorkflowCanvas.tsx
+│   │   │   ├── NodePalette.tsx
+│   │   │   └── ExecutionMonitor.tsx
+│   │   ├── tools/                # Tool components
+│   │   │   ├── ToolList.tsx
+│   │   │   ├── ToolCard.tsx
+│   │   │   ├── ToolForm.tsx
+│   │   │   └── MCPRegistry.tsx
+│   │   ├── rag/                  # RAG components
+│   │   │   ├── DocumentUpload.tsx
+│   │   │   ├── DocumentList.tsx
+│   │   │   ├── QueryInterface.tsx
+│   │   │   └── SearchResults.tsx
+│   │   ├── observability/        # Monitoring components
+│   │   │   ├── TracingDashboard.tsx
+│   │   │   ├── MetricsDashboard.tsx
+│   │   │   ├── A2ANetworkView.tsx
+│   │   │   └── PerformanceCharts.tsx
+│   │   ├── visualization/        # Data visualization
+│   │   │   ├── NetworkDiagram.tsx
+│   │   │   ├── FlowChart.tsx
+│   │   │   ├── PerformanceCharts.tsx
+│   │   │   └── A2AMessageFlow.tsx
+│   │   ├── forms/                # Form components
+│   │   │   ├── DynamicFormBuilder.tsx
+│   │   │   ├── AdvancedSearch.tsx
+│   │   │   └── ConfigurationForm.tsx
+│   │   ├── auth/                 # Authentication
+│   │   │   ├── AuthGuard.tsx
+│   │   │   ├── LoginForm.tsx
+│   │   │   ├── RegisterForm.tsx
+│   │   │   └── ProviderButtons.tsx
+│   │   └── ui/                   # shadcn/ui components
+│   │       ├── button.tsx
+│   │       ├── input.tsx
+│   │       ├── dialog.tsx
+│   │       ├── table.tsx
+│   │       └── ...
+│   ├── hooks/                    # Custom React hooks
+│   │   ├── use-agents.ts
+│   │   ├── use-workflows.ts
+│   │   ├── use-tools.ts
+│   │   ├── use-rag.ts
+│   │   ├── use-auth.ts
+│   │   ├── use-websocket.ts
+│   │   └── use-a2a-protocol.ts
+│   ├── lib/                      # Utility libraries
+│   │   ├── api.ts               # API client
+│   │   ├── auth/                # Authentication logic
+│   │   │   ├── providers.ts
+│   │   │   ├── authService.ts
+│   │   │   └── types.ts
+│   │   ├── utils.ts             # Utility functions
+│   │   ├── validations.ts       # Form validations
+│   │   ├── websocket.ts         # WebSocket client
+│   │   └── constants.ts         # Application constants
+│   ├── store/                   # State management
+│   │   ├── authContext.tsx      # Auth context
+│   │   ├── agent-store.ts       # Agent state
+│   │   ├── workflow-store.ts    # Workflow state
+│   │   ├── ui-store.ts          # UI state
+│   │   └── a2a-store.ts         # A2A protocol state
+│   └── types/                   # TypeScript definitions
+│       ├── agent.ts
+│       ├── workflow.ts
+│       ├── tool.ts
+│       ├── rag.ts
+│       ├── auth.ts
+│       ├── a2a-protocol.ts
+│       └── api.ts
+├── package.json                 # Dependencies
+├── next.config.ts              # Next.js configuration
+├── tailwind.config.ts          # Tailwind configuration
+├── tsconfig.json               # TypeScript configuration
+└── README.md
+```
+
+## Core UI Components
+
+### 1. Layout Components
+
+#### Sidebar (`components/layout/Sidebar.tsx`)
+- **Features**:
+  - Hierarchical navigation with project-based filtering
+  - Real-time A2A agent status indicators
+  - Contextual quick actions and search
+  - Responsive design with mobile drawer
+
+#### Header (`components/layout/Header.tsx`)
+- **Features**:
+  - Global semantic search across agents, workflows, tools
+  - Real-time system health indicator
+  - User profile management and authentication
+  - Notification center with A2A message alerts
+
+#### PageLayout (`components/layout/PageLayout.tsx`)
+- **Features**:
+  - Dynamic breadcrumb navigation
+  - Page-specific action buttons
+  - Content grid system with responsive breakpoints
+
+### 2. Agent Management Components
+
+#### AgentList (`components/agents/AgentList.tsx`)
+```typescript
+export function AgentList() {
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedFramework, setSelectedFramework] = useState('all');
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  
+  const { data: agents, isLoading, error } = useAgents();
+  
+  const filteredAgents = agents?.filter((agent: Agent) => {
+    const matchesSearch = agent.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         agent.description.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesFramework = selectedFramework === 'all' || agent.framework === selectedFramework;
+    return matchesSearch && matchesFramework;
+  });
+
+  return (
+    <div className="space-y-6">
+      {/* Search and Filters */}
+      <div className="flex gap-4">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search agents..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10"
+          />
+        </div>
+        <Select value={selectedFramework} onValueChange={setSelectedFramework}>
+          <SelectTrigger className="w-48">
+            <SelectValue placeholder="Filter by framework" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Frameworks</SelectItem>
+            <SelectItem value="langchain">LangChain</SelectItem>
+            <SelectItem value="crewai">CrewAI</SelectItem>
+            <SelectItem value="semantic-kernel">Semantic Kernel</SelectItem>
+          </SelectContent>
+        </Select>
+        <Button onClick={() => setIsCreateModalOpen(true)}>
+          <Plus className="mr-2 h-4 w-4" />
+          Create Agent
+        </Button>
+      </div>
+
+      {/* Agent Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {filteredAgents?.map((agent) => (
+          <AgentCard key={agent.id} agent={agent} />
+        ))}
+      </div>
+    </div>
+  );
+}
+```
+
+#### AgentCard (`components/agents/AgentCard.tsx`)
+- **Features**:
+  - Agent status and health indicators
+  - Framework and model information
+  - Quick action buttons (execute, edit, delete)
+  - A2A capability badges
+  - Performance metrics display
+
+### 3. Workflow Designer Components
+
+#### WorkflowDesigner (`components/workflows/WorkflowDesigner.tsx`)
+```typescript
+export function WorkflowDesigner({ 
+  initialDefinition, 
+  onDefinitionChange 
+}: WorkflowDesignerProps) {
+  const [nodes, setNodes, onNodesChange] = useNodesState(
+    initialDefinition?.nodes || []
+  );
+  const [edges, setEdges, onEdgesChange] = useEdgesState(
+    initialDefinition?.edges || []
+  );
+  
+  const onConnect = useCallback(
+    (params: Connection) => setEdges((eds) => addEdge(params, eds)),
+    [setEdges]
+  );
+
+  return (
+    <div className="flex h-screen">
+      {/* Node Palette */}
+      <div className="w-64 border-r bg-muted/50">
+        <NodePalette />
+      </div>
+      
+      {/* Flow Canvas */}
+      <div className="flex-1">
+        <ReactFlow
+          nodes={nodes}
+          edges={edges}
+          onNodesChange={onNodesChange}
+          onEdgesChange={onEdgesChange}
+          onConnect={onConnect}
+          nodeTypes={nodeTypes}
+          fitView
+        >
+          <Controls />
+          <MiniMap />
+          <Background variant="dots" gap={12} size={1} />
+        </ReactFlow>
+      </div>
+    </div>
+  );
+}
+```
+
+### 4. A2A Protocol Visualization
+
+#### A2ANetworkView (`components/observability/A2ANetworkView.tsx`)
+- **Features**:
+  - Real-time agent network topology
+  - Message flow visualization
+  - Agent capability mapping
+  - Performance metrics overlay
+  - Interactive node exploration
+
+#### A2AMessageFlow (`components/visualization/A2AMessageFlow.tsx`)
+- **Features**:
+  - Real-time message tracking
+  - Message routing visualization
+  - Latency and performance metrics
+  - Error and retry visualization
+
+### 5. Data Visualization Components
+
+#### NetworkDiagram (`components/visualization/NetworkDiagram.tsx`)
+- **Features**:
+  - Force-directed layout with customizable physics
+  - Node clustering and grouping
+  - Edge weight visualization
+  - Interactive exploration and filtering
+
+#### PerformanceCharts (`components/visualization/PerformanceCharts.tsx`)
+- **Features**:
+  - Line, bar, area, and scatter plot charts
+  - Real-time data streaming
+  - Zoom and pan interactions
+  - Comparative analysis tools
+
+## State Management Architecture
+
+### 1. Zustand Store Structure
+```typescript
+interface AppState {
+  // Authentication
+  auth: {
+    user: User | null;
+    token: string | null;
+    isAuthenticated: boolean;
+  };
+  
+  // A2A Protocol State
+  a2a: {
+    registeredAgents: AgentCard[];
+    activeConnections: A2AConnection[];
+    messageQueue: A2AMessage[];
+    networkTopology: NetworkNode[];
+  };
+  
+  // UI State
+  ui: {
+    theme: "light" | "dark";
+    sidebarCollapsed: boolean;
+    activeWorkspace: string;
+    notifications: Notification[];
+  };
+  
+  // Real-time Data
+  realTime: {
+    systemMetrics: SystemMetrics;
+    agentStatuses: AgentStatus[];
+    workflowExecutions: WorkflowExecution[];
+  };
+}
+```
+
+### 2. React Query Configuration
+```typescript
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60 * 5, // 5 minutes
+      cacheTime: 1000 * 60 * 30, // 30 minutes
+      retry: (failureCount, error) => {
+        if (error.status === 404) return false;
+        return failureCount < 3;
+      },
+    },
+    mutations: {
+      retry: 1,
+    },
+  },
+});
+```
+
+## API Integration
+
+### API Client Configuration
+```typescript
+const apiClient = axios.create({
+  baseURL: process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000/api',
+  timeout: 30000,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
+
+// Request interceptor for auth
+apiClient.interceptors.request.use(
+  (config) => {
+    const token = getAuthToken();
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
+```
+
+### Custom Hooks for Data Fetching
+```typescript
+// hooks/use-agents.ts
+export function useAgents() {
+  const { setAgents, setLoading, setError } = useAgentStore();
+  
+  return useQuery({
+    queryKey: ['agents'],
+    queryFn: agentApi.getAll,
+    onSuccess: (data) => {
+      setAgents(data);
+      setLoading(false);
+    },
+    onError: (error) => {
+      setError(error.message);
+      setLoading(false);
+    },
+  });
+}
+
+export function useCreateAgent() {
+  const queryClient = useQueryClient();
+  const { addAgent } = useAgentStore();
+  
+  return useMutation({
+    mutationFn: agentApi.create,
+    onSuccess: (newAgent) => {
+      addAgent(newAgent);
+      queryClient.invalidateQueries(['agents']);
+    },
+  });
+}
+```
+
+## WebSocket Integration
+
+### Real-time Updates
+```typescript
+export function useWebSocket(url: string, options: UseWebSocketOptions = {}) {
+  const [isConnected, setIsConnected] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const wsRef = useRef<WebSocket | null>(null);
+  
+  const connect = () => {
+    try {
+      const ws = new WebSocket(url);
+      wsRef.current = ws;
+      
+      ws.onopen = () => {
+        setIsConnected(true);
+        setError(null);
+        options.onConnect?.();
+      };
+      
+      ws.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        options.onMessage?.(data);
+      };
+      
+      ws.onerror = (error) => {
+        setError('WebSocket connection error');
+        options.onError?.(error);
+      };
+      
+      ws.onclose = () => {
+        setIsConnected(false);
+        options.onDisconnect?.();
+      };
+    } catch (error) {
+      setError('Failed to establish WebSocket connection');
+    }
+  };
+  
+  useEffect(() => {
+    connect();
+    return () => {
+      wsRef.current?.close();
+    };
+  }, [url]);
+  
+  return { isConnected, error, disconnect: () => wsRef.current?.close() };
+}
+```
+
+## Authentication System
+
+### Multi-Provider Authentication
+- **Local Authentication**: Username/email + password with JWT
+- **OAuth Providers**: GitHub, Google, Microsoft
+- **Security Features**:
+  - JWT token storage in httpOnly cookies
+  - Automatic token refresh
+  - Protected routes with authentication guards
+  - Secure logout with token cleanup
+
+### Authentication Components
+```typescript
+// AuthGuard component
+export function AuthGuard({ children }: { children: React.ReactNode }) {
+  const { isAuthenticated, isLoading } = useAuth();
+  
+  if (isLoading) {
+    return <LoadingSpinner />;
+  }
+  
+  if (!isAuthenticated) {
+    return <Navigate to="/auth/login" replace />;
+  }
+  
+  return <>{children}</>;
+}
+```
+
+## Performance Optimization
+
+### Code Splitting
+```typescript
+// Lazy loading for large components
+const WorkflowDesigner = lazy(() => import('./WorkflowDesigner'));
+const ObservabilityDashboard = lazy(() => import('./ObservabilityDashboard'));
+
+export function App() {
+  return (
+    <Suspense fallback={<LoadingSpinner />}>
+      <Routes>
+        <Route path="/workflows" element={<WorkflowDesigner />} />
+        <Route path="/observability" element={<ObservabilityDashboard />} />
+      </Routes>
+    </Suspense>
+  );
+}
+```
+
+### Optimization Strategies
+- **Lazy Loading**: Components are lazy-loaded where appropriate
+- **Memoization**: React.memo for pure components
+- **Virtual Scrolling**: For large lists and tables
+- **Code Splitting**: Route-based and component-based splitting
+
+## Responsive Design
+
+### Breakpoint System
+```typescript
+const breakpoints = {
+  sm: '640px',
+  md: '768px',
+  lg: '1024px',
+  xl: '1280px',
+  '2xl': '1536px',
+};
+```
+
+### Mobile-First Design
+- Progressive enhancement from mobile to desktop
+- Touch-friendly interactions
+- Optimized navigation for small screens
+- Responsive grid layouts
+
+## Testing Strategy
+
+### Component Testing
+```typescript
+// Unit tests with React Testing Library
+import { render, screen, fireEvent } from '@testing-library/react';
+import { AgentCard } from './AgentCard';
+
+describe('AgentCard', () => {
+  it('renders agent information correctly', () => {
+    const mockAgent = {
+      id: '1',
+      name: 'Test Agent',
+      description: 'Test description',
+      status: 'active'
+    };
+    
+    render(<AgentCard agent={mockAgent} />);
+    
+    expect(screen.getByText('Test Agent')).toBeInTheDocument();
+    expect(screen.getByText('Test description')).toBeInTheDocument();
+  });
+});
+```
+
+### E2E Testing
+- Playwright for end-to-end testing
+- Critical user journey validation
+- Cross-browser compatibility testing
+
+## Build Configuration
+
+### Next.js Configuration
+```typescript
+// next.config.ts
+const nextConfig = {
+  experimental: {
+    appDir: true,
+  },
+  images: {
+    domains: ['localhost', 'api.lcnc-platform.com'],
+    formats: ['image/webp', 'image/avif'],
+  },
+  async redirects() {
+    return [
+      {
+        source: '/',
+        destination: '/dashboard',
+        permanent: false,
+      },
+    ];
+  },
+};
+
+export default nextConfig;
+```
+
+### Environment Variables
+```bash
+NEXT_PUBLIC_API_BASE_URL=http://localhost:8000/api
+NEXT_PUBLIC_API_URL=http://localhost:8000
+NEXT_PUBLIC_GATEWAY_URL=http://localhost:8000
+NEXT_PUBLIC_WS_URL=ws://localhost:8000/ws
+NEXTAUTH_SECRET=your-nextauth-secret
+NEXTAUTH_URL=http://localhost:3000
+```
+
+## Accessibility
+
+### WCAG 2.1 Compliance
+- Semantic HTML structure
+- ARIA labels and roles
+- Keyboard navigation support
+- Screen reader compatibility
+- Color contrast compliance
+
+### Focus Management
+- Focus trapping in modals
+- Skip links for navigation
+- Visible focus indicators
+- Logical tab order
+
+This frontend architecture provides a modern, scalable, and accessible user interface for managing enterprise AI agents with comprehensive real-time monitoring and A2A protocol visualization capabilities.

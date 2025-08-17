@@ -1,186 +1,248 @@
-# Agentic AI Acceleration - Complete Documentation Index
+# Enterprise AI Multi-Agent Platform Documentation
 
-## 📚 Documentation Overview
+Welcome to the comprehensive documentation for the Enterprise AI Multi-Agent Platform. This platform provides a sophisticated microservices architecture for building, managing, and orchestrating AI agents using multiple frameworks.
 
-This is the comprehensive documentation hub for the Agentic AI Acceleration, a sophisticated low-code/no-code system for building and managing multi-agent AI workflows with A2A protocol support, MCP integration, and enterprise-grade observability.
+## 📋 Documentation Overview
 
-## 🏗️ Architecture Documentation
+This documentation is organized into four main categories:
 
-### Core Architecture
-- **[System Requirements](requirements/system-requirements.md)** - Complete system overview with A2A protocol specifications
-- **[Backend Architecture](architecture/backend-modules.md)** - Detailed backend service architecture and components
-- **[Multi-Agent Orchestration](architecture/multiagent-orchestration.md)** - A2A orchestration patterns and agent coordination
-- **[Data Flow Sequences](architecture/data-flow-sequences.md)** - System data flow diagrams and interaction patterns
+### 🏗️ [Architecture](./architecture/)
+- **[System Architecture](./architecture/system-architecture.md)** - Complete technical overview of the platform architecture, service communication patterns, and core components
 
-### Frontend Architecture
-- **[Frontend Requirements](requirements/frontend-requirements.md)** - Next.js application specifications and features
-- **[Component Library](ui/components-inventory.md)** - Comprehensive UI component documentation
-- **[Screen Specifications](ui/screen-wireframes.md)** - Detailed UI screen wireframes and layouts
+### 🔧 [Backend Services](./backend-services/)
+- **[Technical Specifications](./backend-services/technical-specifications.md)** - Detailed documentation of all 8 microservices, APIs, A2A protocol, and service interactions
 
-## 🔌 API Documentation
+### 🎨 [Frontend UI](./frontend-ui/)
+- **[Technical Specifications](./frontend-ui/technical-specifications.md)** - Frontend architecture, React components, state management, and user interface design
 
-### Core API Specifications
-- **[API Endpoints Overview](api/api-endpoints.md)** - Complete REST API endpoint documentation
-- **[Agent Registry Specification](api/agent-registry-specification.md)** - Enhanced agent discovery with input/output signatures
-- **[A2A Protocol Implementation](api/a2a-protocol-implementation.md)** - Complete A2A protocol specification and examples
-- **[MCP Server Integration](api/mcp-server-integration.md)** - Model Context Protocol server integration guide
-- **[Workflow Engine Specification](api/workflow-engine-specification.md)** - Comprehensive workflow orchestration documentation
-- **[Health Monitoring](api/health-monitoring.md)** - Service discovery, health checks, and monitoring
+### 🚀 [Infrastructure](./infrastructure/)
+- **[Database and Deployment](./infrastructure/database-and-deployment.md)** - Database schema, deployment configurations, Kubernetes, Terraform, and DevOps practices
 
-### Service-Specific APIs
-- **[Agents API](api/agents.yml)** - Agent service API specifications (A2A protocol)
-- **[Tools API](api/tools.yml)** - Tools service API with MCP integration
-- **[Workflows API](api/workflows.yml)** - Workflow management and execution APIs
-- **[RAG API](api/rag.yml)** - Retrieval Augmented Generation service APIs
-- **[Observability API](api/observability.yml)** - Monitoring and tracing APIs
-- **[Authentication API](api/auth.yml)** - Authentication and authorization APIs
+### ⚙️ [Setup Scripts](./setup-scripts/)
+- **[setup-windows.ps1](./setup-scripts/setup-windows.ps1)** - PowerShell script for automated Windows setup without Docker
+- **[setup-linux.sh](./setup-scripts/setup-linux.sh)** - Bash script for automated Linux/macOS setup without Docker
 
-## 🚀 Deployment and Operations
+## 🚀 Quick Start
 
-### Deployment Guides
-- **[Production Deployment](operations/deployment.md)** - Complete production deployment guide
-- **[FastAPI Setup Guide](operations/FASTAPI_SETUP.md)** - Backend service configuration and setup
-- **[Backend Requirements](requirements/backend-requirements.md)** - FastAPI services, A2A protocol, MCP integration
+### Prerequisites
+- **Python 3.11+** - Primary backend language
+- **Node.js 18+** - Frontend runtime
+- **PostgreSQL 16+** - Primary database with PGVector extension
+- **Redis 7+** - Caching and A2A protocol communication
 
-### Development Setup
-- **[Development Environment Setup](../SETUP.md)** - Local development environment configuration
-- **[Backend Setup Guide](../SETUP_BACKEND_FRONTEND.md)** - Complete backend and frontend setup
-- **[Current Implementation Status](../STATUS_CURRENT.md)** - Real-time implementation progress
+### Option 1: Docker Compose (Recommended)
+```bash
+# Clone the repository
+git clone <repository-url>
+cd lcnc-multiagent-platform
 
-## 🤖 Agent and Tool Integration
+# Start all services
+docker-compose up -d
 
-### Agent Development
-- **[A2A Agent Cards](api/agent-registry-specification.md#agent-card-schema-a2a-protocol-enhanced)** - Standardized agent descriptions with enhanced metadata
-- **[Agent Input/Output Signatures](api/agent-registry-specification.md#standard-agent-card-structure)** - Comprehensive parameter schemas and examples
-- **[Agent Health Monitoring](api/health-monitoring.md#service-specific-health-implementations)** - Health check implementations for agents
+# Access the platform
+# Frontend: http://localhost:3000
+# API: http://localhost:8000
+```
 
-### Tool Integration
-- **[MCP Tool Discovery](api/mcp-server-integration.md#tool-discovery-and-cataloging)** - Automated tool discovery and cataloging
-- **[Tool Execution Framework](api/mcp-server-integration.md#tool-execution)** - Secure tool execution with monitoring
-- **[External Tool Integration](api/agent-registry-specification.md#tool-registry-schema)** - DNS names, health URLs, and external service integration
+### Option 2: Native Setup (No Docker)
 
-### Workflow Orchestration
-- **[Visual Workflow Designer](api/workflow-engine-specification.md#visual-workflow-designer)** - Drag-and-drop workflow creation
-- **[Workflow Templates](api/workflow-engine-specification.md#workflow-templates)** - Reusable workflow patterns
-- **[Error Handling and Recovery](api/workflow-engine-specification.md#error-handling-and-recovery)** - Robust error management
+#### Windows
+```powershell
+# Run the automated setup script
+powershell -ExecutionPolicy Bypass -File docs/setup-scripts/setup-windows.ps1
 
-## 🔍 Discovery and Registry
+# Start the platform
+./start-platform.ps1
+```
 
-### Service Discovery
-- **[DNS-Based Discovery](api/health-monitoring.md#dns-based-discovery)** - Service registration and discovery patterns
-- **[Agent Registry](api/agent-registry-specification.md)** - Comprehensive agent discovery and management
-- **[Tool Registry](api/agent-registry-specification.md#tool-registry-schema)** - Enhanced tool definition with execution metadata
+#### Linux/macOS
+```bash
+# Make the script executable
+chmod +x docs/setup-scripts/setup-linux.sh
 
-### MCP Server Integration
-- **[MCP Server Registration](api/mcp-server-integration.md#mcp-server-registration)** - External MCP server integration
-- **[Tool Auto-Discovery](api/mcp-server-integration.md#automatic-tool-discovery)** - Automated tool cataloging from MCP servers
-- **[Protocol Support](api/mcp-server-integration.md#protocol-support)** - Multi-transport MCP protocol support
+# Run the automated setup script
+./docs/setup-scripts/setup-linux.sh
 
-## 📊 Monitoring and Observability
+# Start the platform
+./start-platform.sh
+```
 
-### Health Monitoring
-- **[Health Check Framework](api/health-monitoring.md#health-check-framework)** - Standardized health checks across all services
-- **[Service Status Dashboard](api/health-monitoring.md#real-time-status-dashboard)** - Real-time system monitoring
-- **[Alert Management](api/health-monitoring.md#alerting-and-notifications)** - Automated alerting and notifications
+## 🏛️ Platform Architecture
 
-### Performance Analytics
-- **[Workflow Analytics](api/workflow-engine-specification.md#monitoring-and-analytics)** - Comprehensive workflow performance metrics
-- **[Agent Performance Tracking](api/agent-registry-specification.md#agent-card-schema-a2a-protocol-enhanced)** - Agent execution analytics and optimization
-- **[Resource Usage Monitoring](api/health-monitoring.md#performance-metrics)** - System resource tracking and optimization
+### Service Overview
+The platform consists of 8 core microservices:
 
-## 🔐 Security and Authentication
+| Service | Port | Purpose |
+|---------|------|---------|
+| **Gateway** | 8000 | API Gateway, Authentication, Request Routing |
+| **Agents** | 8002 | Agent Lifecycle Management, Multi-Framework Support |
+| **Orchestrator** | 8003 | Workflow Orchestration, Agent Coordination |
+| **RAG** | 8004 | Retrieval-Augmented Generation, Vector Search |
+| **Tools** | 8005 | External Tool Integration, Function Calling |
+| **SQL Tool** | 8006 | Database Operations, Query Execution |
+| **Workflow Engine** | 8007 | Complex Workflow Execution, State Management |
+| **Observability** | 8008 | Monitoring, Logging, Performance Metrics |
 
-### Authentication
-- **[JWT Authentication](api/auth.yml)** - JSON Web Token implementation
-- **[API Key Management](api/mcp-server-integration.md#authentication-and-authorization)** - Secure API key handling
-- **[OAuth Integration](api/mcp-server-integration.md#mcp-server-registration)** - OAuth 2.0 flow support
+### Key Features
+- **Multi-Framework AI Support**: LangChain, CrewAI, Semantic Kernel, AutoGen
+- **A2A Protocol**: JSON-RPC 2.0 based Agent-to-Agent communication
+- **MCP Integration**: Model Context Protocol for enhanced agent capabilities
+- **Vector Search**: PGVector for semantic search and RAG operations
+- **Real-time UI**: Live agent status, workflow visualization, performance monitoring
+- **Comprehensive Monitoring**: OpenTelemetry, Jaeger tracing, Prometheus metrics
 
-### Security Best Practices
-- **[A2A Security](api/a2a-protocol-implementation.md#error-handling-and-recovery)** - A2A protocol security considerations
-- **[MCP Security](api/mcp-server-integration.md#security-considerations)** - MCP integration security patterns
-- **[Data Protection](api/mcp-server-integration.md#data-protection)** - Encrypted communication and data handling
+## 🔗 Core Protocols
 
-## 🛠️ Development Guides
+### A2A (Agent-to-Agent) Protocol
+- **Standard**: JSON-RPC 2.0
+- **Transport**: HTTP/WebSocket with Redis pub/sub
+- **Features**: Type-safe communication, error handling, async messaging
+- **Security**: JWT-based authentication, role-based access control
 
-### Getting Started
-1. **[System Requirements](requirements/system-requirements.md)** - Prerequisites and dependencies
-2. **[Quick Start Guide](../README.md#quick-start)** - Fast setup for development
-3. **[Service Architecture](architecture/backend-modules.md)** - Understanding the service structure
+### MCP (Model Context Protocol)
+- **Purpose**: Enhanced agent context and capabilities
+- **Integration**: Seamless with existing AI frameworks
+- **Features**: Context sharing, tool discovery, resource management
 
-### Advanced Development
-- **[Custom Agent Development](api/a2a-protocol-implementation.md#agent-implementation-examples)** - Building custom A2A-compliant agents
-- **[Tool Integration Patterns](api/mcp-server-integration.md#integration-patterns)** - Integrating external tools and services
-- **[Workflow Development](api/workflow-engine-specification.md#workflow-definition-schema)** - Creating complex multi-step workflows
+## 📊 Database Schema
 
-## 📋 API Reference Quick Links
+### Core Tables
+- **agents**: Agent definitions and configurations
+- **agent_executions**: Execution history and results
+- **workflows**: Workflow definitions and templates
+- **tools**: External tool registrations and configurations
+- **users**: User management and authentication
+- **a2a_messages**: Agent communication logs
 
-### Core Services
-- **Gateway API**: `http://localhost:8000/docs` - Main API gateway with routing and authentication
-- **Agents API**: `http://localhost:8002/docs` - A2A protocol agent management
-- **Tools API**: `http://localhost:8005/docs` - MCP tool integration and execution
-- **Workflow API**: `http://localhost:8007/docs` - Workflow orchestration engine
-- **RAG API**: `http://localhost:8004/docs` - Document retrieval and search
-- **Observability API**: `http://localhost:8008/docs` - Monitoring and tracing
+### Advanced Features
+- **Vector Storage**: PGVector extension for embeddings
+- **JSON Columns**: Flexible configuration storage
+- **Performance Indexes**: Optimized for query performance
+- **Audit Trail**: Comprehensive logging and tracking
 
-### A2A Protocol Endpoints
-- **Agent Cards**: `GET /a2a/cards` - List all available agent cards
-- **Agent Discovery**: `POST /a2a/discover` - Semantic agent discovery
-- **Message Handling**: `POST /a2a/message/stream` - Streaming A2A communication
-- **Health Checks**: `GET /health` - Service health monitoring
+## 🔧 Development
 
-### MCP Integration Endpoints
-- **Server Registration**: `POST /api/v1/mcp/servers` - Register external MCP servers
-- **Tool Discovery**: `GET /api/v1/mcp/tools` - List discovered tools
-- **Tool Execution**: `POST /api/v1/mcp/tools/{tool_id}/execute` - Execute MCP tools
-- **Health Monitoring**: `GET /api/v1/mcp/servers/{server_id}/health` - MCP server health
+### API Testing
+```bash
+# Test all endpoints
+cd scripts/testing
+python test_all_endpoints.py
 
-## 🔄 Integration Examples
+# Test specific service
+python test_backend.py --service gateway
+```
 
-### Common Integration Patterns
-- **[Agent Communication](api/a2a-protocol-implementation.md#a2a-message-protocol)** - A2A message exchange examples
-- **[Tool Execution](api/mcp-server-integration.md#tool-execution)** - MCP tool execution patterns
-- **[Workflow Orchestration](api/workflow-engine-specification.md#workflow-execution-engine)** - Multi-step workflow examples
+### Database Operations
+```bash
+# Run migrations
+python scripts/utilities/fix_schema_mismatch.py
 
-### External Service Integration
-- **[DNS-Based Services](api/health-monitoring.md#dns-based-discovery)** - External service discovery
-- **[Health URL Integration](api/agent-registry-specification.md#enhanced-agent-definition)** - External health monitoring
-- **[A2A Card URLs](api/a2a-protocol-implementation.md#agent-discovery-endpoints)** - External agent integration
+# Check database health
+python scripts/debug/check_db.py
+```
 
-## 📈 Performance and Scaling
+### Frontend Development
+```bash
+cd frontend
 
-### Performance Optimization
-- **[Resource Management](api/workflow-engine-specification.md#performance-and-resource-management)** - CPU, memory, and execution limits
-- **[Caching Strategies](requirements/backend-requirements.md)** - Redis caching for performance
-- **[Database Optimization](requirements/system-requirements.md)** - PostgreSQL performance tuning
+# Install dependencies
+pnpm install
 
-### Scaling Considerations
-- **[Horizontal Scaling](operations/deployment.md)** - Multi-instance deployment patterns
-- **[Load Balancing](api/health-monitoring.md)** - Service load distribution
-- **[Resource Monitoring](api/health-monitoring.md#performance-metrics)** - Resource usage tracking
+# Start development server
+pnpm dev
 
-## 🔧 Troubleshooting and Support
+# Build for production
+pnpm build
+```
+
+## 🌐 Deployment
+
+### Local Development
+- Use Docker Compose for easy local development
+- All services auto-restart on code changes
+- Pre-configured with sample data
+
+### Production Deployment
+- **Kubernetes**: Full K8s manifests in `infra/k8s/`
+- **Terraform**: Infrastructure as Code in `infra/terraform/`
+- **Monitoring**: Prometheus, Grafana, Jaeger integration
+- **Security**: JWT authentication, RBAC, CORS configuration
+
+## 🔐 Default Credentials
+
+### Development Environment
+- **Admin User**: 
+  - Email: `admin@lcnc.local`
+  - Password: `admin123`
+- **Database**: 
+  - User: `lcnc_user`
+  - Password: `lcnc_password`
+  - Database: `lcnc_platform`
+
+> ⚠️ **Security Warning**: Change all default credentials in production environments!
+
+## 📝 Configuration
+
+### Environment Variables
+Key configuration files:
+- **Backend**: `.env` - Database, Redis, JWT, AI provider keys
+- **Frontend**: `frontend/.env.local` - API URLs, NextAuth configuration
+
+### AI Provider Setup
+The platform supports multiple AI providers:
+```bash
+# OpenAI
+OPENAI_API_KEY=your-openai-key
+
+# Google AI
+GOOGLE_API_KEY=your-google-key
+
+# Anthropic
+ANTHROPIC_API_KEY=your-anthropic-key
+```
+
+## 🆘 Troubleshooting
 
 ### Common Issues
-- **[Error Handling](api/mcp-server-integration.md#error-handling-and-troubleshooting)** - Common error scenarios and solutions
-- **[Health Check Failures](api/health-monitoring.md#health-check-framework)** - Diagnosing service health issues
-- **[A2A Communication Problems](api/a2a-protocol-implementation.md#error-handling-and-recovery)** - A2A protocol troubleshooting
+1. **Port Conflicts**: Ensure ports 3000, 5432, 6379, 8000-8008 are available
+2. **Database Connection**: Verify PostgreSQL is running and credentials are correct
+3. **Redis Connection**: Ensure Redis is running on port 6379
+4. **Missing Dependencies**: Run setup scripts to install all prerequisites
 
-### Debug and Logging
-- **[Observability Integration](api/health-monitoring.md#observability-integration)** - Jaeger tracing and Prometheus metrics
-- **[Log Analysis](api/workflow-engine-specification.md#monitoring-and-observability)** - Workflow execution logging
-- **[Performance Profiling](api/health-monitoring.md#monitoring-dashboard)** - System performance analysis
+### Debug Tools
+- **Health Checks**: `scripts/debug/check_*.py`
+- **Service Testing**: `scripts/testing/test_*.py`
+- **Database Utilities**: `scripts/utilities/`
+
+### Logs and Monitoring
+- **Service Logs**: Check individual service directories
+- **Database Logs**: PostgreSQL logs for query issues
+- **API Monitoring**: Use `/docs` endpoints for API testing
+
+## 📧 Support
+
+For technical support and questions:
+- Review the detailed documentation in each category
+- Check the `scripts/debug/` utilities for diagnostics
+- Examine service logs for specific error messages
+- Use the `/docs` API endpoints for testing
+
+## 🔄 Updates and Maintenance
+
+### Regular Tasks
+- Update AI provider API keys
+- Monitor database performance
+- Review agent execution logs
+- Update dependencies
+
+### Backup Procedures
+- Database: Regular PostgreSQL backups
+- Configuration: Version control all config files
+- Logs: Rotate and archive service logs
 
 ---
 
-## 📞 Support and Contributing
-
-For questions, issues, or contributions:
-- **Documentation Issues**: Create an issue with documentation feedback
-- **API Questions**: Refer to the interactive API documentation at service `/docs` endpoints
-- **Integration Support**: Review the integration examples and patterns
-- **Performance Issues**: Check the monitoring and observability documentation
-
-**Platform Version**: 1.0.0  
-**Documentation Last Updated**: August 14, 2025  
-**A2A Protocol Version**: 1.0  
-**MCP Protocol Version**: 1.0+
+**Version**: 1.0.0  
+**Last Updated**: December 2024  
+**Platform**: Cross-platform (Windows, Linux, macOS)  
+**License**: Enterprise License
