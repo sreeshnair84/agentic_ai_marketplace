@@ -1,0 +1,55 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.venv/
+venv/
+env/
+
+# Script outputs
+*.output
+*.log
+*.err
+
+# Generated data
+generated/
+output/
+results/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment
+.env
+.env.*
+
+# Test data
+test_data/
+sample_data/
+
+# Backup files
+backup/
+*.bak
+
+# Cache
+cache/
+.cache/
+
+# Reports
+reports/
+*.html
+*.xml
+*.json.bak

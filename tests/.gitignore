@@ -1,0 +1,63 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.venv/
+venv/
+env/
+
+# Test outputs
+.pytest_cache/
+.tox/
+.coverage
+.coverage.*
+htmlcov/
+.nox/
+coverage.xml
+*.cover
+.hypothesis/
+.cache
+
+# Test data
+test_data/
+fixtures/
+mock_data/
+
+# Reports
+reports/
+test_results/
+*.xml
+*.html
+*.json.bak
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment
+.env
+.env.*
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Logs
+*.log
+logs/
+
+# Node.js (if any frontend tests)
+node_modules/
+
+# Generated files
+generated/
+screenshots/
+videos/

@@ -1,0 +1,49 @@
+# Git
+.git
+.gitignore
+README.md
+*.md
+
+# Database files (except schema)
+*.db
+*.sqlite
+*.sqlite3
+*.db-journal
+*.backup
+*.dump
+data/
+pgdata/
+postgres_data/
+
+# Environment
+.env
+.env.*
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Backup files
+backup/
+dumps/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.output
+*.err
+
+# Docker volumes
+docker-data/
+volumes/

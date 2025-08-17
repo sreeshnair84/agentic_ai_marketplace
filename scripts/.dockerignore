@@ -1,0 +1,50 @@
+# Git
+.git
+.gitignore
+README.md
+*.md
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.venv/
+venv/
+env/
+
+# Environment
+.env
+.env.*
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Script outputs and generated files
+*.output
+*.log
+*.err
+generated/
+output/
+results/
+test_data/
+sample_data/
+backup/
+reports/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.bak
+
+# Cache
+cache/
+.cache/

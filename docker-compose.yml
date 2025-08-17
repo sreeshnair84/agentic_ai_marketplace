@@ -29,7 +29,7 @@ services:
       - DATABASE_URL=postgresql+asyncpg://lcnc_user:lcnc_password@postgres:5432/lcnc_platform
       - REDIS_URL=redis://redis:6379/0
       - JWT_SECRET_KEY=your-secret-key-here
-      - CORS_ORIGINS=http://localhost:3000,http://web:3000,http://127.0.0.1:3000
+      - 'CORS_ORIGINS_STR=http://localhost:3000,http://localhost:3001,http://web:3000,http://127.0.0.1:3000,*'
       - ORCHESTRATOR_URL=http://orchestrator:8003
       - AGENTS_URL=http://agents:8002
       - TOOLS_URL=http://tools:8005

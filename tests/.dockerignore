@@ -1,0 +1,57 @@
+# Git
+.git
+.gitignore
+README.md
+*.md
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.venv/
+venv/
+env/
+
+# Environment
+.env
+.env.*
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Test outputs and reports
+.pytest_cache/
+.tox/
+.coverage
+htmlcov/
+coverage.xml
+reports/
+test_results/
+*.xml
+*.html
+
+# Test data
+test_data/
+fixtures/
+mock_data/
+generated/
+screenshots/
+videos/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.log
+logs/
+
+# Node.js (if any)
+node_modules/

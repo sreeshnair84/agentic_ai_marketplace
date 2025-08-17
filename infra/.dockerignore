@@ -1,0 +1,72 @@
+# Git
+.git
+.gitignore
+README.md
+*.md
+docs/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment files
+.env
+.env.*
+
+# Terraform state files (keep .tf files)
+*.tfstate
+*.tfstate.*
+.terraform/
+.terraform.lock.hcl
+
+# Terraform variables with secrets
+*.tfvars
+*.tfvars.json
+terraform.tfstate.d/
+
+# Kubernetes secrets and configs
+secrets/
+*.key
+*.crt
+*.pem
+*.p12
+
+# Local configs
+config.local
+config.dev
+config.test
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Build artifacts
+dist/
+build/
+
+# Generated files that are not needed in container
+generated/
+
+# Cloud provider configs
+.aws/
+.azure/
+.gcp/
+
+# Monitoring data
+prometheus_data/
+grafana_data/
+
+# Helm
+charts/*/charts/
+charts/*/requirements.lock

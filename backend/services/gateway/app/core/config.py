@@ -32,7 +32,7 @@ class Settings(BaseSettings):
     JWT_ALGORITHM: str = "HS256"
     JWT_ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     JWT_REFRESH_TOKEN_EXPIRE_DAYS: int = 7
-    ALLOWED_HOSTS: List[str] = ["*"]
+    ALLOWED_HOSTS: str = "*"
     
     # Database
     DATABASE_URL: str = "postgresql+asyncpg://lcnc_user:lcnc_password@localhost:5432/lcnc_platform"
@@ -48,15 +48,15 @@ class Settings(BaseSettings):
     REDIS_SSL: bool = False
     
     # CORS
-    CORS_ORIGINS: List[str] = ["http://localhost:3000", "http://localhost:3001"]
+    CORS_ORIGINS_STR: str = "http://localhost:3000,http://localhost:3001"
     CORS_ALLOW_CREDENTIALS: bool = True
-    CORS_ALLOW_METHODS: List[str] = ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"]
-    CORS_ALLOW_HEADERS: List[str] = ["*"]
+    CORS_ALLOW_METHODS: str = "GET,POST,PUT,DELETE,OPTIONS,PATCH"
+    CORS_ALLOW_HEADERS: str = "*"
     
     # File Upload
     MAX_FILE_SIZE: int = 10 * 1024 * 1024  # 10MB
     UPLOAD_DIR: str = "uploads"
-    ALLOWED_EXTENSIONS: List[str] = [".pdf", ".txt", ".docx", ".xlsx", ".csv"]
+    ALLOWED_EXTENSIONS: str = ".pdf,.txt,.docx,.xlsx,.csv"
     
     # External Services
     OPENAI_API_KEY: Optional[str] = None
@@ -120,29 +120,29 @@ class Settings(BaseSettings):
     DEFAULT_ADMIN_FIRST_NAME: str = "Admin"
     DEFAULT_ADMIN_LAST_NAME: str = "User"
 
-    @field_validator("CORS_ORIGINS", mode="before")
-    @classmethod
-    def parse_cors_origins(cls, v):
-        if isinstance(v, str):
-            return [i.strip() for i in v.split(",")]
-        return v
+    def get_cors_origins(self) -> List[str]:
+        """Get CORS origins as a list"""
+        if isinstance(self.CORS_ORIGINS_STR, str):
+            return [origin.strip() for origin in self.CORS_ORIGINS_STR.split(",") if origin.strip()]
+        return self.CORS_ORIGINS_STR if isinstance(self.CORS_ORIGINS_STR, list) else []
 
-    @field_validator("CORS_ALLOW_METHODS", mode="before")
-    @classmethod
-    def parse_cors_methods(cls, v):
-        if isinstance(v, str):
-            return [i.strip() for i in v.split(",")]
-        return v
+    def get_cors_methods(self) -> List[str]:
+        """Get CORS methods as a list"""
+        if isinstance(self.CORS_ALLOW_METHODS, str):
+            return [method.strip() for method in self.CORS_ALLOW_METHODS.split(",") if method.strip()]
+        return self.CORS_ALLOW_METHODS if isinstance(self.CORS_ALLOW_METHODS, list) else []
 
-    @field_validator("ALLOWED_EXTENSIONS", mode="before")
-    @classmethod
-    def parse_allowed_extensions(cls, v):
-        if isinstance(v, str):
-            return [i.strip() for i in v.split(",")]
-        return v
+    def get_cors_headers(self) -> List[str]:
+        """Get CORS headers as a list"""
+        if isinstance(self.CORS_ALLOW_HEADERS, str):
+            return [header.strip() for header in self.CORS_ALLOW_HEADERS.split(",") if header.strip()]
+        return self.CORS_ALLOW_HEADERS if isinstance(self.CORS_ALLOW_HEADERS, list) else []
 
-    class Config:
-        case_sensitive = True
+    def get_allowed_extensions(self) -> List[str]:
+        """Get allowed extensions as a list"""
+        if isinstance(self.ALLOWED_EXTENSIONS, str):
+            return [ext.strip() for ext in self.ALLOWED_EXTENSIONS.split(",") if ext.strip()]
+        return self.ALLOWED_EXTENSIONS if isinstance(self.ALLOWED_EXTENSIONS, list) else []
 
 
 # Create global settings instance

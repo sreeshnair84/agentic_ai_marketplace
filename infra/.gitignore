@@ -1,0 +1,73 @@
+# Terraform
+*.tfstate
+*.tfstate.*
+*.tfvars
+*.tfvars.json
+.terraform/
+.terraform.lock.hcl
+terraform.tfstate.d/
+crash.log
+crash.*.log
+
+# Terraform override files
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# Terraform plan files
+*.tfplan
+
+# Kubernetes secrets
+secrets/
+*.key
+*.crt
+*.pem
+*.p12
+
+# Local config
+config.local
+config.dev
+config.test
+
+# Helm charts
+charts/*/charts/
+charts/*/requirements.lock
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment
+.env
+.env.*
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+tmp/
+temp/
+
+# Build artifacts
+dist/
+build/
+
+# Generated files
+generated/
+
+# Cloud provider configs
+.aws/
+.azure/
+.gcp/
+
+# Monitoring data
+prometheus_data/
+grafana_data/
