@@ -1,0 +1,422 @@
+'use client';
+
+import { AuthGuard } from '@/components/auth/AuthGuard';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { 
+  Activity, 
+  Bot, 
+  Workflow, 
+  MessageSquare, 
+  TrendingUp,
+  AlertCircle,
+  CheckCircle,
+  Clock,
+  Zap,
+  RefreshCw,
+  Wifi,
+  WifiOff
+} from 'lucide-react';
+import Link from 'next/link';
+import { useDashboardData, useLiveMetrics, useSystemHealth } from '@/hooks/useDashboardData';
+
+export default function DashboardPage() {
+  const { data: dashboardData, loading, error, lastUpdated, refresh } = useDashboardData();
+  const liveMetrics = useLiveMetrics();
+  const systemHealth = useSystemHealth();
+
+  // Fallback data for when API is not available
+  const metrics = liveMetrics || {
+    activeAgents: 0,
+    runningWorkflows: 0,
+    a2aMessages: 0,
+    responseTime: 0,
+    totalServices: 0,
+    healthyServices: 0
+  };
+
+  const recentActivity = dashboardData?.recentActivity || [];
+
+  const formatTimestamp = (timestamp: string) => {
+    const date = new Date(timestamp);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    
+    if (diffMs < 60000) {
+      return 'Just now';
+    } else if (diffMs < 3600000) {
+      const minutes = Math.floor(diffMs / 60000);
+      return `${minutes} minute${minutes !== 1 ? 's' : ''} ago`;
+    } else if (diffMs < 86400000) {
+      const hours = Math.floor(diffMs / 3600000);
+      return `${hours} hour${hours !== 1 ? 's' : ''} ago`;
+    } else {
+      const days = Math.floor(diffMs / 86400000);
+      return `${days} day${days !== 1 ? 's' : ''} ago`;
+    }
+  };
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'success':
+        return <CheckCircle className="h-4 w-4 text-green-500" />;
+      case 'warning':
+        return <AlertCircle className="h-4 w-4 text-yellow-500" />;
+      case 'error':
+        return <AlertCircle className="h-4 w-4 text-red-500" />;
+      case 'running':
+        return <Clock className="h-4 w-4 text-blue-500" />;
+      default:
+        return <Activity className="h-4 w-4 text-gray-500" />;
+    }
+  };
+
+  const getActivityTypeIcon = (type: string) => {
+    switch (type) {
+      case 'agent':
+        return <Bot className="h-4 w-4" />;
+      case 'workflow':
+        return <Workflow className="h-4 w-4" />;
+      case 'a2a':
+        return <MessageSquare className="h-4 w-4" />;
+      case 'tool':
+        return <Zap className="h-4 w-4" />;
+      case 'service':
+        return <Activity className="h-4 w-4" />;
+      default:
+        return <Activity className="h-4 w-4" />;
+    }
+  };
+
+  return (
+    <AuthGuard>
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+        <div className="container mx-auto px-4 py-8">
+          {/* Header */}
+          <div className="mb-8 flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+                Platform Dashboard
+              </h1>
+              <p className="text-gray-600 dark:text-gray-300">
+                Monitor your multi-agent system performance and activity
+              </p>
+            </div>
+            <div className="flex items-center space-x-4">
+              {lastUpdated && (
+                <span className="text-sm text-gray-500 flex items-center">
+                  <Clock className="h-4 w-4 mr-1" />
+                  Updated {formatTimestamp(lastUpdated.toISOString())}
+                </span>
+              )}
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={refresh}
+                disabled={loading}
+                className="flex items-center space-x-2"
+              >
+                <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+                <span>Refresh</span>
+              </Button>
+            </div>
+          </div>
+
+          {/* Error Banner */}
+          {error && (
+            <div className="mb-8">
+              <Card className="border-red-200 bg-red-50">
+                <CardContent className="p-4">
+                  <div className="flex items-center space-x-2">
+                    <AlertCircle className="h-5 w-5 text-red-500" />
+                    <span className="text-red-700">
+                      Failed to fetch dashboard data: {error}
+                    </span>
+                    <Button variant="outline" size="sm" onClick={refresh}>
+                      Retry
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
+          {/* System Health Banner */}
+          <div className="mb-8">
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-4">
+                    <div className="flex items-center space-x-2">
+                      {loading ? (
+                        <>
+                          <RefreshCw className="h-6 w-6 text-blue-500 animate-spin" />
+                          <span className="text-lg font-medium">Loading System Status...</span>
+                        </>
+                      ) : systemHealth ? (
+                        <>
+                          {systemHealth.status === 'healthy' ? (
+                            <CheckCircle className="h-6 w-6 text-green-500" />
+                          ) : systemHealth.status === 'degraded' ? (
+                            <AlertCircle className="h-6 w-6 text-yellow-500" />
+                          ) : (
+                            <AlertCircle className="h-6 w-6 text-red-500" />
+                          )}
+                          <span className="text-lg font-medium">
+                            System {systemHealth.status === 'healthy' ? 'Healthy' : 
+                                     systemHealth.status === 'degraded' ? 'Degraded' : 'Unhealthy'}
+                          </span>
+                        </>
+                      ) : (
+                        <>
+                          <WifiOff className="h-6 w-6 text-gray-500" />
+                          <span className="text-lg font-medium">System Status Unknown</span>
+                        </>
+                      )}
+                    </div>
+                    {systemHealth && (
+                      <Badge 
+                        variant="outline" 
+                        className={
+                          systemHealth.status === 'healthy' 
+                            ? "bg-green-50 text-green-700 border-green-200"
+                            : systemHealth.status === 'degraded'
+                            ? "bg-yellow-50 text-yellow-700 border-yellow-200"
+                            : "bg-red-50 text-red-700 border-red-200"
+                        }
+                      >
+                        {systemHealth.servicesCount?.healthy || 0}/{systemHealth.servicesCount?.total || 0} Services Operational
+                      </Badge>
+                    )}
+                  </div>
+                  <div className="text-sm text-gray-600 dark:text-gray-300 flex items-center space-x-4">
+                    {systemHealth && (
+                      <span>Uptime: {systemHealth.uptime}</span>
+                    )}
+                    {dashboardData && (
+                      <>
+                        <span className="flex items-center">
+                          <Wifi className="h-4 w-4 mr-1" />
+                          Live Data
+                        </span>
+                      </>
+                    )}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Metrics Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Active Agents</CardTitle>
+                <Bot className="h-4 w-4 text-blue-600" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{metrics.activeAgents}</div>
+                <p className="text-xs text-gray-600 dark:text-gray-300">
+                  <TrendingUp className="inline h-3 w-3 mr-1" />
+                  {metrics.healthyServices > 0 ? 'Services online' : 'Waiting for services'}
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Running Workflows</CardTitle>
+                <Workflow className="h-4 w-4 text-green-600" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{metrics.runningWorkflows}</div>
+                <p className="text-xs text-gray-600 dark:text-gray-300">
+                  <Activity className="inline h-3 w-3 mr-1" />
+                  {metrics.runningWorkflows > 0 ? `${metrics.runningWorkflows} queued` : 'No active workflows'}
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">A2A Messages</CardTitle>
+                <MessageSquare className="h-4 w-4 text-purple-600" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{metrics.a2aMessages}</div>
+                <p className="text-xs text-gray-600 dark:text-gray-300">
+                  <TrendingUp className="inline h-3 w-3 mr-1" />
+                  {dashboardData ? 'Live updating' : 'Static count'}
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Avg Response Time</CardTitle>
+                <Zap className="h-4 w-4 text-yellow-600" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  {metrics.responseTime > 0 ? `${Math.round(metrics.responseTime)}ms` : 'N/A'}
+                </div>
+                <p className="text-xs text-gray-600 dark:text-gray-300">
+                  <TrendingUp className="inline h-3 w-3 mr-1" />
+                  {metrics.healthyServices}/{metrics.totalServices} services
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* Recent Activity */}
+            <div className="lg:col-span-2">
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between">
+                  <CardTitle>Recent Activity</CardTitle>
+                  <Button variant="outline" size="sm" asChild>
+                    <Link href="/observability">View All</Link>
+                  </Button>
+                </CardHeader>
+                <CardContent>
+                  {loading ? (
+                    <div className="flex items-center justify-center p-8">
+                      <RefreshCw className="h-6 w-6 animate-spin text-gray-400" />
+                      <span className="ml-2 text-gray-500">Loading activity...</span>
+                    </div>
+                  ) : recentActivity.length > 0 ? (
+                    <div className="space-y-4">
+                      {recentActivity.map((activity) => (
+                        <div key={activity.id} className="flex items-start space-x-3">
+                          <div className="flex-shrink-0 mt-1">
+                            {getActivityTypeIcon(activity.type)}
+                          </div>
+                          <div className="flex-grow min-w-0">
+                            <div className="flex items-center space-x-2">
+                              <p className="font-medium text-sm">{activity.title}</p>
+                              {getStatusIcon(activity.status)}
+                            </div>
+                            <p className="text-sm text-gray-600 dark:text-gray-300">
+                              {activity.description}
+                            </p>
+                            <p className="text-xs text-gray-500">{formatTimestamp(activity.timestamp)}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 text-gray-500">
+                      <Activity className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                      <p>No recent activity available</p>
+                      <Button variant="outline" size="sm" onClick={refresh} className="mt-2">
+                        Refresh
+                      </Button>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Quick Actions */}
+            <div>
+              <Card>
+                <CardHeader>
+                  <CardTitle>Quick Actions</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    <Button className="w-full justify-start" asChild>
+                      <Link href="/agents">
+                        <Bot className="mr-2 h-4 w-4" />
+                        Create Agent
+                      </Link>
+                    </Button>
+                    <Button className="w-full justify-start" variant="outline" asChild>
+                      <Link href="/workflows">
+                        <Workflow className="mr-2 h-4 w-4" />
+                        New Workflow
+                      </Link>
+                    </Button>
+                    <Button className="w-full justify-start" variant="outline" asChild>
+                      <Link href="/chat">
+                        <MessageSquare className="mr-2 h-4 w-4" />
+                        Start Chat
+                      </Link>
+                    </Button>
+                    <Button className="w-full justify-start" variant="outline" asChild>
+                      <Link href="/tools">
+                        <Zap className="mr-2 h-4 w-4" />
+                        Manage Tools
+                      </Link>
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* System Status */}
+              <Card className="mt-6">
+                <CardHeader>
+                  <CardTitle>System Status</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {loading ? (
+                    <div className="flex items-center justify-center p-4">
+                      <RefreshCw className="h-4 w-4 animate-spin text-gray-400" />
+                      <span className="ml-2 text-gray-500">Loading services...</span>
+                    </div>
+                  ) : dashboardData?.systemHealth?.services ? (
+                    <div className="space-y-4">
+                      {Object.entries(dashboardData.systemHealth.services).map(([serviceName, service]) => (
+                        <div key={serviceName} className="flex items-center justify-between">
+                          <span className="text-sm capitalize">{serviceName.replace('-', ' ')}</span>
+                          <div className="flex items-center space-x-2">
+                            <span className="text-xs text-gray-500">
+                              {(service as any)?.response_time_ms?.toFixed(0) || 0}ms
+                            </span>
+                            <Badge 
+                              variant="outline" 
+                              className={
+                                (service as any)?.status === 'healthy'
+                                  ? "bg-green-50 text-green-700"
+                                  : "bg-red-50 text-red-700"
+                              }
+                            >
+                              {(service as any)?.status === 'healthy' ? 'Online' : 'Offline'}
+                            </Badge>
+                          </div>
+                        </div>
+                      ))}
+                      {/* Add Gateway Service */}
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm">Gateway Service</span>
+                        <Badge variant="outline" className="bg-green-50 text-green-700">
+                          Online
+                        </Badge>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm">Gateway Service</span>
+                        <Badge variant="outline" className="bg-green-50 text-green-700">
+                          Online
+                        </Badge>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm">Other Services</span>
+                        <Badge variant="outline" className="bg-gray-50 text-gray-700">
+                          Unknown
+                        </Badge>
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </div>
+      </div>
+    </AuthGuard>
+  );
+}

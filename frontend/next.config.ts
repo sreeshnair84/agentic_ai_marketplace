@@ -1,0 +1,18 @@
+import type { NextConfig } from 'next';
+
+const nextConfig: NextConfig = {
+  output: 'standalone',
+  // Enable static optimization
+  trailingSlash: false,
+  // API configuration
+  async rewrites() {
+    return [
+      {
+        source: '/api/:path*',
+        destination: `${process.env.INTERNAL_GATEWAY_URL || process.env.NEXT_PUBLIC_GATEWAY_URL || 'http://localhost:8000'}/api/:path*`,
+      },
+    ];
+  },
+};
+
+export default nextConfig;
