@@ -68,7 +68,7 @@ async def get_specific_agent_card(agent_name: str):
     try:
         orchestrator = await get_orchestrator()
         
-        if agent_name.lower() in ["orchestrator", "lcnc_orchestrator_agent"]:
+        if agent_name.lower() in ["orchestrator", "agenticai_orchestrator_agent"]:
             card = orchestrator.get_agent_card()
             return card.model_dump()
         else:

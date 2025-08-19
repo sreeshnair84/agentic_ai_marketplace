@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: sqltool
-  namespace: lcnc-multiagent-platform
+  namespace: agenticai-multiagent-platform
 spec:
   replicas: 1
   selector:

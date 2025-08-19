@@ -4,7 +4,7 @@ This orchestrator service implements the A2A (Agent-to-Agent) protocol based on 
 
 ## Overview
 
-The LCNC Orchestrator is a multi-agent coordination service that follows the A2A protocol standard. It acts as a "host agent" that can discover, coordinate, and manage multiple remote agents to accomplish complex tasks.
+The AgenticAI Orchestrator is a multi-agent coordination service that follows the A2A protocol standard. It acts as a "host agent" that can discover, coordinate, and manage multiple remote agents to accomplish complex tasks.
 
 ## Key Features
 
@@ -34,7 +34,7 @@ The LCNC Orchestrator is a multi-agent coordination service that follows the A2A
 ## Architecture
 
 ```
-LCNC Orchestrator (Port 8003)
+AgenticAI Orchestrator (Port 8003)
 ├── A2A Protocol Endpoints
 │   ├── /a2a/cards - Agent card discovery
 │   ├── /a2a/message/send - Synchronous messaging
@@ -59,8 +59,8 @@ The orchestrator exposes its capabilities through an A2A agent card:
 
 ```json
 {
-  "name": "LCNC Orchestrator Agent",
-  "description": "Multi-agent orchestration and workflow coordination for LCNC platform",
+  "name": "AgenticAI Orchestrator Agent",
+  "description": "Multi-agent orchestration and workflow coordination for AgenticAI platform",
   "version": "1.0.0",
   "url": "http://localhost:8003",
   "default_input_modes": ["text"],
@@ -215,7 +215,7 @@ The orchestrator analyzes incoming queries to understand:
 - Context preservation
 - Response formatting
 
-## Integration with LCNC Services
+## Integration with AgenticAI Services
 
 ### Connected Services
 
@@ -349,4 +349,4 @@ Following A2A protocol security recommendations:
 - **Performance Optimization**: Caching and load balancing
 - **Security Enhancements**: Advanced authentication and encryption
 
-The LCNC Orchestrator provides a robust foundation for multi-agent coordination while maintaining full compatibility with the A2A protocol standard.
+The AgenticAI Orchestrator provides a robust foundation for multi-agent coordination while maintaining full compatibility with the A2A protocol standard.

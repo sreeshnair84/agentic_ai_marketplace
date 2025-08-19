@@ -55,7 +55,7 @@ def test_login_admin():
     try:
         print("\n⏳ Testing login with admin credentials...")
         login_data = {
-            "email": "admin@lcnc.com",
+            "email": "admin@agenticai.com",
             "password": "secret123"
         }
         
@@ -140,7 +140,7 @@ def test_protected_endpoint(token, user_type="user"):
         return False
 
 if __name__ == "__main__":
-    print("🧪 Testing LCNC Backend Authentication...")
+    print("🧪 Testing AgenticAI Backend Authentication...")
     print("=" * 60)
     
     # Test health
@@ -183,7 +183,7 @@ if __name__ == "__main__":
         print()
         print("🔐 LOGIN OPTIONS:")
         print("   1. Default Admin Account:")
-        print("      Email: admin@lcnc.com")
+        print("      Email: admin@agenticai.com")
         print("      Password: secret123")
         print()
         if register_ok:

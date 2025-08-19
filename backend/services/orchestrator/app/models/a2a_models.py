@@ -222,8 +222,8 @@ class A2AAgentCardBuilder:
     def create_orchestrator_card(host: str = "localhost", port: int = 8003) -> A2AAgentCard:
         """Create orchestrator agent card"""
         return A2AAgentCard(
-            name="LCNC Orchestrator Agent",
-            description="Multi-agent orchestration and workflow coordination for LCNC platform",
+            name="AgenticAI Orchestrator Agent",
+            description="Multi-agent orchestration and workflow coordination for AgenticAI platform",
             version="1.0.0",
             url=f"http://{host}:{port}",
             default_input_modes=["text"],
@@ -280,7 +280,7 @@ class A2AAgentCardBuilder:
                     ]
                 )
             ],
-            tags=["orchestrator", "coordinator", "lcnc", "gemini", "multiagent"],
+            tags=["orchestrator", "coordinator", "agenticai", "gemini", "multiagent"],
             metadata={
                 "ai_provider": "gemini",
                 "model_name": "gemini-1.5-pro",

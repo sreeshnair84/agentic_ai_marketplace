@@ -12,7 +12,7 @@ import json
 from typing import List, Dict, Any
 
 # Configuration
-DATABASE_URL = "postgresql://lcnc_user:lcnc_password@localhost:5432/lcnc_platform"
+DATABASE_URL = "postgresql://agenticai_user:agenticai_password@localhost:5432/agenticai_platform"
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "dummy-key-for-testing")
 
 async def test_database_connection():

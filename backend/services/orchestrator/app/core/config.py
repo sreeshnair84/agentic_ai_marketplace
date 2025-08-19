@@ -19,7 +19,7 @@ class Settings(BaseSettings):
     API_V1_STR: str = "/api/v1"
     
     # Database configuration
-    DATABASE_URL: str = "postgresql+asyncpg://user:password@localhost:5432/lcnc_orchestrator"
+    DATABASE_URL: str = "postgresql+asyncpg://user:password@localhost:5432/agenticai_orchestrator"
     
     # Redis configuration for task queue
     REDIS_URL: str = "redis://localhost:6379/0"

@@ -267,10 +267,10 @@ GOOGLE_API_KEY=your-google-api-key-here
 ANTHROPIC_API_KEY=your-anthropic-api-key-here
 
 # Database Configuration
-DATABASE_URL=postgresql+asyncpg://lcnc_user:lcnc_password@postgres:5432/lcnc_platform
-POSTGRES_USER=lcnc_user
-POSTGRES_PASSWORD=lcnc_password
-POSTGRES_DB=lcnc_platform
+DATABASE_URL=postgresql+asyncpg://agenticai_user:agenticai_password@postgres:5432/agenticai_platform
+POSTGRES_USER=agenticai_user
+POSTGRES_PASSWORD=agenticai_password
+POSTGRES_DB=agenticai_platform
 
 # Redis Configuration
 REDIS_URL=redis://redis:6379/0
@@ -291,7 +291,7 @@ NEXT_PUBLIC_GATEWAY_URL=http://gateway:8000
         # Gateway service .env file
         gateway_env_content = '''# Gateway Service Environment
 ENVIRONMENT=development
-DATABASE_URL=postgresql+asyncpg://lcnc_user:lcnc_password@postgres:5432/lcnc_platform
+DATABASE_URL=postgresql+asyncpg://agenticai_user:agenticai_password@postgres:5432/agenticai_platform
 REDIS_URL=redis://redis:6379/0
 JWT_SECRET_KEY=your-super-secret-jwt-key-change-in-production
 CORS_ORIGINS=["http://localhost:3000", "http://web:3000"]

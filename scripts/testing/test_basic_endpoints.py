@@ -254,7 +254,7 @@ class BasicServiceTester:
 async def main():
     """Main execution function"""
     
-    print("🔧 LCNC Multi-Agent Platform - Basic Service Validation")
+    print("🔧 AgenticAI Multi-Agent Platform - Basic Service Validation")
     print("Testing confirmed working endpoints and core functionality...")
     print("="*80)
     

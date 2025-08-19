@@ -1,5 +1,5 @@
-resource "aws_s3_bucket" "lcnc_bucket" {
-  bucket = "lcnc-multiagent-platform-bucket"
+resource "aws_s3_bucket" "agenticai_bucket" {
+  bucket = "agenticai-multiagent-platform-bucket"
   acl    = "private"
 
   tags = {
@@ -50,7 +50,7 @@ resource "aws_lambda_function" "agent_function" {
   handler       = "index.handler"
   runtime       = "nodejs14.x"
   role          = aws_iam_role.lambda_exec.arn
-  s3_bucket     = aws_s3_bucket.lcnc_bucket.bucket
+  s3_bucket     = aws_s3_bucket.agenticai_bucket.bucket
   s3_key        = "path/to/your/lambda/code.zip"
 
   environment = {
@@ -84,7 +84,7 @@ resource "aws_iam_policy_attachment" "lambda_policy" {
 }
 
 output "bucket_name" {
-  value = aws_s3_bucket.lcnc_bucket.bucket
+  value = aws_s3_bucket.agenticai_bucket.bucket
 }
 
 output "agents_table_name" {

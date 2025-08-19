@@ -1,5 +1,5 @@
 """
-Configuration settings for the LCNC Gateway Service
+Configuration settings for the AgenticAI Gateway Service
 """
 
 from typing import List, Optional
@@ -12,8 +12,8 @@ class Settings(BaseSettings):
     """Application settings with environment variable support"""
     
     # Application
-    APP_NAME: str = "LCNC Gateway Service"
-    PROJECT_NAME: str = "LCNC Gateway Service"  # Alias for APP_NAME
+    APP_NAME: str = "AgenticAI Gateway Service"
+    PROJECT_NAME: str = "AgenticAI Gateway Service"  # Alias for APP_NAME
     DEBUG: bool = False
     VERSION: str = "1.0.0"
     
@@ -35,7 +35,7 @@ class Settings(BaseSettings):
     ALLOWED_HOSTS: str = "*"
     
     # Database
-    DATABASE_URL: str = "postgresql+asyncpg://lcnc_user:lcnc_password@localhost:5432/lcnc_platform"
+    DATABASE_URL: str = "postgresql+asyncpg://agenticai_user:agenticai_password@localhost:5432/agenticai_platform"
     DATABASE_POOL_SIZE: int = 5
     DATABASE_MAX_OVERFLOW: int = 10
     DATABASE_POOL_TIMEOUT: int = 30
@@ -115,7 +115,7 @@ class Settings(BaseSettings):
     OBSERVABILITY_URL: str = "http://localhost:8007"
     
     # Default Admin User
-    DEFAULT_ADMIN_EMAIL: str = "admin@lcnc.com"
+    DEFAULT_ADMIN_EMAIL: str = "admin@agenticai.com"
     DEFAULT_ADMIN_PASSWORD: str = "secret123"
     DEFAULT_ADMIN_FIRST_NAME: str = "Admin"
     DEFAULT_ADMIN_LAST_NAME: str = "User"

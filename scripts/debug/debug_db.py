@@ -10,7 +10,7 @@ from sqlalchemy import text
 async def debug_db():
     try:
         # Connect to database
-        conn = await asyncpg.connect('postgresql://lcnc_user:lcnc_password@localhost:5432/lcnc_platform')
+        conn = await asyncpg.connect('postgresql://agenticai_user:agenticai_password@localhost:5432/agenticai_platform')
         
         # Check table structure
         print("=== LLM_MODELS TABLE STRUCTURE ===")

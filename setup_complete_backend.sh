@@ -82,7 +82,7 @@ if [ ! -f ".env" ]; then
     print_info "Creating .env file for gateway..."
     cat > .env << EOF
 DATABASE_URL=postgresql://$DB_USER@localhost:5432/$DB_NAME
-PROJECT_NAME=LCNC Gateway
+PROJECT_NAME=AgenticAI Gateway
 VERSION=1.0.0
 API_V1_STR=/api/v1
 SECRET_KEY=your-secret-key-here

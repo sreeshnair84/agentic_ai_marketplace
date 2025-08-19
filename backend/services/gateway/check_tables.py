@@ -6,9 +6,9 @@ async def check_tables():
         db_config = {
             'host': 'localhost',
             'port': 5432,
-            'user': 'lcnc_user', 
-            'password': 'lcnc_password',
-            'database': 'lcnc_platform'
+            'user': 'agenticai_user', 
+            'password': 'agenticai_password',
+            'database': 'agenticai_platform'
         }
         
         conn = await asyncpg.connect(**db_config)

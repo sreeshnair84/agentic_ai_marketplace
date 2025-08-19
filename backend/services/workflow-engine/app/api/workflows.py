@@ -281,7 +281,7 @@ async def get_workflow_card(
             
             # Service Discovery
             "execution_url": getattr(workflow, 'execution_url', f"http://localhost:8007/workflows/{workflow.id}/execute"),
-            "dns_name": getattr(workflow, 'dns_name', "workflow-engine.lcnc.local"),
+            "dns_name": getattr(workflow, 'dns_name', "workflow-engine.agenticai.local"),
             "status_url": getattr(workflow, 'status_url', f"http://localhost:8007/workflows/{workflow.id}/status"),
             
             # Enhanced metadata
@@ -297,7 +297,7 @@ async def get_workflow_card(
             "created_at": workflow.created_at.isoformat() if workflow.created_at else None,
             "updated_at": workflow.updated_at.isoformat() if workflow.updated_at else None,
             "author": getattr(workflow, 'author', None),
-            "organization": getattr(workflow, 'organization', "LCNC Platform"),
+            "organization": getattr(workflow, 'organization', "Agentic AI Accelerator"),
             "environment": getattr(workflow, 'environment', "development")
         }
         

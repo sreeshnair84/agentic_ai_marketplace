@@ -4,12 +4,60 @@ SQLAlchemy database models for Tools service
 
 from sqlalchemy import Column, String, Text, Boolean, DateTime, JSON, Integer, ForeignKey, ARRAY
 from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
+from typing import AsyncGenerator
 import uuid
+import os
 
 Base = declarative_base()
+
+# Global engine and session variables
+engine = None
+async_session_local = None
+
+async def init_db():
+    """Initialize database connection"""
+    global engine, async_session_local
+    
+    # Database URL from environment - use the main platform database
+    database_url = os.getenv("DATABASE_URL", "postgresql+asyncpg://lcnc_user:lcnc_password@postgres:5432/lcnc_platform")
+    
+    # Create async engine
+    engine = create_async_engine(
+        database_url,
+        echo=False,  # Set to True for SQL logging
+        pool_size=10,
+        max_overflow=20
+    )
+    
+    # Create session factory
+    async_session_local = async_sessionmaker(
+        engine,
+        class_=AsyncSession,
+        expire_on_commit=False,
+    )
+
+async def get_db() -> AsyncGenerator[AsyncSession, None]:
+    """Get database session"""
+    global async_session_local
+    
+    if async_session_local is None:
+        await init_db()
+    
+    if async_session_local is not None:
+        async with async_session_local() as session:
+            try:
+                yield session
+            except Exception:
+                await session.rollback()
+                raise
+            finally:
+                await session.close()
+    else:
+        raise RuntimeError("Database not initialized")
 
 class ToolTemplate(Base):
     """Tool template definitions"""
@@ -121,3 +169,28 @@ class EmbeddingModel(Base):
     # Metadata
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+class RAGPipeline(Base):
+    """RAG pipeline configurations"""
+    __tablename__ = "rag_pipelines"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    tool_instance_id = Column(UUID(as_uuid=True), ForeignKey("tool_instances.id"), nullable=False)
+    name = Column(String(255), nullable=False)
+    display_name = Column(String(255), nullable=False)
+    description = Column(Text, nullable=True)
+    status = Column(String(50), nullable=False, default="inactive")
+    data_sources = Column(JSON, nullable=False, default=list)
+    vectorization_config = Column(JSON, nullable=False, default=dict)
+    ingestion_config = Column(JSON, nullable=False, default=dict)
+    retrieval_config = Column(JSON, nullable=False, default=dict)
+    metadata_dict = Column(JSON, nullable=True, default=dict)
+    
+    # Metadata
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    created_by = Column(String(255), nullable=True)
+    updated_by = Column(String(255), nullable=True)
+
+    # Relationships
+    tool_instance = relationship("ToolInstance")

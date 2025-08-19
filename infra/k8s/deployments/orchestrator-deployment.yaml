@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: orchestrator
-  namespace: lcnc-multiagent
+  namespace: agenticai-multiagent
 spec:
   replicas: 3
   selector:

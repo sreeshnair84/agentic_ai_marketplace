@@ -1,5 +1,5 @@
 -- =====================================================
--- LCNC PLATFORM - COMPLETE DATABASE SCHEMA
+-- AgenticAI PLATFORM - COMPLETE DATABASE SCHEMA
 -- Consolidated Migration: All core tables and functionality
 -- =====================================================
 

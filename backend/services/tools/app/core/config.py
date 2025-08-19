@@ -19,7 +19,7 @@ class Settings(BaseSettings):
     API_V1_STR: str = "/api/v1"
     
     # Database configuration
-    DATABASE_URL: str = "postgresql+asyncpg://user:password@localhost:5432/lcnc_tools"
+    DATABASE_URL: str = "postgresql+asyncpg://user:password@localhost:5432/agenticai_tools"
     
     # Redis configuration for tool caching
     REDIS_URL: str = "redis://localhost:6379/3"
@@ -41,7 +41,7 @@ class Settings(BaseSettings):
     
     # File handling
     MAX_FILE_SIZE: int = 100 * 1024 * 1024  # 100MB
-    TEMP_DIR: str = "/tmp/lcnc-tools"
+    TEMP_DIR: str = "/tmp/agenticai-tools"
     
     # Standard tools configuration
     ENABLE_WEB_TOOLS: bool = True

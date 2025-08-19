@@ -10,7 +10,7 @@ import asyncio
 import asyncpg
 from datetime import datetime
 
-DATABASE_URL = "postgresql://lcnc_user:lcnc_password@localhost:5432/lcnc_platform"
+DATABASE_URL = "postgresql://agenticai_user:agenticai_password@localhost:5432/agenticai_platform"
 
 async def fix_schema_mismatches():
     """Fix schema mismatches between database and Python models"""

@@ -19,6 +19,12 @@ pydantic-settings
 mcp-client
 websockets
 
+# LangGraph for workflow orchestration
+langgraph
+langchain
+langchain-core
+langchain-community
+
 # Redis for tool state and caching
 aioredis
 

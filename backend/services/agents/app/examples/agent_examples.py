@@ -19,7 +19,7 @@ class AgentExamples:
             "category": "customer-service",
             "url": "http://localhost:8002/a2a/agents/customer-service",
             "health_url": "http://localhost:8002/health",
-            "dns_name": "customer-service.lcnc.local",
+            "dns_name": "customer-service.agenticai.local",
             "card_url": "http://localhost:8002/a2a/cards/customer-service-agent",
             "default_input_modes": ["text", "json", "voice"],
             "default_output_modes": ["text", "json", "stream"],
@@ -183,7 +183,7 @@ class AgentExamples:
                 "last_executed": "2024-08-14T15:45:00Z"
             },
             "author": "Customer Success Team",
-            "organization": "LCNC Platform",
+            "organization": "Agentic AI Accelerator",
             "environment": "production",
             "created_at": "2024-06-01T10:00:00Z",
             "updated_at": "2024-08-14T15:30:00Z"
@@ -200,7 +200,7 @@ class AgentExamples:
             "category": "analytics",
             "url": "http://localhost:8002/a2a/agents/data-analyst",
             "health_url": "http://localhost:8002/health",
-            "dns_name": "data-analyst.lcnc.local",
+            "dns_name": "data-analyst.agenticai.local",
             "card_url": "http://localhost:8002/a2a/cards/data-analyst-agent",
             "default_input_modes": ["text", "json", "file"],
             "default_output_modes": ["text", "json", "stream", "file"],
@@ -366,7 +366,7 @@ class AgentExamples:
                 "last_executed": "2024-08-14T14:20:00Z"
             },
             "author": "Data Science Team",
-            "organization": "LCNC Platform",
+            "organization": "Agentic AI Accelerator",
             "environment": "production"
         }
 
@@ -381,7 +381,7 @@ class AgentExamples:
             "category": "development",
             "url": "http://localhost:8002/a2a/agents/code-review",
             "health_url": "http://localhost:8002/health",
-            "dns_name": "code-review.lcnc.local",
+            "dns_name": "code-review.agenticai.local",
             "card_url": "http://localhost:8002/a2a/cards/code-review-agent",
             "default_input_modes": ["text", "json", "file"],
             "default_output_modes": ["text", "json", "stream"],
@@ -502,6 +502,6 @@ class AgentExamples:
                 "last_executed": "2024-08-14T16:15:00Z"
             },
             "author": "Development Team",
-            "organization": "LCNC Platform",
+            "organization": "Agentic AI Accelerator",
             "environment": "production"
         }

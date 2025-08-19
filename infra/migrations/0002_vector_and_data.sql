@@ -1,5 +1,5 @@
 -- =====================================================
--- LCNC PLATFORM - VECTOR STORAGE AND SAMPLE DATA
+-- AgenticAI PLATFORM - VECTOR STORAGE AND SAMPLE DATA
 -- Consolidated Migration: RAG capabilities and initial data
 -- =====================================================
 
@@ -144,7 +144,7 @@ $$;
 INSERT INTO users (
     email, username, first_name, last_name, hashed_password, role, is_active, is_verified
 ) VALUES (
-    'admin@lcnc.local',
+    'admin@agenticai.local',
     'admin',
     'System',
     'Administrator',
@@ -167,8 +167,8 @@ ON CONFLICT (name) DO NOTHING;
 
 -- Insert essential sample agents
 INSERT INTO agents (name, display_name, description, url, health_url, category, ai_provider, model_name, tags, project_tags, author, organization, environment, created_by) VALUES
-('customer-service-agent', 'Customer Service Agent', 'AI agent for customer service interactions', 'http://localhost:8002/a2a/agents/customer-service', 'http://localhost:8002/health', 'customer-service', 'gemini', 'gemini-1.5-pro', ARRAY['customer', 'support', 'service'], ARRAY['support', 'customer'], 'Platform Team', 'LCNC Platform', 'development', 'system'),
-('data-analyst-agent', 'Data Analyst Agent', 'AI agent for data analysis tasks', 'http://localhost:8002/a2a/agents/data-analyst', 'http://localhost:8002/health', 'analytics', 'gemini', 'gemini-1.5-pro', ARRAY['data', 'analysis', 'analytics'], ARRAY['analytics', 'data'], 'Platform Team', 'LCNC Platform', 'development', 'system')
+('customer-service-agent', 'Customer Service Agent', 'AI agent for customer service interactions', 'http://localhost:8002/a2a/agents/customer-service', 'http://localhost:8002/health', 'customer-service', 'gemini', 'gemini-1.5-pro', ARRAY['customer', 'support', 'service'], ARRAY['support', 'customer'], 'Platform Team', 'Agentic AI Accelerator', 'development', 'system'),
+('data-analyst-agent', 'Data Analyst Agent', 'AI agent for data analysis tasks', 'http://localhost:8002/a2a/agents/data-analyst', 'http://localhost:8002/health', 'analytics', 'gemini', 'gemini-1.5-pro', ARRAY['data', 'analysis', 'analytics'], ARRAY['analytics', 'data'], 'Platform Team', 'Agentic AI Accelerator', 'development', 'system')
 ON CONFLICT (name) DO NOTHING;
 
 -- Insert essential tool templates
@@ -231,7 +231,7 @@ WHERE name IN ('customer-support-pipeline', 'data-analysis-pipeline');
 
 -- Insert sample knowledge base content
 INSERT INTO knowledge_base_embeddings (knowledge_item_id, title, content, category, tags, metadata) VALUES
-('kb-001', 'Platform Overview', 'The LCNC Platform is a low-code/no-code multi-agent AI platform that enables users to create, deploy, and manage AI agents, tools, and workflows.', 'platform', ARRAY['overview', 'platform', 'introduction'], '{"type": "documentation", "version": "1.0"}'),
+('kb-001', 'Platform Overview', 'The Agentic AI Accelerator is a low-code/no-code multi-agent AI platform that enables users to create, deploy, and manage AI agents, tools, and workflows.', 'platform', ARRAY['overview', 'platform', 'introduction'], '{"type": "documentation", "version": "1.0"}'),
 ('kb-002', 'Agent Management', 'Agents are AI-powered entities that can perform specific tasks. They can be configured with different models, capabilities, and integration points.', 'agents', ARRAY['agents', 'management', 'configuration'], '{"type": "documentation", "section": "agents"}'),
 ('kb-003', 'Workflow Automation', 'Workflows enable the orchestration of multiple agents and tools to create complex automation pipelines with conditional logic and error handling.', 'workflows', ARRAY['workflows', 'automation', 'orchestration'], '{"type": "documentation", "section": "workflows"}')
 ON CONFLICT (knowledge_item_id) DO NOTHING;

@@ -4,7 +4,7 @@ This implementation follows the A2A (Agent-to-Agent) protocol standard based on 
 
 ## Overview
 
-Our LCNC platform now supports the A2A protocol, enabling standardized communication between agents across different frameworks and systems. This implementation includes:
+Our AgenticAI platform now supports the A2A protocol, enabling standardized communication between agents across different frameworks and systems. This implementation includes:
 
 - **A2A Agent Cards**: Standardized agent descriptions following the A2A protocol
 - **JSON-RPC Communication**: Standard A2A message format with streaming support

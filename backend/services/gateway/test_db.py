@@ -19,7 +19,7 @@ async def test_db():
             print("✅ Got database session")
             
             # Try a simple query
-            query = select(UserDB).where(UserDB.email == "admin@lcnc.com")
+            query = select(UserDB).where(UserDB.email == "admin@agenticai.com")
             result = await db.execute(query)
             user_db = result.scalar_one_or_none()
             

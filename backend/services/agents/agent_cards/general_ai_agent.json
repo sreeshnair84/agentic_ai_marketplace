@@ -6,7 +6,7 @@
   "category": "general",
   "url": "http://localhost:8002/a2a/agents/general",
   "health_url": "http://localhost:8002/health",
-  "dns_name": "agent-service.lcnc.local",
+  "dns_name": "agent-service.agenticai.local",
   "card_url": "http://localhost:8002/a2a/cards/general-ai-agent",
   "default_input_modes": ["text", "json"],
   "default_output_modes": ["text", "json", "stream"],
@@ -130,8 +130,8 @@
     "avg_execution_time": 0.0,
     "last_executed": null
   },
-  "author": "LCNC Platform",
-  "organization": "LCNC Platform",
+  "author": "Agentic AI Accelerator",
+  "organization": "Agentic AI Accelerator",
   "environment": "development",
   "created_at": "2024-01-01T00:00:00Z",
   "updated_at": "2024-08-14T15:30:00Z"

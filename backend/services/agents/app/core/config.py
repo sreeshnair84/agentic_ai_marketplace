@@ -20,7 +20,7 @@ class Settings(BaseSettings):
     API_V1_STR: str = "/api/v1"
     
     # Database configuration
-    DATABASE_URL: str = "postgresql+asyncpg://user:password@localhost:5432/lcnc_agents"
+    DATABASE_URL: str = "postgresql+asyncpg://user:password@localhost:5432/agenticai_agents"
     
     # Redis configuration for agent state
     REDIS_URL: str = "redis://localhost:6379/2"

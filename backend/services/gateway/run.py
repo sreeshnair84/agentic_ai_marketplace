@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Run script for the LCNC Gateway Service
+Run script for the AgenticAI Gateway Service
 """
 
 import uvicorn

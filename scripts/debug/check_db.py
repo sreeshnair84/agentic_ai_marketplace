@@ -10,7 +10,7 @@ import sys
 
 async def check_database():
     try:
-        conn = await asyncpg.connect('postgresql://postgres:password@localhost:5432/lcnc_platform')
+        conn = await asyncpg.connect('postgresql://postgres:password@localhost:5432/agenticai_platform')
         
         # Check if tables exist
         result = await conn.fetch("""

@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/agents", tags=["agents"])
 
 # Database connection
-DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://lcnc_user:lcnc_password@postgres:5432/lcnc_platform")
+DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://agenticai_user:agenticai_password@postgres:5432/agenticai_platform")
 
 
 async def get_db_connection():

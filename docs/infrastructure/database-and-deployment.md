@@ -684,7 +684,7 @@ alerting:
 ```json
 {
   "dashboard": {
-    "title": "LCNC Platform Overview",
+    "title": "Agentic AI Accelerator Overview",
     "panels": [
       {
         "title": "Service Health",

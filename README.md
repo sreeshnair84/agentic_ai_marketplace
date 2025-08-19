@@ -57,7 +57,7 @@ docs/
 1. **Clone the Repository**
    ```bash
    git clone <repository-url>
-   cd lcnc-multiagent-platform
+   cd agenticai-multiagent-platform
    ```
 
 2. **One-Step Setup (Recommended)**
@@ -127,7 +127,7 @@ docs/
    - Frontend: http://localhost:3000
    - API Gateway: http://localhost:8000
    - API Documentation: http://localhost:8000/docs
-   - Default Admin: `admin@lcnc.local` / `admin123`
+   - Default Admin: `admin@agenticai.local` / `admin123`
 
 ## Service Ports
 ```
@@ -311,7 +311,7 @@ await a2a_protocol.register_agent(AgentCard(
 Key environment variables for development:
 ```bash
 # Database
-DATABASE_URL=postgresql+asyncpg://lcnc_user:lcnc_password@postgres:5432/lcnc_platform
+DATABASE_URL=postgresql+asyncpg://agenticai_user:agenticai_password@postgres:5432/agenticai_platform
 
 # Redis for A2A Communication
 REDIS_URL=redis://redis:6379/0

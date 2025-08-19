@@ -16,7 +16,7 @@ async def fix_gateway_schema():
     try:
         # Connect to database
         conn = await asyncpg.connect(
-            'postgresql://lcnc_user:lcnc_password@localhost:5432/lcnc_platform'
+            'postgresql://agenticai_user:agenticai_password@localhost:5432/agenticai_platform'
         )
         
         print("📋 Checking and fixing tool_templates table...")

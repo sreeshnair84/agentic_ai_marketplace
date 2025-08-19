@@ -33,7 +33,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Configuration from environment (fallback only)
-DATABASE_URL = os.getenv("DATABASE_URL", "postgresql+asyncpg://lcnc_user:lcnc_password@postgres:5432/lcnc_platform")
+DATABASE_URL = os.getenv("DATABASE_URL", "postgresql+asyncpg://agenticai_user:agenticai_password@postgres:5432/agenticai_platform")
 UPLOAD_DIR = Path(os.getenv("UPLOAD_DIR", "./uploads"))
 
 # Global variables

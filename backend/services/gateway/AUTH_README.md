@@ -1,4 +1,4 @@
-# LCNC Gateway Service - Authentication Backend
+# AgenticAI Gateway Service - Authentication Backend
 
 Complete authentication backend for the Agentic AI Acceleration with JWT tokens, user management, and OAuth support.
 
@@ -46,7 +46,7 @@ POST /api/v1/auth/login
 Content-Type: application/json
 
 {
-  "email": "admin@lcnc.com",      # or use "username" instead
+  "email": "admin@agenticai.com",      # or use "username" instead
   "password": "secret123"
 }
 ```
@@ -60,7 +60,7 @@ Content-Type: application/json
   "expires_in": 1800,
   "user": {
     "id": "uuid",
-    "email": "admin@lcnc.com",
+    "email": "admin@agenticai.com",
     "username": "admin",
     "firstName": "System",
     "lastName": "Administrator",
@@ -206,7 +206,7 @@ pydantic[email]>=2.0.0
 # Test login
 curl -X POST http://localhost:8000/api/v1/auth/login \
   -H "Content-Type: application/json" \
-  -d '{"email":"admin@lcnc.com","password":"secret123"}'
+  -d '{"email":"admin@agenticai.com","password":"secret123"}'
 
 # Test protected endpoint
 curl -X GET http://localhost:8000/api/v1/auth/me \

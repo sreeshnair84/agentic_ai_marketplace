@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Setup script for LCNC Gateway Service Authentication
+Setup script for AgenticAI Gateway Service Authentication
 """
 
 import asyncio
@@ -11,7 +11,7 @@ from pathlib import Path
 
 def print_banner():
     """Print setup banner"""
-    print("🚀 LCNC Gateway Service - Authentication Setup")
+    print("🚀 AgenticAI Gateway Service - Authentication Setup")
     print("=" * 50)
 
 def check_python_version():
@@ -66,7 +66,7 @@ async def setup_database():
         # Get database URL from environment
         DATABASE_URL = os.getenv(
             "DATABASE_URL", 
-            "postgresql://lcnc_user:lcnc_password@localhost:5432/lcnc_platform"
+            "postgresql://agenticai_user:agenticai_password@localhost:5432/agenticai_platform"
         )
         
         # Connect and run migration
@@ -82,7 +82,7 @@ async def setup_database():
         
         print("✅ Database tables created successfully")
         print("👤 Default admin user created:")
-        print("   📧 Email: admin@lcnc.com")
+        print("   📧 Email: admin@agenticai.com")
         print("   🔑 Password: secret123")
         
     except ImportError:
@@ -106,7 +106,7 @@ def print_next_steps():
     print("\n🔐 Test authentication:")
     print("   curl -X POST http://localhost:8000/api/v1/auth/login \\")
     print("     -H 'Content-Type: application/json' \\")
-    print("     -d '{\"email\":\"admin@lcnc.com\",\"password\":\"secret123\"}'")
+    print("     -d '{\"email\":\"admin@agenticai.com\",\"password\":\"secret123\"}'")
 
 async def main():
     """Main setup function"""

@@ -18,10 +18,10 @@ class ToolExamples:
             "category": "mcp",
             "type": "email_processing",
             "version": "2.1.0",
-            "endpoint_url": "https://tools.lcnc.local/v1/email-parser",
-            "dns_name": "email-parser.tools.lcnc.local",
-            "health_url": "https://tools.lcnc.local/health",
-            "documentation_url": "https://docs.lcnc.local/tools/email-parser",
+            "endpoint_url": "https://tools.agenticai.local/v1/email-parser",
+            "dns_name": "email-parser.tools.agenticai.local",
+            "health_url": "https://tools.agenticai.local/health",
+            "documentation_url": "https://docs.agenticai.local/tools/email-parser",
             "input_signature": {
                 "schema": {
                     "type": "object",
@@ -215,10 +215,10 @@ class ToolExamples:
             "category": "custom",
             "type": "database_tool",
             "version": "3.0.0",
-            "endpoint_url": "https://tools.lcnc.local/v1/database-query",
-            "dns_name": "db-query.tools.lcnc.local",
-            "health_url": "https://tools.lcnc.local/health",
-            "documentation_url": "https://docs.lcnc.local/tools/database-query",
+            "endpoint_url": "https://tools.agenticai.local/v1/database-query",
+            "dns_name": "db-query.tools.agenticai.local",
+            "health_url": "https://tools.agenticai.local/health",
+            "documentation_url": "https://docs.agenticai.local/tools/database-query",
             "input_signature": {
                 "schema": {
                     "type": "object",
@@ -395,10 +395,10 @@ class ToolExamples:
             "category": "api",
             "type": "file_processing",
             "version": "2.3.0",
-            "endpoint_url": "https://tools.lcnc.local/v1/file-processor",
-            "dns_name": "file-processor.tools.lcnc.local",
-            "health_url": "https://tools.lcnc.local/health",
-            "documentation_url": "https://docs.lcnc.local/tools/file-processor",
+            "endpoint_url": "https://tools.agenticai.local/v1/file-processor",
+            "dns_name": "file-processor.tools.agenticai.local",
+            "health_url": "https://tools.agenticai.local/health",
+            "documentation_url": "https://docs.agenticai.local/tools/file-processor",
             "input_signature": {
                 "schema": {
                     "type": "object",

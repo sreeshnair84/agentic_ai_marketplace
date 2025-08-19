@@ -46,7 +46,7 @@ def create_application() -> FastAPI:
     settings = get_settings()
     
     app = FastAPI(
-        title="LCNC Orchestrator Service",
+        title="AgenticAI Orchestrator Service",
         description="Multi-Agent Workflow Orchestration Service with A2A Protocol Support",
         version="1.0.0",
         openapi_url="/api/openapi.json",
@@ -78,7 +78,7 @@ def create_application() -> FastAPI:
             "version": "1.0.0",
             "status": "running",
             "protocols": ["HTTP", "A2A", "JSON-RPC 2.0"],
-            "description": "LCNC Multi-Agent Orchestrator with A2A Protocol Support"
+            "description": "AgenticAI Multi-Agent Orchestrator with A2A Protocol Support"
         }
     
     return app

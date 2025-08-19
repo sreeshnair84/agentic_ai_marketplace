@@ -122,7 +122,7 @@ INSERT INTO users (
     is_verified,
     provider
 ) VALUES (
-    'admin@lcnc.com', 
+    'admin@agenticai.com', 
     'admin', 
     'System', 
     'Administrator', 
@@ -160,7 +160,7 @@ async def run_migration(db_connection):
     
     await db_connection.commit()
     print("✅ Authentication tables created successfully")
-    print("📧 Default admin user: admin@lcnc.com / secret123")
+    print("📧 Default admin user: admin@agenticai.com / secret123")
 
 
 if __name__ == "__main__":
@@ -172,7 +172,7 @@ if __name__ == "__main__":
         # Database connection details
         DATABASE_URL = os.getenv(
             "DATABASE_URL", 
-            "postgresql://lcnc_user:lcnc_password@localhost:5432/lcnc_platform"
+            "postgresql://agenticai_user:agenticai_password@localhost:5432/agenticai_platform"
         )
         
         # Parse connection string for asyncpg
@@ -191,7 +191,7 @@ if __name__ == "__main__":
                 await conn.execute(statement)
             
             print("✅ Authentication tables created successfully")
-            print("📧 Default admin user: admin@lcnc.com / secret123")
+            print("📧 Default admin user: admin@agenticai.com / secret123")
             
         except Exception as e:
             print(f"❌ Migration failed: {e}")

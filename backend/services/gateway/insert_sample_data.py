@@ -6,9 +6,9 @@ async def insert_sample_data():
         db_config = {
             'host': 'localhost',
             'port': 5432,
-            'user': 'lcnc_user',
-            'password': 'lcnc_password',
-            'database': 'lcnc_platform'
+            'user': 'agenticai_user',
+            'password': 'agenticai_password',
+            'database': 'agenticai_platform'
         }
         
         print('Connecting to database...')
@@ -17,19 +17,19 @@ async def insert_sample_data():
         # Sample tool instances
         await conn.execute("""
             INSERT INTO tool_instances (name, display_name, template_name, status, configuration, created_by) 
-            VALUES ('postgres-prod', 'Production PostgreSQL', 'postgres-query-tool', 'active', '{"host": "prod-db.example.com", "port": 5432}', 'admin@lcnc.com')
+            VALUES ('postgres-prod', 'Production PostgreSQL', 'postgres-query-tool', 'active', '{"host": "prod-db.example.com", "port": 5432}', 'admin@agenticai.com')
             ON CONFLICT (name) DO NOTHING
         """)
         
         await conn.execute("""
             INSERT INTO tool_instances (name, display_name, template_name, status, configuration, created_by) 
-            VALUES ('redis-cache', 'Redis Cache Instance', 'redis-tool', 'active', '{"host": "redis.example.com", "port": 6379}', 'admin@lcnc.com')
+            VALUES ('redis-cache', 'Redis Cache Instance', 'redis-tool', 'active', '{"host": "redis.example.com", "port": 6379}', 'admin@agenticai.com')
             ON CONFLICT (name) DO NOTHING
         """)
         
         await conn.execute("""
             INSERT INTO tool_instances (name, display_name, template_name, status, configuration, created_by) 
-            VALUES ('email-service', 'Email Service Instance', 'email-sender-tool', 'active', '{"smtp_host": "smtp.example.com", "port": 587}', 'admin@lcnc.com')
+            VALUES ('email-service', 'Email Service Instance', 'email-sender-tool', 'active', '{"smtp_host": "smtp.example.com", "port": 587}', 'admin@agenticai.com')
             ON CONFLICT (name) DO NOTHING
         """)
         print('✅ Inserted tool instances')

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 
-const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:8000';
+const BACKEND_URL = process.env.INTERNAL_GATEWAY_URL || process.env.BACKEND_URL || 'http://gateway:8000';
 
 export async function GET() {
   try {
@@ -22,11 +22,11 @@ export async function GET() {
     const healthData = await healthResponse.json();
     console.log('Sidebar API: Health data received:', healthData);
 
-    // Get tools count from Tools service
+    // Get tools count from Tools service via Gateway
     let toolsCount = 0;
     try {
-      console.log('Sidebar API: Fetching tools from port 8005...');
-      const toolsResponse = await fetch('http://localhost:8005/tools', {
+      console.log('Sidebar API: Fetching tools via gateway...');
+      const toolsResponse = await fetch(`${BACKEND_URL}/api/tools`, {
         method: 'GET',
         headers: { 'Content-Type': 'application/json' },
         signal: AbortSignal.timeout(10000),

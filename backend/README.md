@@ -89,7 +89,7 @@ This directory contains the backend services for the Agentic AI Acceleration.
    Copy `.env.example` to `.env` in each service directory and configure:
    ```bash
    # Database
-   DATABASE_URL=postgresql+asyncpg://user:password@localhost:5432/lcnc_gateway
+   DATABASE_URL=postgresql+asyncpg://user:password@localhost:5432/agenticai_gateway
    
    # Redis
    REDIS_URL=redis://localhost:6379/0

@@ -15,7 +15,7 @@ services:
     depends_on:
       - gateway
     networks:
-      - lcnc-network
+      - agenticai-network
 
   # API Gateway - FastAPI
   gateway:
@@ -26,7 +26,7 @@ services:
       - "8000:8000"
     environment:
       - ENVIRONMENT=development
-      - DATABASE_URL=postgresql+asyncpg://lcnc_user:lcnc_password@postgres:5432/lcnc_platform
+      - DATABASE_URL=postgresql+asyncpg://agenticai_user:agenticai_password@postgres:5432/agenticai_platform
       - REDIS_URL=redis://redis:6379/0
       - JWT_SECRET_KEY=your-secret-key-here
       - 'CORS_ORIGINS_STR=http://localhost:3000,http://localhost:3001,http://web:3000,http://127.0.0.1:3000,*'
@@ -41,7 +41,7 @@ services:
       - postgres
       - redis
     networks:
-      - lcnc-network
+      - agenticai-network
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 30s
@@ -57,7 +57,7 @@ services:
       - "8002:8002"
     environment:
       - ENVIRONMENT=development
-      - DATABASE_URL=postgresql+asyncpg://lcnc_user:lcnc_password@postgres:5432/lcnc_platform
+      - DATABASE_URL=postgresql+asyncpg://agenticai_user:agenticai_password@postgres:5432/agenticai_platform
       - REDIS_URL=redis://redis:6379/2
       - GOOGLE_API_KEY=${GOOGLE_API_KEY}
       - OPENAI_API_KEY=${OPENAI_API_KEY}
@@ -70,7 +70,7 @@ services:
       - postgres
       - redis
     networks:
-      - lcnc-network
+      - agenticai-network
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8002/health"]
       interval: 30s
@@ -86,7 +86,7 @@ services:
       - "8003:8003"
     environment:
       - ENVIRONMENT=development
-      - DATABASE_URL=postgresql+asyncpg://lcnc_user:lcnc_password@postgres:5432/lcnc_platform
+      - DATABASE_URL=postgresql+asyncpg://agenticai_user:agenticai_password@postgres:5432/agenticai_platform
       - REDIS_URL=redis://redis:6379/1
       - GOOGLE_API_KEY=${GOOGLE_API_KEY}
       - AGENTS_URL=http://agents:8002
@@ -101,7 +101,7 @@ services:
       - postgres
       - redis
     networks:
-      - lcnc-network
+      - agenticai-network
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8003/health"]
       interval: 30s
@@ -117,10 +117,10 @@ services:
       - "8004:8004"
     environment:
       - ENVIRONMENT=development
-      - DATABASE_URL=postgresql+asyncpg://lcnc_user:lcnc_password@postgres:5432/lcnc_platform
+      - DATABASE_URL=postgresql+asyncpg://agenticai_user:agenticai_password@postgres:5432/agenticai_platform
       - REDIS_URL=redis://redis:6379/4
       - VECTOR_STORE_TYPE=pgvector
-      - PGVECTOR_DATABASE_URL=postgresql+asyncpg://lcnc_user:lcnc_password@postgres:5432/lcnc_platform
+      - PGVECTOR_DATABASE_URL=postgresql+asyncpg://agenticai_user:agenticai_password@postgres:5432/agenticai_platform
       - A2A_PROTOCOL_ENABLED=true
       - HOST=0.0.0.0
       - PORT=8004
@@ -128,7 +128,7 @@ services:
       - postgres
       - redis
     networks:
-      - lcnc-network
+      - agenticai-network
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8004/health"]
       interval: 30s
@@ -144,7 +144,7 @@ services:
       - "8005:8005"
     environment:
       - ENVIRONMENT=development
-      - DATABASE_URL=postgresql+asyncpg://lcnc_user:lcnc_password@postgres:5432/lcnc_platform
+      - DATABASE_URL=postgresql+asyncpg://agenticai_user:agenticai_password@postgres:5432/agenticai_platform
       - REDIS_URL=redis://redis:6379/3
       - MCP_SERVER_REGISTRY_URL=http://mcp-registry:9000
       - A2A_PROTOCOL_ENABLED=true
@@ -154,7 +154,7 @@ services:
       - postgres
       - redis
     networks:
-      - lcnc-network
+      - agenticai-network
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8005/health"]
       interval: 30s
@@ -170,7 +170,7 @@ services:
       - "8006:8006"
     environment:
       - ENVIRONMENT=development
-      - DATABASE_URL=postgresql+asyncpg://lcnc_user:lcnc_password@postgres:5432/lcnc_platform
+      - DATABASE_URL=postgresql+asyncpg://agenticai_user:agenticai_password@postgres:5432/agenticai_platform
       - REDIS_URL=redis://redis:6379/5
       - ALLOWED_DB_TYPES=postgresql,mysql,sqlite,mssql
       - MAX_QUERY_EXECUTION_TIME=30
@@ -180,7 +180,7 @@ services:
       - postgres
       - redis
     networks:
-      - lcnc-network
+      - agenticai-network
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8006/health"]
       interval: 30s
@@ -196,7 +196,7 @@ services:
       - "8007:8007"
     environment:
       - ENVIRONMENT=development
-      - DATABASE_URL=postgresql+asyncpg://lcnc_user:lcnc_password@postgres:5432/lcnc_platform
+      - DATABASE_URL=postgresql+asyncpg://agenticai_user:agenticai_password@postgres:5432/agenticai_platform
       - REDIS_URL=redis://redis:6379/6
       - ORCHESTRATOR_URL=http://orchestrator:8003
       - AGENTS_URL=http://agents:8002
@@ -207,7 +207,7 @@ services:
       - postgres
       - redis
     networks:
-      - lcnc-network
+      - agenticai-network
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8007/health"]
       interval: 30s
@@ -223,7 +223,7 @@ services:
       - "8008:8008"
     environment:
       - ENVIRONMENT=development
-      - DATABASE_URL=postgresql+asyncpg://lcnc_user:lcnc_password@postgres:5432/lcnc_platform
+      - DATABASE_URL=postgresql+asyncpg://agenticai_user:agenticai_password@postgres:5432/agenticai_platform
       - REDIS_URL=redis://redis:6379/7
       - JAEGER_ENDPOINT=http://jaeger:14268/api/traces
       - PROMETHEUS_GATEWAY=http://prometheus:9091
@@ -233,7 +233,7 @@ services:
       - postgres
       - redis
     networks:
-      - lcnc-network
+      - agenticai-network
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8008/health"]
       interval: 30s
@@ -245,9 +245,9 @@ services:
     image: pgvector/pgvector:pg16
     restart: always
     environment:
-      POSTGRES_USER: lcnc_user
-      POSTGRES_PASSWORD: lcnc_password
-      POSTGRES_DB: lcnc_platform
+      POSTGRES_USER: agenticai_user
+      POSTGRES_PASSWORD: agenticai_password
+      POSTGRES_DB: agenticai_platform
       POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=C"
     volumes:
       - postgres_data:/var/lib/postgresql/data
@@ -255,9 +255,9 @@ services:
     ports:
       - "5432:5432"
     networks:
-      - lcnc-network
+      - agenticai-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U lcnc_user -d lcnc_platform"]
+      test: ["CMD-SHELL", "pg_isready -U agenticai_user -d agenticai_platform"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -272,7 +272,7 @@ services:
     ports:
       - "6379:6379"
     networks:
-      - lcnc-network
+      - agenticai-network
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
@@ -292,7 +292,7 @@ services:
       - "6831:6831/udp"
       - "6832:6832/udp"
     networks:
-      - lcnc-network
+      - agenticai-network
 
   # Prometheus Monitoring (Optional for development)
   prometheus:
@@ -311,10 +311,10 @@ services:
     ports:
       - "9090:9090"
     networks:
-      - lcnc-network
+      - agenticai-network
 
 networks:
-  lcnc-network:
+  agenticai-network:
     driver: bridge
 
 volumes:

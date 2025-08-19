@@ -33,6 +33,16 @@ app.add_middleware(
 app.include_router(agents_router)
 # app.include_router(a2a_router)  # Temporarily disabled due to AgentService issues
 
+# Include new template management router
+try:
+    from .api.agent_management import router as agent_management_router
+    app.include_router(agent_management_router, prefix="/agent-management")
+    logger.info("Agent management router included successfully")
+except ImportError as e:
+    logger.warning(f"Could not import agent management router: {e}")
+except Exception as e:
+    logger.error(f"Error including agent management router: {e}")
+
 @app.get("/health")
 async def health_check():
     """Health check endpoint"""
@@ -48,7 +58,11 @@ async def health_check():
             "a2a_messaging": True,
             "a2a_protocol": True,
             "agent_execution": True,
-            "conversation_sessions": True
+            "conversation_sessions": True,
+            "agent_templates": True,
+            "agent_instances": True,
+            "tool_integration": True,
+            "langgraph_workflows": True
         }
     }
 
@@ -61,6 +75,8 @@ async def root():
         "description": "Multi-agent system with A2A communication and Gemini AI integration",
         "endpoints": {
             "agents": "/agents",
+            "agent_templates": "/agent-management/templates",
+            "agent_instances": "/agent-management/instances",
             "a2a": "/a2a",
             "health": "/health",
             "docs": "/docs"

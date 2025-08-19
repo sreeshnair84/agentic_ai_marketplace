@@ -21,7 +21,7 @@ class DatabaseService:
     
     def __init__(self):
         # Database URL from environment - use the main platform database
-        database_url = os.getenv("DATABASE_URL", "postgresql+asyncpg://lcnc_user:lcnc_password@postgres:5432/lcnc_platform")
+        database_url = os.getenv("DATABASE_URL", "postgresql+asyncpg://agenticai_user:agenticai_password@postgres:5432/agenticai_platform")
         
         # Create async engine
         self.engine = create_async_engine(

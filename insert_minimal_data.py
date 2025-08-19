@@ -5,7 +5,7 @@ Minimal data insertion for testing
 import asyncio
 import asyncpg
 
-DATABASE_URL = "postgresql://lcnc_user:lcnc_password@localhost:5432/lcnc_platform"
+DATABASE_URL = "postgresql://agenticai_user:agenticai_password@localhost:5432/agenticai_platform"
 
 async def insert_minimal_data():
     """Insert minimal test data"""
@@ -17,7 +17,7 @@ async def insert_minimal_data():
         # Insert default admin user
         await conn.execute("""
             INSERT INTO users (username, email, first_name, last_name, hashed_password, role, is_active, is_verified) 
-            VALUES ('admin', 'admin@lcnc.local', 'Admin', 'User', 
+            VALUES ('admin', 'admin@agenticai.local', 'Admin', 'User', 
                    '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LKO8F3ZH9VdGQ1oC6',
                    'ADMIN', true, true)
         """)
@@ -39,7 +39,7 @@ async def insert_minimal_data():
             VALUES ('test-agent', 'Test Agent', 'A test agent for validation', 
                    'http://localhost:8002/agents/test', 'http://localhost:8002/health',
                    'testing', 'openai', 'gpt-4', ARRAY['test'], ARRAY['default'],
-                   'Platform Team', 'LCNC Platform', 'development', 'system')
+                   'Platform Team', 'Agentic AI Accelerator', 'development', 'system')
         """)
         print("✅ Inserted test agent")
         

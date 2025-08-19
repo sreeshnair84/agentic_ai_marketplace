@@ -13,7 +13,7 @@ def login_admin():
     """Login as admin and get token"""
     print("🔐 Logging in as admin...")
     login_data = {
-        "email": "admin@lcnc.com",
+        "email": "admin@agenticai.com",
         "password": "secret123"
     }
     
@@ -61,7 +61,7 @@ def update_user_role(token, user_id, new_role):
 
 def demonstrate_user_management():
     """Demonstrate complete user management workflow"""
-    print("🧪 LCNC User Management Demonstration")
+    print("🧪 AgenticAI User Management Demonstration")
     print("=" * 50)
     
     # Step 1: Login as admin

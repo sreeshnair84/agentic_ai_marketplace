@@ -18,7 +18,7 @@ variable "db_password" {
 variable "db_name" {
   description = "The name of the database."
   type        = string
-  default     = "lcnc_multiagent_db"
+  default     = "agenticai_multiagent_db"
 }
 
 variable "instance_type" {

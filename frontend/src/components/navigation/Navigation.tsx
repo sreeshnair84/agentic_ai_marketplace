@@ -223,7 +223,7 @@ function Sidebar({ isOpen, onClose }: SidebarProps) {
             </div>
             <div>
               <h2 className="font-bold text-lg text-gray-900 dark:text-white">
-                LCNC Platform
+                Agentic AI Accelerator
               </h2>
               <p className="text-xs text-gray-500 dark:text-gray-400">
                 Multi-Agent System

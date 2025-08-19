@@ -5,7 +5,7 @@ Check tools and workflows table schemas
 import asyncio
 import asyncpg
 
-DATABASE_URL = "postgresql://lcnc_user:lcnc_password@localhost:5432/lcnc_platform"
+DATABASE_URL = "postgresql://agenticai_user:agenticai_password@localhost:5432/agenticai_platform"
 
 async def check_schemas():
     """Check current schemas for tools and workflows"""

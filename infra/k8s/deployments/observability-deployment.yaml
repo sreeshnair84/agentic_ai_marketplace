@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: observability
-  namespace: lcnc-multiagent-platform
+  namespace: agenticai-multiagent-platform
 spec:
   replicas: 2
   selector:

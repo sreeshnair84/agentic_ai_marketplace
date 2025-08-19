@@ -1,6 +1,6 @@
-# LCNC Platform - Scripts Directory
+# Agentic AI Accelerator - Scripts Directory
 
-This directory contains utility scripts for testing, debugging, and maintaining the LCNC Multi-Agent Platform.
+This directory contains utility scripts for testing, debugging, and maintaining the AgenticAI Multi-Agent Platform.
 
 ## 📁 Directory Structure
 
@@ -154,14 +154,14 @@ python scripts/utilities/fix_docker.py
 ## 📝 Notes
 
 - All scripts assume the platform is set up using `initial_setup.py`
-- Database URL: `postgresql://lcnc_user:lcnc_password@localhost:5432/lcnc_platform`
-- Default admin credentials: `admin@lcnc.local` / `admin123`
+- Database URL: `postgresql://agenticai_user:agenticai_password@localhost:5432/agenticai_platform`
+- Default admin credentials: `admin@agenticai.local` / `admin123`
 - Backend services run on ports 8000-8008
 - Frontend runs on port 3000
 
 ## 🔄 Maintenance
 
-These scripts are maintained as part of the LCNC Platform. When adding new features:
+These scripts are maintained as part of the Agentic AI Accelerator. When adding new features:
 
 1. Add corresponding test scripts to `testing/`
 2. Add debug scripts to `debug/` if needed

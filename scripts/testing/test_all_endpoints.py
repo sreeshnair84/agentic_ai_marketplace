@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Comprehensive API Endpoint Testing Suite
-Tests all endpoints across all 8 microservices in the LCNC Multi-Agent Platform
+Tests all endpoints across all 8 microservices in the AgenticAI Multi-Agent Platform
 
 Services tested:
 - Gateway Service (Port 8000)
@@ -586,7 +586,7 @@ class EndpointTester:
 async def main():
     """Main execution function"""
     
-    print("🚀 LCNC Multi-Agent Platform - Comprehensive Endpoint Testing")
+    print("🚀 AgenticAI Multi-Agent Platform - Comprehensive Endpoint Testing")
     print("Testing all 8 microservices and their API endpoints...")
     print("=" * 80)
     

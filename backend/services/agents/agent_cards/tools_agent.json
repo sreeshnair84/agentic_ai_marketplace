@@ -6,7 +6,7 @@
   "category": "tool_executor",
   "url": "http://localhost:8003/tools",
   "health_url": "http://localhost:8003/health",
-  "dns_name": "tools-service.lcnc.local",
+  "dns_name": "tools-service.agenticai.local",
   "card_url": "http://localhost:8003/a2a/cards/tools-agent",
   "default_input_modes": ["text", "json", "file"],
   "default_output_modes": ["text", "json", "data", "file"],
@@ -177,8 +177,8 @@
   "external_services": [
     {
       "name": "MCP Tool Server",
-      "dns_name": "mcp-tools.lcnc.local",
-      "health_url": "http://mcp-tools.lcnc.local:8080/health",
+      "dns_name": "mcp-tools.agenticai.local",
+      "health_url": "http://mcp-tools.agenticai.local:8080/health",
       "api_version": "v1",
       "authentication": "api_key"
     }
@@ -195,8 +195,8 @@
     "avg_execution_time": 0.0,
     "last_executed": null
   },
-  "author": "LCNC Platform",
-  "organization": "LCNC Platform",
+  "author": "Agentic AI Accelerator",
+  "organization": "Agentic AI Accelerator",
   "environment": "development",
   "created_at": "2024-01-01T00:00:00Z",
   "updated_at": "2024-08-14T15:30:00Z"

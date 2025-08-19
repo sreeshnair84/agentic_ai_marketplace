@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Initial Setup Script for LCNC Multi-Agent Platform
+Initial Setup Script for AgenticAI Multi-Agent Platform
 This consolidated script replaces all migration scripts for a fresh installation.
 
 Includes:
@@ -24,7 +24,7 @@ from pathlib import Path
 from typing import List, Dict, Any
 
 # Configuration
-DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://lcnc_user:lcnc_password@localhost:5432/lcnc_platform")
+DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://agenticai_user:agenticai_password@localhost:5432/agenticai_platform")
 POSTGRES_ADMIN_URL = os.getenv("POSTGRES_ADMIN_URL", "postgresql://postgres:password@localhost:5432/postgres")
 
 class SetupManager:
@@ -83,7 +83,7 @@ class SetupManager:
             await self.ensure_database_exists()
             
             # Connect to the main database
-            print("🔌 Connecting to LCNC database...")
+            print("🔌 Connecting to AgenticAI database...")
             conn = await asyncpg.connect(DATABASE_URL)
             
             # Execute consolidated migrations (only 2 files)
@@ -110,34 +110,34 @@ class SetupManager:
             return False
 
     async def ensure_database_exists(self):
-        """Ensure the LCNC database exists"""
+        """Ensure the AgenticAI database exists"""
         try:
             # Connect to postgres admin database
             admin_conn = await asyncpg.connect(POSTGRES_ADMIN_URL)
             
             # Check if database exists
             db_exists = await admin_conn.fetchval(
-                "SELECT EXISTS(SELECT 1 FROM pg_database WHERE datname = 'lcnc_platform')"
+                "SELECT EXISTS(SELECT 1 FROM pg_database WHERE datname = 'agenticai_platform')"
             )
             
             if not db_exists:
-                print("🔧 Creating LCNC database...")
-                await admin_conn.execute("CREATE DATABASE lcnc_platform")
-                self.log_step("Created LCNC database")
+                print("🔧 Creating AgenticAI database...")
+                await admin_conn.execute("CREATE DATABASE agenticai_platform")
+                self.log_step("Created AgenticAI database")
             else:
-                self.log_step("LCNC database already exists")
+                self.log_step("AgenticAI database already exists")
             
             # Create user if not exists
             user_exists = await admin_conn.fetchval(
-                "SELECT EXISTS(SELECT 1 FROM pg_roles WHERE rolname = 'lcnc_user')"
+                "SELECT EXISTS(SELECT 1 FROM pg_roles WHERE rolname = 'agenticai_user')"
             )
             
             if not user_exists:
-                await admin_conn.execute("CREATE USER lcnc_user WITH PASSWORD 'lcnc_password'")
-                await admin_conn.execute("GRANT ALL PRIVILEGES ON DATABASE lcnc_platform TO lcnc_user")
-                self.log_step("Created LCNC user")
+                await admin_conn.execute("CREATE USER agenticai_user WITH PASSWORD 'agenticai_password'")
+                await admin_conn.execute("GRANT ALL PRIVILEGES ON DATABASE agenticai_platform TO agenticai_user")
+                self.log_step("Created AgenticAI user")
             else:
-                self.log_step("LCNC user already exists")
+                self.log_step("AgenticAI user already exists")
                 
             await admin_conn.close()
             
@@ -212,7 +212,7 @@ class SetupManager:
         
         # Verify admin user
         admin_exists = await conn.fetchval("""
-            SELECT EXISTS(SELECT 1 FROM users WHERE email = 'admin@lcnc.local')
+            SELECT EXISTS(SELECT 1 FROM users WHERE email = 'admin@agenticai.local')
         """)
         self.log_step(f"Admin user exists: {admin_exists}")
 
@@ -314,10 +314,10 @@ class SetupManager:
         print("="*50)
         
         # Create .env file for backend services
-        env_content = """# LCNC Platform Environment Configuration
+        env_content = """# Agentic AI Accelerator Environment Configuration
 
 # Database
-DATABASE_URL=postgresql://lcnc_user:lcnc_password@localhost:5432/lcnc_platform
+DATABASE_URL=postgresql://agenticai_user:agenticai_password@localhost:5432/agenticai_platform
 POSTGRES_ADMIN_URL=postgresql://postgres:password@localhost:5432/postgres
 
 # Redis (if using)
@@ -413,14 +413,14 @@ NEXT_PUBLIC_WS_URL=ws://localhost:8000
         """Create a verification script for testing the setup"""
         verification_script = '''#!/usr/bin/env python3
 """
-Quick verification script to test LCNC platform setup
+Quick verification script to test AgenticAI platform setup
 """
 import asyncio
 import asyncpg
 import requests
 import sys
 
-DATABASE_URL = "postgresql://lcnc_user:lcnc_password@localhost:5432/lcnc_platform"
+DATABASE_URL = "postgresql://agenticai_user:agenticai_password@localhost:5432/agenticai_platform"
 
 async def verify_database():
     """Verify database setup"""
@@ -479,7 +479,7 @@ def verify_backend():
             print(f"⚠️  {name} service is not running")
 
 async def main():
-    print("🔍 LCNC Platform Verification")
+    print("🔍 Agentic AI Accelerator Verification")
     print("=" * 40)
     
     # Test database
@@ -503,7 +503,7 @@ async def main():
         print("2. Start frontend:")
         print("   cd frontend && npm run dev")
         print("3. Visit: http://localhost:3000")
-        print("4. Admin login: admin@lcnc.local / admin123")
+        print("4. Admin login: admin@agenticai.local / admin123")
     else:
         print("❌ Platform setup has issues - check the errors above")
         sys.exit(1)
@@ -519,7 +519,7 @@ if __name__ == "__main__":
     def print_summary(self):
         """Print setup summary"""
         print("\n" + "="*60)
-        print("🎉 LCNC PLATFORM INITIAL SETUP COMPLETE!")
+        print("🎉 AgenticAI PLATFORM INITIAL SETUP COMPLETE!")
         print("="*60)
         
         print(f"\nSetup Results: {self.success_count}/{self.total_steps} steps completed successfully")
@@ -528,7 +528,7 @@ if __name__ == "__main__":
         print("✅ Complete database schema (2 consolidated migrations)")
         print("✅ Vector storage for RAG capabilities")
         print("✅ Essential sample data (2 agents, 2 LLM models, workflows)")
-        print("✅ Default admin user (admin@lcnc.local / admin123)")
+        print("✅ Default admin user (admin@agenticai.local / admin123)")
         print("✅ Development environment for backend services")
         print("✅ Environment configuration files")
         print("✅ Health check functions and verification scripts")
@@ -550,7 +550,7 @@ if __name__ == "__main__":
         print("\n4. 🌐 Access the platform:")
         print("   Frontend: http://localhost:3000")
         print("   API Docs: http://localhost:8000/docs")
-        print("   Admin: admin@lcnc.local / admin123")
+        print("   Admin: admin@agenticai.local / admin123")
         
         print("\n5. 🧪 Verify setup:")
         print("   python verify_setup.py")
@@ -566,7 +566,7 @@ if __name__ == "__main__":
 
 async def main():
     """Main setup function"""
-    print("🚀 LCNC Multi-Agent Platform - Initial Setup")
+    print("🚀 AgenticAI Multi-Agent Platform - Initial Setup")
     print("This script will set up the complete platform from scratch")
     print("="*60)
     
