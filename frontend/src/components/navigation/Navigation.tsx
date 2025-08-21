@@ -38,7 +38,8 @@ import {
   TrendingUp,
   AlertCircle,
   HelpCircle,
-  Brain
+  Brain,
+  TestTube
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -127,6 +128,38 @@ const navigationSections = [
             label: 'Tool Templates',
             href: '/templates/tools',
             icon: Star
+          }
+        ]
+      },
+      {
+        id: 'mcp',
+        label: 'MCP Management',
+        href: '/mcp',
+        icon: Command,
+        children: [
+          {
+            id: 'mcp-servers',
+            label: 'MCP Servers',
+            href: '/mcp?tab=servers',
+            icon: Bot
+          },
+          {
+            id: 'mcp-endpoints',
+            label: 'Gateway Endpoints',
+            href: '/mcp?tab=endpoints',
+            icon: Zap
+          },
+          {
+            id: 'mcp-tools',
+            label: 'Discovered Tools',
+            href: '/mcp?tab=tools',
+            icon: Command
+          },
+          {
+            id: 'mcp-tester',
+            label: 'Tool Tester',
+            href: '/mcp?tab=tester',
+            icon: TestTube
           }
         ]
       }

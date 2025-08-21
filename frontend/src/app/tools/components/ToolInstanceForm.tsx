@@ -320,19 +320,20 @@ export default function ToolInstanceForm({
   };
 
   return (
-    <>
-      {/* Header */}
-      <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
-        <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-          {instance ? 'Edit Tool Instance' : 'Create Tool Instance'}
-        </h2>
-        <Button variant="ghost" onClick={onCancel}>
-          <X className="h-5 w-5" />
-        </Button>
-      </div>
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+      <div className="bg-white dark:bg-gray-900 rounded-lg shadow-xl max-w-4xl w-full max-h-[95vh] overflow-hidden">
+        {/* Header */}
+        <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+            {instance ? 'Edit Tool Instance' : 'Create Tool Instance'}
+          </h2>
+          <Button variant="ghost" onClick={onCancel}>
+            <X className="h-5 w-5" />
+          </Button>
+        </div>
 
-      {/* Content */}
-      <div className="overflow-y-auto p-6" style={{ maxHeight: 'calc(90vh - 140px)' }}>
+        {/* Content */}
+        <div className="overflow-y-auto p-6" style={{ maxHeight: 'calc(95vh - 140px)' }}>
         <form onSubmit={handleSubmit} className="space-y-6">
           
           {/* Template Selection */}
@@ -573,18 +574,19 @@ export default function ToolInstanceForm({
             </div>
           )}
         </form>
+        </div>
+        
+        {/* Footer */}
+        <div className="flex justify-end space-x-3 p-6 border-t border-gray-200 dark:border-gray-700">
+          <Button variant="outline" onClick={onCancel}>
+            Cancel
+          </Button>
+          <Button onClick={handleSubmit} disabled={!selectedTemplate}>
+            <Save className="h-4 w-4 mr-2" />
+            Save Instance
+          </Button>
+        </div>
       </div>
-
-      {/* Footer */}
-      <div className="flex justify-end space-x-3 p-6 border-t border-gray-200 dark:border-gray-700">
-        <Button variant="outline" onClick={onCancel}>
-          Cancel
-        </Button>
-        <Button onClick={handleSubmit} disabled={!selectedTemplate}>
-          <Save className="h-4 w-4 mr-2" />
-          Save Instance
-        </Button>
-      </div>
-    </>
+    </div>
   );
 }

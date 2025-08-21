@@ -1,7 +1,7 @@
 output.tf
 
 output "agent_service_url" {
-  value = "http://${aws_api_gateway.example.invoke_url}/api/agents"
+  value = "http://${aws_api_gateway.example.invoke_url}/api/v1/agents"
 }
 
 output "tool_service_url" {

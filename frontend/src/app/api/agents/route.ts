@@ -49,11 +49,16 @@ async function fetchFromService(service: string, endpoint: string, timeout = 300
     throw new Error(`Unknown service: ${service}`);
   }
 
+  // Use internal Docker network URLs when running in container
+  const baseUrl = service === 'gateway' 
+    ? (process.env.INTERNAL_GATEWAY_URL || `http://localhost:${port}`)
+    : `http://localhost:${port}`;
+
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeout);
 
   try {
-    const response = await fetch(`http://localhost:${port}${endpoint}`, {
+    const response = await fetch(`${baseUrl}${endpoint}`, {
       signal: controller.signal,
       headers: {
         'Content-Type': 'application/json',
@@ -75,12 +80,65 @@ async function fetchFromService(service: string, endpoint: string, timeout = 300
 
 export async function GET() {
   try {
-    // Get system health to determine if we can generate realistic agent data
-    const healthData = await fetchFromService('gateway', '/health/detailed');
-    const services = healthData.services || {};
-    const healthyServices = Object.values(services).filter((s): s is ServiceHealth => 
-      typeof s === 'object' && s !== null && 'status' in s && (s as ServiceHealth).status === 'healthy'
-    ).length;
+    // Try to get actual agents from the backend first
+    try {
+      const backendAgents = await fetchFromService('gateway', '/api/v1/agents/');
+      if (backendAgents && backendAgents.agents && backendAgents.agents.length > 0) {
+        // Return actual agents from the backend
+        const response = {
+          agents: backendAgents.agents.map((agent: any) => ({
+            id: agent.name,
+            name: agent.display_name || agent.name,
+            description: agent.description,
+            framework: agent.ai_provider || 'unknown',
+            skills: agent.tags || [],
+            status: agent.status || 'unknown',
+            version: '1.0.0',
+            createdAt: agent.created_at || new Date().toISOString(),
+            updatedAt: agent.updated_at || new Date().toISOString(),
+            lastExecutedAt: agent.updated_at || null,
+            executionCount: agent.execution_count || 0,
+            systemPrompt: agent.description,
+            tags: [...(agent.tags || []), ...(agent.project_tags || [])],
+            responseTime: agent.avg_response_time || 0,
+            config: {
+              model: agent.model_name || 'gpt-4',
+              temperature: 0.7,
+              maxTokens: 2000,
+              systemPrompt: agent.description,
+              tools: [],
+              memory: true,
+              streaming: false,
+              timeout: 30000,
+              retryAttempts: 3,
+            }
+          })),
+          statistics: {
+            total: backendAgents.agents.length,
+            active: backendAgents.agents.filter((a: any) => a.status === 'active').length,
+            inactive: backendAgents.agents.filter((a: any) => a.status === 'inactive').length,
+            error: backendAgents.agents.filter((a: any) => a.status === 'error').length,
+            totalExecutions: backendAgents.agents.reduce((sum: number, a: any) => sum + (a.execution_count || 0), 0),
+            averageExecutions: Math.round(backendAgents.agents.reduce((sum: number, a: any) => sum + (a.execution_count || 0), 0) / backendAgents.agents.length),
+            frameworkDistribution: backendAgents.agents.reduce((acc: any, a: any) => {
+              const fw = a.ai_provider || 'unknown';
+              acc[fw] = (acc[fw] || 0) + 1;
+              return acc;
+            }, {}),
+            availableSkills: [...new Set(backendAgents.agents.flatMap((a: any) => a.tags || []))],
+            systemHealth: 'healthy',
+          },
+          lastUpdated: new Date().toISOString(),
+        };
+        return NextResponse.json(response);
+      }
+    } catch (error) {
+      console.warn('Failed to fetch agents from backend, falling back to mock data:', error);
+    }
+
+    // Fallback: Get basic system health to determine if we can generate realistic agent data
+    const healthData = await fetchFromService('gateway', '/health');
+    const healthyServices = healthData.status === 'healthy' ? 5 : 1;
 
     // Get tools to create realistic agent configurations
     let availableTools: Tool[] = [];

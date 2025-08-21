@@ -23,6 +23,8 @@ from .api.sample_queries import router as sample_queries_router
 from .api.agents import router as agents_router
 from .api.tools import router as tools_router
 from .api.workflows import router as workflows_router
+from .api.mcp_registry import router as mcp_registry_router
+from .api.mcp_gateway import router as mcp_gateway_router
 
 # Configure logging
 logging.basicConfig(
@@ -133,6 +135,22 @@ def create_application() -> FastAPI:
         workflows_router, 
         prefix=f"{settings.API_V1_STR}", 
         tags=["workflows"]
+    )
+    # Also mount workflows router under /api/workflows for frontend compatibility
+    app.include_router(
+        workflows_router, 
+        prefix="/api", 
+        tags=["workflows-legacy"]
+    )
+    app.include_router(
+        mcp_registry_router, 
+        prefix=f"{settings.API_V1_STR}", 
+        tags=["mcp-registry"]
+    )
+    app.include_router(
+        mcp_gateway_router, 
+        prefix=f"{settings.API_V1_STR}", 
+        tags=["mcp-gateway"]
     )
     
     # Global exception handlers

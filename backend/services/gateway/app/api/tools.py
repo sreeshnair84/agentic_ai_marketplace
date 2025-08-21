@@ -126,9 +126,18 @@ async def get_tool_instances(db: AsyncSession = Depends(get_database)):
     try:
         result_query = await db.execute(
             text("""
-                SELECT id, name, display_name, template_name, status, configuration,
-                created_at, updated_at, created_by
-                FROM tool_instances
+                SELECT 
+                    ti.id, 
+                    ti.name, 
+                    ti.display_name, 
+                    tt.name as template_name,
+                    ti.status, 
+                    ti.configuration,
+                    ti.created_at, 
+                    ti.updated_at, 
+                    ti.created_by
+                FROM tool_instances ti
+                LEFT JOIN tool_templates tt ON ti.tool_template_id = tt.id
             """)
         )
         instances = result_query.fetchall()

@@ -38,12 +38,33 @@ export function useAgents() {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch(`${API_BASE}/api/agents`);
+      const response = await fetch(`${API_BASE}/api/v1/agents/`);
       if (!response.ok) {
         throw new Error(`Failed to fetch agents: ${response.statusText}`);
       }
       const data = await response.json();
-      setAgents(Array.isArray(data) ? data : []);
+      
+      // Transform backend response to frontend format
+      const transformedAgents = (data.agents || []).map((agent: any) => ({
+        id: agent.name,
+        name: agent.display_name || agent.name,
+        description: agent.description,
+        status: agent.status || 'inactive',
+        framework: agent.ai_provider === 'gemini' ? 'custom' : (agent.ai_provider === 'openai' ? 'langchain' : 'crewai'),
+        capabilities: [...(agent.tags || []), ...(agent.project_tags || [])], // Combine tags as capabilities
+        performance: {
+          tasksCompleted: agent.execution_count || 0,
+          successRate: agent.success_rate || 0,
+          avgResponseTime: 0, // Backend doesn't provide this in the list endpoint
+        },
+        lastActivity: new Date(agent.updated_at || Date.now()),
+        owner: agent.author || 'system',
+        tags: [...(agent.tags || []), ...(agent.project_tags || [])],
+        created_at: agent.created_at || new Date().toISOString(),
+        updated_at: agent.updated_at || new Date().toISOString(),
+      }));
+      
+      setAgents(transformedAgents);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch agents');
       setAgents([]);
@@ -54,7 +75,7 @@ export function useAgents() {
 
   const createAgent = useCallback(async (agentData: CreateAgentData): Promise<{ success: boolean; error?: string; id?: string }> => {
     try {
-      const response = await fetch(`${API_BASE}/api/agents`, {
+      const response = await fetch(`${API_BASE}/api/v1/agents/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -78,7 +99,7 @@ export function useAgents() {
 
   const updateAgent = useCallback(async (agentId: string, agentData: Partial<CreateAgentData>): Promise<{ success: boolean; error?: string }> => {
     try {
-      const response = await fetch(`${API_BASE}/api/agents/${agentId}`, {
+      const response = await fetch(`${API_BASE}/api/v1/agents/${agentId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -101,7 +122,7 @@ export function useAgents() {
 
   const deleteAgent = useCallback(async (agentId: string): Promise<{ success: boolean; error?: string }> => {
     try {
-      const response = await fetch(`${API_BASE}/api/agents/${agentId}`, {
+      const response = await fetch(`${API_BASE}/api/v1/agents/${agentId}`, {
         method: 'DELETE',
       });
 
@@ -120,7 +141,7 @@ export function useAgents() {
 
   const runAgent = useCallback(async (agentId: string, taskData?: any): Promise<{ success: boolean; error?: string; taskId?: string }> => {
     try {
-      const response = await fetch(`${API_BASE}/api/agents/${agentId}/run`, {
+      const response = await fetch(`${API_BASE}/api/v1/agents/${agentId}/run`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -147,7 +168,7 @@ export function useAgents() {
 
   const getAgent = useCallback(async (agentId: string): Promise<Agent | null> => {
     try {
-      const response = await fetch(`${API_BASE}/api/agents/${agentId}`);
+      const response = await fetch(`${API_BASE}/api/v1/agents/${agentId}`);
       if (!response.ok) {
         throw new Error(`Failed to fetch agent: ${response.statusText}`);
       }

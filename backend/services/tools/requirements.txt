@@ -28,6 +28,9 @@ langchain-community
 # Redis for tool state and caching
 aioredis
 
+# AI providers
+openai
+
 # Standard tools
 requests
 beautifulsoup4
