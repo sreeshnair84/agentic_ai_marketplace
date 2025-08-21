@@ -1,7 +1,25 @@
 import { NextResponse } from 'next/server';
 
+interface TestResult {
+  name: string;
+  url: string;
+  status: string;
+  statusCode?: number;
+  error?: string | null;
+}
+
+interface TestResults {
+  timestamp: string;
+  tests: TestResult[];
+  environment?: {
+    nodeEnv: string | undefined;
+    backendUrl: string;
+    platform: string;
+  };
+}
+
 export async function GET() {
-  const testResults: any = {
+  const testResults: TestResults = {
     timestamp: new Date().toISOString(),
     tests: [],
   };

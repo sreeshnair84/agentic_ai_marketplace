@@ -10,7 +10,7 @@ from typing import List, Optional, Dict, Any
 import uuid
 from datetime import datetime
 
-from app.models.database import get_db
+from app.core.database import get_db
 from ..models.agent_management import (
     AgentTemplate, AgentInstance, ToolTemplateAgentTemplateAssociation,
     AgentInstanceConversation

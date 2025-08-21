@@ -10,25 +10,10 @@ import {
   PencilIcon, 
   TrashIcon,
   ClockIcon,
-  ChartBarIcon
+  ChartBarIcon,
+  DocumentDuplicateIcon
 } from '@heroicons/react/24/outline';
-
-interface Agent {
-  id: string;
-  name: string;
-  description: string;
-  framework: 'langchain' | 'llamaindex' | 'crewai' | 'semantic-kernel';
-  skills: string[];
-  status: 'active' | 'inactive' | 'error' | 'draft';
-  version: string;
-  createdAt: Date;
-  updatedAt: Date;
-  lastExecutedAt?: Date;
-  executionCount: number;
-  systemPrompt?: string;
-  tags: string[];
-  config: any;
-}
+import { Agent } from '@/hooks/useAgents'; // Use Agent from hook
 
 interface AgentCardProps {
   agent: Agent;
@@ -36,6 +21,7 @@ interface AgentCardProps {
   onDelete?: (agent: Agent) => void;
   onToggleStatus?: (agent: Agent) => void;
   onExecute?: (agent: Agent) => void;
+  onClone?: (agent: Agent) => void;
 }
 
 const getStatusColor = (status: string): string => {
@@ -73,7 +59,8 @@ export function AgentCard({
   onEdit, 
   onDelete, 
   onToggleStatus, 
-  onExecute 
+  onExecute,
+  onClone
 }: AgentCardProps) {
   const [isHovered, setIsHovered] = useState(false);
 
@@ -99,7 +86,7 @@ export function AgentCard({
                 >
                   {agent.status}
                 </Badge>
-                <span className="text-xs text-gray-500">v{agent.version}</span>
+                <span className="text-xs text-gray-500">{agent.framework}</span>
               </div>
             </div>
           </div>
@@ -128,6 +115,16 @@ export function AgentCard({
                 <PencilIcon className="h-4 w-4" />
               </Button>
             )}
+            {onClone && (
+              <Button
+                size="icon"
+                variant="ghost"
+                onClick={() => onClone(agent)}
+                className="h-8 w-8"
+              >
+                <DocumentDuplicateIcon className="h-4 w-4" />
+              </Button>
+            )}
           </div>
         </div>
         
@@ -144,14 +141,14 @@ export function AgentCard({
             <Badge variant="outline" className="text-xs">
               {agent.framework}
             </Badge>
-            {agent.skills.slice(0, 3).map((skill) => (
-              <Badge key={skill} variant="secondary" className="text-xs">
-                {skill}
+            {agent.capabilities.slice(0, 3).map((capability: string) => (
+              <Badge key={capability} variant="secondary" className="text-xs">
+                {capability}
               </Badge>
             ))}
-            {agent.skills.length > 3 && (
+            {agent.capabilities.length > 3 && (
               <Badge variant="outline" className="text-xs">
-                +{agent.skills.length - 3} more
+                +{agent.capabilities.length - 3} more
               </Badge>
             )}
           </div>
@@ -163,7 +160,7 @@ export function AgentCard({
             <ChartBarIcon className="h-4 w-4 text-gray-400" />
             <div>
               <div className="font-medium text-gray-900 dark:text-white">
-                {agent.executionCount}
+                {agent.performance.tasksCompleted}
               </div>
               <div className="text-xs text-gray-500">executions</div>
             </div>
@@ -173,10 +170,7 @@ export function AgentCard({
             <ClockIcon className="h-4 w-4 text-gray-400" />
             <div>
               <div className="font-medium text-gray-900 dark:text-white">
-                {agent.lastExecutedAt 
-                  ? formatRelativeTime(agent.lastExecutedAt)
-                  : 'Never'
-                }
+                {formatRelativeTime(agent.lastActivity)}
               </div>
               <div className="text-xs text-gray-500">last run</div>
             </div>
@@ -200,7 +194,7 @@ export function AgentCard({
         {/* Footer Actions */}
         <div className="flex items-center justify-between pt-2 border-t border-gray-100 dark:border-gray-800">
           <div className="text-xs text-gray-500">
-            Updated {formatRelativeTime(agent.updatedAt)}
+            Updated {formatRelativeTime(new Date(agent.updated_at))}
           </div>
           
           <div className="flex gap-2">

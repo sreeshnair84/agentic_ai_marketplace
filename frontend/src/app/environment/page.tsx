@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { 
   Key, 
   Plus, 
@@ -8,17 +8,14 @@ import {
   Trash2, 
   Eye, 
   EyeOff, 
-  Save, 
   Search, 
-  Filter,
   Shield,
   Database,
   Cloud,
   Zap,
   RefreshCw,
   Copy,
-  Check,
-  AlertTriangle
+  Check
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -135,7 +132,6 @@ export default function EnvironmentManagement() {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [selectedScope, setSelectedScope] = useState<string>('all');
   const [showAddForm, setShowAddForm] = useState(false);
-  const [editingVar, setEditingVar] = useState<string | null>(null);
   const [visibleSecrets, setVisibleSecrets] = useState<Set<string>>(new Set());
   const [copiedValue, setCopiedValue] = useState<string | null>(null);
 
@@ -367,7 +363,10 @@ export default function EnvironmentManagement() {
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => setEditingVar(envVar.id)}
+                    onClick={() => {
+                      // TODO: Implement edit functionality
+                      console.log('Edit environment variable:', envVar.id);
+                    }}
                   >
                     <Edit3 className="h-4 w-4" />
                   </Button>

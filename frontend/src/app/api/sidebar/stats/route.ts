@@ -1,5 +1,9 @@
 import { NextResponse } from 'next/server';
 
+interface ServiceHealth {
+  status: string;
+}
+
 const SERVICE_PORTS = {
   gateway: 8000,
   tools: 8005,
@@ -41,7 +45,9 @@ export async function GET() {
     // Get system health to determine overall service status
     const healthData = await fetchFromService('gateway', '/health/detailed');
     const services = healthData.services || {};
-    const healthyServices = Object.values(services).filter((s: any) => s.status === 'healthy').length;
+    const healthyServices = Object.values(services).filter((s): s is ServiceHealth => 
+      typeof s === 'object' && s !== null && 'status' in s && (s as ServiceHealth).status === 'healthy'
+    ).length;
 
     // Get tools count from Tools service
     let toolsCount = 0;

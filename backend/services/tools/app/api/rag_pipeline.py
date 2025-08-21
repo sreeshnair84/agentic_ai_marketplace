@@ -1,687 +1,595 @@
 """
-RAG Pipeline API Router
-Provides endpoints for managing RAG pipelines, data ingestion, and vectorization
-Integrates with tool instances for configurable RAG workflows
+Enhanced RAG Pipeline Management API
+Provides comprehensive RAG pipeline operations including document management,
+embedding model selection, and collection operations
 """
 
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
-from sqlalchemy.orm import Session
+from fastapi import APIRouter, HTTPException, Depends, status, UploadFile, File, Form
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select, update, delete
 from typing import List, Dict, Any, Optional
 import json
 import uuid
-from datetime import datetime
 import logging
-import os
+from datetime import datetime
+import aiofiles
 import tempfile
+from pathlib import Path
 
+from ..models.tool_management import RAGPipeline, RAGPipelineRun, ToolInstance
 from ..models.database import get_db
-from ..models.tool_management import RAGPipeline, ToolInstance
-from ..schemas.tool_management import (
+from ..schemas.tool_schemas import (
     RAGPipelineCreate, RAGPipelineUpdate, RAGPipelineResponse,
-    RAGPipelineStatus, DataSource, IngestionMethod,
-    DataIngestionRequest, VectorizationRequest
+    DocumentIngestionRequest, DocumentIngestionResponse
 )
+from ..services.rag_service import EnhancedRAGService
 
-# Configure logging
+router = APIRouter(prefix="/rag-pipelines", tags=["RAG Pipelines"])
 logger = logging.getLogger(__name__)
 
-# Create router
-router = APIRouter(tags=["RAG Pipelines"])
+# Initialize RAG service
+rag_service = EnhancedRAGService()
 
-# ============================================================================
-# RAG PIPELINE MANAGEMENT ENDPOINTS
-# ============================================================================
+@router.get("/", response_model=List[RAGPipelineResponse])
+async def list_rag_pipelines(
+    status: Optional[str] = None,
+    skip: int = 0,
+    limit: int = 100,
+    db: AsyncSession = Depends(get_db)
+):
+    """List all RAG pipelines with optional filtering"""
+    
+    query = select(RAGPipeline)
+    
+    if status:
+        query = query.where(RAGPipeline.status == status)
+    
+    query = query.offset(skip).limit(limit).order_by(RAGPipeline.created_at.desc())
+    
+    result = await db.execute(query)
+    pipelines = result.scalars().all()
+    
+    return [RAGPipelineResponse.model_validate(pipeline) for pipeline in pipelines]
 
 @router.post("/", response_model=RAGPipelineResponse)
 async def create_rag_pipeline(
     pipeline: RAGPipelineCreate,
-    db: Session = Depends(get_db)
+    db: AsyncSession = Depends(get_db)
 ):
-    """
-    Create a new RAG pipeline
-    """
-    try:
-        # Validate that tool instance exists and is RAG type
-        tool_instance = db.query(ToolInstance).filter(
-            ToolInstance.id == pipeline.tool_instance_id
-        ).first()
-        
-        if not tool_instance:
-            raise HTTPException(status_code=404, detail="Tool instance not found")
-        
-        if tool_instance.template.template_type.value != "rag_pipeline":
-            raise HTTPException(
-                status_code=400, 
-                detail="Tool instance must be of type 'rag_pipeline'"
-            )
-        
-        # Create RAG pipeline
-        db_pipeline = RAGPipeline(
-            id=str(uuid.uuid4()),
-            tool_instance_id=pipeline.tool_instance_id,
-            name=pipeline.name,
-            description=pipeline.description,
-            data_sources=pipeline.data_sources,
-            ingestion_config=pipeline.ingestion_config,
-            vectorization_config=pipeline.vectorization_config,
-            status=RAGPipelineStatus.INACTIVE,
-            metadata=pipeline.metadata or {},
-            created_by="system",  # TODO: Get from auth context
-            created_at=datetime.utcnow()
+    """Create a new RAG pipeline"""
+    
+    # Verify tool instance exists and is of RAG type
+    tool_instance = await db.execute(
+        select(ToolInstance).where(ToolInstance.id == pipeline.tool_instance_id)
+    )
+    tool_instance = tool_instance.scalar_one_or_none()
+    
+    if not tool_instance:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Tool instance not found"
         )
-        
-        db.add(db_pipeline)
-        db.commit()
-        db.refresh(db_pipeline)
-        
-        logger.info(f"Created RAG pipeline: {db_pipeline.name} ({db_pipeline.id})")
-        return db_pipeline
-        
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Error creating RAG pipeline: {str(e)}")
-        db.rollback()
-        raise HTTPException(status_code=500, detail=str(e))
-
-@router.get("/", response_model=List[RAGPipelineResponse])
-async def list_rag_pipelines(
-    tool_instance_id: Optional[str] = None,
-    status: Optional[RAGPipelineStatus] = None,
-    skip: int = 0,
-    limit: int = 100,
-    db: Session = Depends(get_db)
-):
-    """
-    List RAG pipelines with optional filtering
-    """
-    try:
-        query = db.query(RAGPipeline)
-        
-        if tool_instance_id:
-            query = query.filter(RAGPipeline.tool_instance_id == tool_instance_id)
-        if status:
-            query = query.filter(RAGPipeline.status == status)
-            
-        pipelines = query.offset(skip).limit(limit).all()
-        
-        logger.info(f"Retrieved {len(pipelines)} RAG pipelines")
-        return pipelines
-        
-    except Exception as e:
-        logger.error(f"Error listing RAG pipelines: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+    
+    # Check if pipeline name already exists
+    existing = await db.execute(
+        select(RAGPipeline).where(RAGPipeline.name == pipeline.name)
+    )
+    if existing.scalar_one_or_none():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"RAG pipeline with name '{pipeline.name}' already exists"
+        )
+    
+    # Create pipeline
+    db_pipeline = RAGPipeline(
+        id=uuid.uuid4(),
+        name=pipeline.name,
+        description=pipeline.description,
+        data_sources=[source.dict() for source in pipeline.data_sources],
+        processing_config=pipeline.ingestion_config,
+        vectorization_config=pipeline.vectorization_config,
+        status="inactive",
+        created_by=pipeline.created_by
+    )
+    
+    db.add(db_pipeline)
+    await db.commit()
+    await db.refresh(db_pipeline)
+    
+    logger.info(f"Created RAG pipeline: {pipeline.name}")
+    return RAGPipelineResponse.model_validate(db_pipeline)
 
 @router.get("/{pipeline_id}", response_model=RAGPipelineResponse)
 async def get_rag_pipeline(
     pipeline_id: str,
-    db: Session = Depends(get_db)
+    db: AsyncSession = Depends(get_db)
 ):
-    """
-    Get a specific RAG pipeline by ID
-    """
-    try:
-        pipeline = db.query(RAGPipeline).filter(RAGPipeline.id == pipeline_id).first()
-        if not pipeline:
-            raise HTTPException(status_code=404, detail="RAG pipeline not found")
-            
-        return pipeline
-        
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Error retrieving RAG pipeline {pipeline_id}: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+    """Get a specific RAG pipeline"""
+    
+    pipeline = await db.execute(
+        select(RAGPipeline).where(RAGPipeline.id == pipeline_id)
+    )
+    pipeline = pipeline.scalar_one_or_none()
+    
+    if not pipeline:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="RAG pipeline not found"
+        )
+    
+    return RAGPipelineResponse.model_validate(pipeline)
 
 @router.put("/{pipeline_id}", response_model=RAGPipelineResponse)
 async def update_rag_pipeline(
     pipeline_id: str,
     pipeline_update: RAGPipelineUpdate,
-    db: Session = Depends(get_db)
+    db: AsyncSession = Depends(get_db)
 ):
-    """
-    Update a RAG pipeline
-    """
-    try:
-        db_pipeline = db.query(RAGPipeline).filter(RAGPipeline.id == pipeline_id).first()
-        if not db_pipeline:
-            raise HTTPException(status_code=404, detail="RAG pipeline not found")
-        
-        # Update fields
-        update_data = pipeline_update.dict(exclude_unset=True)
-        for field, value in update_data.items():
-            setattr(db_pipeline, field, value)
-        
-        db_pipeline.updated_at = datetime.utcnow()
-        
-        db.commit()
-        db.refresh(db_pipeline)
-        
-        logger.info(f"Updated RAG pipeline: {pipeline_id}")
-        return db_pipeline
-        
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Error updating RAG pipeline {pipeline_id}: {str(e)}")
-        db.rollback()
-        raise HTTPException(status_code=500, detail=str(e))
+    """Update a RAG pipeline"""
+    
+    pipeline = await db.execute(
+        select(RAGPipeline).where(RAGPipeline.id == pipeline_id)
+    )
+    pipeline = pipeline.scalar_one_or_none()
+    
+    if not pipeline:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="RAG pipeline not found"
+        )
+    
+    # Update fields
+    update_data = pipeline_update.dict(exclude_unset=True)
+    
+    if "data_sources" in update_data:
+        update_data["data_sources"] = [source.dict() for source in update_data["data_sources"]]
+    
+    for field, value in update_data.items():
+        setattr(pipeline, field, value)
+    
+    pipeline.updated_at = datetime.utcnow()
+    
+    await db.commit()
+    await db.refresh(pipeline)
+    
+    logger.info(f"Updated RAG pipeline: {pipeline.name}")
+    return RAGPipelineResponse.model_validate(pipeline)
 
 @router.delete("/{pipeline_id}")
 async def delete_rag_pipeline(
     pipeline_id: str,
-    db: Session = Depends(get_db)
+    force: bool = False,
+    db: AsyncSession = Depends(get_db)
 ):
-    """
-    Delete a RAG pipeline
-    """
-    try:
-        pipeline = db.query(RAGPipeline).filter(RAGPipeline.id == pipeline_id).first()
-        if not pipeline:
-            raise HTTPException(status_code=404, detail="RAG pipeline not found")
-        
-        # Check if pipeline is active
-        if pipeline.status in [RAGPipelineStatus.ACTIVE, RAGPipelineStatus.PROCESSING]:
-            raise HTTPException(
-                status_code=400,
-                detail="Cannot delete active or processing pipeline"
-            )
-        
-        db.delete(pipeline)
-        db.commit()
-        
-        logger.info(f"Deleted RAG pipeline: {pipeline_id}")
-        return {"message": "RAG pipeline deleted successfully"}
-        
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Error deleting RAG pipeline {pipeline_id}: {str(e)}")
-        db.rollback()
-        raise HTTPException(status_code=500, detail=str(e))
-
-# ============================================================================
-# DATA INGESTION ENDPOINTS
-# ============================================================================
-
-@router.post("/{pipeline_id}/ingest-text")
-async def ingest_text_data(
-    pipeline_id: str,
-    text_data: str = Form(...),
-    metadata: Optional[str] = Form(None),
-    db: Session = Depends(get_db)
-):
-    """
-    Ingest text data into a RAG pipeline
-    """
-    try:
-        pipeline = db.query(RAGPipeline).filter(RAGPipeline.id == pipeline_id).first()
-        if not pipeline:
-            raise HTTPException(status_code=404, detail="RAG pipeline not found")
-        
-        # Parse metadata if provided
-        parsed_metadata = {}
-        if metadata:
-            try:
-                parsed_metadata = json.loads(metadata)
-            except json.JSONDecodeError:
-                raise HTTPException(status_code=400, detail="Invalid metadata JSON")
-        
-        # Process text ingestion
-        result = await _process_text_ingestion(pipeline, text_data, parsed_metadata)
-        
-        logger.info(f"Successfully ingested text data into pipeline: {pipeline_id}")
-        return result
-        
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Error ingesting text data: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-@router.post("/{pipeline_id}/ingest-file")
-async def ingest_file_data(
-    pipeline_id: str,
-    file: UploadFile = File(...),
-    metadata: Optional[str] = Form(None),
-    db: Session = Depends(get_db)
-):
-    """
-    Ingest file data into a RAG pipeline
-    """
-    try:
-        pipeline = db.query(RAGPipeline).filter(RAGPipeline.id == pipeline_id).first()
-        if not pipeline:
-            raise HTTPException(status_code=404, detail="RAG pipeline not found")
-        
-        # Parse metadata if provided
-        parsed_metadata = {}
-        if metadata:
-            try:
-                parsed_metadata = json.loads(metadata)
-            except json.JSONDecodeError:
-                raise HTTPException(status_code=400, detail="Invalid metadata JSON")
-        
-        # Save uploaded file temporarily
-        with tempfile.NamedTemporaryFile(delete=False, suffix=f"_{file.filename}") as temp_file:
-            content = await file.read()
-            temp_file.write(content)
-            temp_file_path = temp_file.name
-        
-        try:
-            # Process file ingestion
-            result = await _process_file_ingestion(pipeline, temp_file_path, file.filename, parsed_metadata)
-            
-            logger.info(f"Successfully ingested file {file.filename} into pipeline: {pipeline_id}")
-            return result
-            
-        finally:
-            # Clean up temporary file
-            if os.path.exists(temp_file_path):
-                os.unlink(temp_file_path)
-        
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Error ingesting file data: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-@router.post("/{pipeline_id}/ingest-url")
-async def ingest_url_data(
-    pipeline_id: str,
-    ingestion_request: DataIngestionRequest,
-    db: Session = Depends(get_db)
-):
-    """
-    Ingest data from a URL into a RAG pipeline
-    """
-    try:
-        pipeline = db.query(RAGPipeline).filter(RAGPipeline.id == pipeline_id).first()
-        if not pipeline:
-            raise HTTPException(status_code=404, detail="RAG pipeline not found")
-        
-        # Process URL ingestion
-        result = await _process_url_ingestion(
-            pipeline, 
-            ingestion_request.source_url, 
-            ingestion_request.ingestion_method,
-            ingestion_request.metadata or {}
+    """Delete a RAG pipeline"""
+    
+    # Check if pipeline has runs
+    if not force:
+        runs = await db.execute(
+            select(RAGPipelineRun).where(RAGPipelineRun.pipeline_id == pipeline_id)
         )
-        
-        logger.info(f"Successfully ingested URL data into pipeline: {pipeline_id}")
-        return result
-        
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Error ingesting URL data: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+        if runs.scalars().first():
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Cannot delete pipeline with existing runs. Use force=true to override."
+            )
+    
+    # Delete pipeline
+    result = await db.execute(
+        delete(RAGPipeline).where(RAGPipeline.id == pipeline_id)
+    )
+    
+    if result.rowcount == 0:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="RAG pipeline not found"
+        )
+    
+    await db.commit()
+    logger.info(f"Deleted RAG pipeline: {pipeline_id}")
+    return {"message": "RAG pipeline deleted successfully"}
 
-# ============================================================================
-# VECTORIZATION ENDPOINTS
-# ============================================================================
-
-@router.post("/{pipeline_id}/vectorize")
-async def vectorize_pipeline_data(
+@router.post("/{pipeline_id}/documents/upload")
+async def upload_documents(
     pipeline_id: str,
-    vectorization_request: VectorizationRequest,
-    db: Session = Depends(get_db)
+    files: List[UploadFile] = File(...),
+    metadata: Optional[str] = Form(None),
+    processing_options: Optional[str] = Form(None),
+    db: AsyncSession = Depends(get_db)
 ):
-    """
-    Vectorize data in a RAG pipeline
-    """
-    try:
-        pipeline = db.query(RAGPipeline).filter(RAGPipeline.id == pipeline_id).first()
-        if not pipeline:
-            raise HTTPException(status_code=404, detail="RAG pipeline not found")
-        
-        # Process vectorization
-        result = await _process_vectorization(pipeline, vectorization_request)
-        
-        logger.info(f"Successfully vectorized data in pipeline: {pipeline_id}")
-        return result
-        
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Error vectorizing pipeline data: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+    """Upload documents to a RAG pipeline"""
+    
+    # Get pipeline
+    pipeline = await db.execute(
+        select(RAGPipeline).where(RAGPipeline.id == pipeline_id)
+    )
+    pipeline = pipeline.scalar_one_or_none()
+    
+    if not pipeline:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="RAG pipeline not found"
+        )
+    
+    # Parse metadata and options
+    doc_metadata = json.loads(metadata) if metadata else {}
+    proc_options = json.loads(processing_options) if processing_options else {}
+    
+    # Process uploaded files
+    processed_files = []
+    total_chunks = 0
+    
+    for file in files:
+        try:
+            # Save file temporarily
+            with tempfile.NamedTemporaryFile(delete=False, suffix=Path(file.filename).suffix) as temp_file:
+                content = await file.read()
+                temp_file.write(content)
+                temp_file_path = temp_file.name
+            
+            # Process file with RAG service
+            result = await rag_service.ingest_document(
+                pipeline_id=pipeline_id,
+                file_path=temp_file_path,
+                filename=file.filename,
+                metadata=doc_metadata,
+                processing_options=proc_options
+            )
+            
+            processed_files.append({
+                "filename": file.filename,
+                "status": result["status"],
+                "chunks_created": result.get("chunks_created", 0),
+                "file_size": len(content)
+            })
+            
+            total_chunks += result.get("chunks_created", 0)
+            
+            # Clean up temp file
+            Path(temp_file_path).unlink(missing_ok=True)
+            
+        except Exception as e:
+            logger.error(f"Error processing file {file.filename}: {e}")
+            processed_files.append({
+                "filename": file.filename,
+                "status": "error",
+                "error": str(e)
+            })
+    
+    return {
+        "pipeline_id": pipeline_id,
+        "files_processed": len(processed_files),
+        "total_chunks_created": total_chunks,
+        "results": processed_files
+    }
 
-@router.get("/{pipeline_id}/vector-stats")
-async def get_vector_statistics(
+@router.post("/{pipeline_id}/documents/ingest-text")
+async def ingest_text_content(
     pipeline_id: str,
-    db: Session = Depends(get_db)
+    content: str,
+    metadata: Optional[Dict[str, Any]] = None,
+    db: AsyncSession = Depends(get_db)
 ):
-    """
-    Get vector statistics for a RAG pipeline
-    """
-    try:
-        pipeline = db.query(RAGPipeline).filter(RAGPipeline.id == pipeline_id).first()
-        if not pipeline:
-            raise HTTPException(status_code=404, detail="RAG pipeline not found")
-        
-        # Get vector statistics
-        stats = await _get_vector_statistics(pipeline)
-        
-        return stats
-        
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Error getting vector statistics: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-# ============================================================================
-# SEARCH AND RETRIEVAL ENDPOINTS
-# ============================================================================
+    """Ingest text content directly into a RAG pipeline"""
+    
+    # Get pipeline
+    pipeline = await db.execute(
+        select(RAGPipeline).where(RAGPipeline.id == pipeline_id)
+    )
+    pipeline = pipeline.scalar_one_or_none()
+    
+    if not pipeline:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="RAG pipeline not found"
+        )
+    
+    # Process text content
+    result = await rag_service.ingest_text(
+        pipeline_id=pipeline_id,
+        content=content,
+        metadata=metadata or {}
+    )
+    
+    return result
 
 @router.post("/{pipeline_id}/search")
 async def search_pipeline(
     pipeline_id: str,
     query: str,
-    top_k: int = 5,
+    k: int = 5,
     filters: Optional[Dict[str, Any]] = None,
-    db: Session = Depends(get_db)
+    db: AsyncSession = Depends(get_db)
 ):
-    """
-    Search a RAG pipeline using vector similarity
-    """
-    try:
-        pipeline = db.query(RAGPipeline).filter(RAGPipeline.id == pipeline_id).first()
-        if not pipeline:
-            raise HTTPException(status_code=404, detail="RAG pipeline not found")
-        
-        if pipeline.status != RAGPipelineStatus.ACTIVE:
-            raise HTTPException(status_code=400, detail="Pipeline is not active")
-        
-        # Perform search
-        results = await _perform_pipeline_search(pipeline, query, top_k, filters or {})
-        
-        return {
-            "query": query,
-            "pipeline_id": pipeline_id,
-            "results": results,
-            "total_results": len(results),
-            "search_time": 0.1  # Mock timing
-        }
-        
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Error searching pipeline: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+    """Search documents in a RAG pipeline"""
+    
+    # Get pipeline
+    pipeline = await db.execute(
+        select(RAGPipeline).where(RAGPipeline.id == pipeline_id)
+    )
+    pipeline = pipeline.scalar_one_or_none()
+    
+    if not pipeline:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="RAG pipeline not found"
+        )
+    
+    # Perform search
+    results = await rag_service.search(
+        pipeline_id=pipeline_id,
+        query=query,
+        k=k,
+        filters=filters or {}
+    )
+    
+    return results
 
-# ============================================================================
-# PIPELINE LIFECYCLE ENDPOINTS
-# ============================================================================
-
-@router.post("/{pipeline_id}/activate")
-async def activate_pipeline(
+@router.post("/{pipeline_id}/collections/{collection_name}/rebuild")
+async def rebuild_collection(
     pipeline_id: str,
-    db: Session = Depends(get_db)
+    collection_name: str,
+    embedding_model: Optional[str] = None,
+    db: AsyncSession = Depends(get_db)
 ):
-    """
-    Activate a RAG pipeline
-    """
-    try:
-        pipeline = db.query(RAGPipeline).filter(RAGPipeline.id == pipeline_id).first()
-        if not pipeline:
-            raise HTTPException(status_code=404, detail="RAG pipeline not found")
-        
-        # Activate pipeline
-        success = await _activate_pipeline(pipeline)
-        
-        if success:
-            pipeline.status = RAGPipelineStatus.ACTIVE
-            pipeline.updated_at = datetime.utcnow()
-            db.commit()
-            
-            logger.info(f"Activated RAG pipeline: {pipeline_id}")
-            return {"message": "Pipeline activated successfully", "status": "active"}
-        else:
-            raise HTTPException(status_code=500, detail="Failed to activate pipeline")
-        
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Error activating pipeline: {str(e)}")
-        db.rollback()
-        raise HTTPException(status_code=500, detail=str(e))
+    """Rebuild a collection with a new embedding model"""
+    
+    # Get pipeline
+    pipeline = await db.execute(
+        select(RAGPipeline).where(RAGPipeline.id == pipeline_id)
+    )
+    pipeline = pipeline.scalar_one_or_none()
+    
+    if not pipeline:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="RAG pipeline not found"
+        )
+    
+    # Rebuild collection
+    result = await rag_service.rebuild_collection(
+        pipeline_id=pipeline_id,
+        collection_name=collection_name,
+        new_embedding_model=embedding_model
+    )
+    
+    return result
 
-@router.post("/{pipeline_id}/deactivate")
-async def deactivate_pipeline(
+@router.delete("/{pipeline_id}/collections/{collection_name}")
+async def delete_collection(
     pipeline_id: str,
-    db: Session = Depends(get_db)
+    collection_name: str,
+    db: AsyncSession = Depends(get_db)
 ):
-    """
-    Deactivate a RAG pipeline
-    """
-    try:
-        pipeline = db.query(RAGPipeline).filter(RAGPipeline.id == pipeline_id).first()
-        if not pipeline:
-            raise HTTPException(status_code=404, detail="RAG pipeline not found")
-        
-        # Deactivate pipeline
-        success = await _deactivate_pipeline(pipeline)
-        
-        if success:
-            pipeline.status = RAGPipelineStatus.INACTIVE
-            pipeline.updated_at = datetime.utcnow()
-            db.commit()
-            
-            logger.info(f"Deactivated RAG pipeline: {pipeline_id}")
-            return {"message": "Pipeline deactivated successfully", "status": "inactive"}
-        else:
-            raise HTTPException(status_code=500, detail="Failed to deactivate pipeline")
-        
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Error deactivating pipeline: {str(e)}")
-        db.rollback()
-        raise HTTPException(status_code=500, detail=str(e))
-
-# ============================================================================
-# HELPER FUNCTIONS
-# ============================================================================
-
-async def _process_text_ingestion(
-    pipeline: RAGPipeline, 
-    text_data: str, 
-    metadata: Dict[str, Any]
-) -> Dict[str, Any]:
-    """Process text data ingestion"""
-    try:
-        # Mock text processing
-        chunks = _chunk_text(text_data, pipeline.ingestion_config)
-        
-        return {
-            "ingestion_type": "text",
-            "chunks_created": len(chunks),
-            "total_characters": len(text_data),
-            "metadata": metadata,
-            "processing_time": 0.5,
-            "status": "success"
-        }
-        
-    except Exception as e:
-        logger.error(f"Error processing text ingestion: {str(e)}")
-        raise
-
-async def _process_file_ingestion(
-    pipeline: RAGPipeline, 
-    file_path: str, 
-    filename: str, 
-    metadata: Dict[str, Any]
-) -> Dict[str, Any]:
-    """Process file data ingestion"""
-    try:
-        # Mock file processing
-        file_size = os.path.getsize(file_path)
-        
-        # Simulate text extraction based on file type
-        file_extension = filename.split('.')[-1].lower()
-        
-        if file_extension in ['txt', 'md']:
-            with open(file_path, 'r', encoding='utf-8') as f:
-                content = f.read()
-        else:
-            # Mock extraction for other file types
-            content = f"Mock extracted content from {filename}"
-        
-        chunks = _chunk_text(content, pipeline.ingestion_config)
-        
-        return {
-            "ingestion_type": "file",
-            "filename": filename,
-            "file_size": file_size,
-            "file_type": file_extension,
-            "chunks_created": len(chunks),
-            "total_characters": len(content),
-            "metadata": metadata,
-            "processing_time": 1.2,
-            "status": "success"
-        }
-        
-    except Exception as e:
-        logger.error(f"Error processing file ingestion: {str(e)}")
-        raise
-
-async def _process_url_ingestion(
-    pipeline: RAGPipeline, 
-    url: str, 
-    method: IngestionMethod, 
-    metadata: Dict[str, Any]
-) -> Dict[str, Any]:
-    """Process URL data ingestion"""
-    try:
-        # Mock URL processing
-        if method == IngestionMethod.WEB_SCRAPING:
-            content = f"Mock scraped content from {url}"
-        elif method == IngestionMethod.API_EXTRACTION:
-            content = f"Mock API content from {url}"
-        else:
-            content = f"Mock RSS content from {url}"
-        
-        chunks = _chunk_text(content, pipeline.ingestion_config)
-        
-        return {
-            "ingestion_type": "url",
-            "source_url": url,
-            "ingestion_method": method.value,
-            "chunks_created": len(chunks),
-            "total_characters": len(content),
-            "metadata": metadata,
-            "processing_time": 2.0,
-            "status": "success"
-        }
-        
-    except Exception as e:
-        logger.error(f"Error processing URL ingestion: {str(e)}")
-        raise
-
-async def _process_vectorization(
-    pipeline: RAGPipeline, 
-    request: VectorizationRequest
-) -> Dict[str, Any]:
-    """Process data vectorization"""
-    try:
-        # Mock vectorization process
-        return {
-            "vectorization_model": request.embedding_model,
-            "vectors_created": request.batch_size or 100,
-            "dimensions": 1536,  # Mock OpenAI embedding dimensions
-            "processing_time": 5.0,
-            "status": "success"
-        }
-        
-    except Exception as e:
-        logger.error(f"Error processing vectorization: {str(e)}")
-        raise
-
-async def _get_vector_statistics(pipeline: RAGPipeline) -> Dict[str, Any]:
-    """Get vector statistics for pipeline"""
-    try:
-        # Mock vector statistics
-        return {
-            "total_vectors": 1500,
-            "vector_dimensions": 1536,
-            "last_updated": datetime.utcnow().isoformat(),
-            "storage_size_mb": 45.2,
-            "index_status": "ready",
-            "embedding_model": pipeline.vectorization_config.get("embedding_model", "text-embedding-ada-002")
-        }
-        
-    except Exception as e:
-        logger.error(f"Error getting vector statistics: {str(e)}")
-        raise
-
-async def _perform_pipeline_search(
-    pipeline: RAGPipeline, 
-    query: str, 
-    top_k: int, 
-    filters: Dict[str, Any]
-) -> List[Dict[str, Any]]:
-    """Perform vector search in pipeline"""
-    try:
-        # Mock search results
-        results = []
-        for i in range(min(top_k, 5)):
-            results.append({
-                "content": f"Mock search result {i+1} for query: {query}",
-                "score": 0.95 - (i * 0.1),
-                "metadata": {
-                    "source": f"document_{i+1}",
-                    "chunk_index": i,
-                    "timestamp": datetime.utcnow().isoformat()
-                }
-            })
-        
-        return results
-        
-    except Exception as e:
-        logger.error(f"Error performing pipeline search: {str(e)}")
-        raise
-
-async def _activate_pipeline(pipeline: RAGPipeline) -> bool:
-    """Activate a RAG pipeline"""
-    try:
-        # Mock activation process
-        logger.info(f"Activating pipeline: {pipeline.id}")
-        return True
-        
-    except Exception as e:
-        logger.error(f"Error activating pipeline: {str(e)}")
-        return False
-
-async def _deactivate_pipeline(pipeline: RAGPipeline) -> bool:
-    """Deactivate a RAG pipeline"""
-    try:
-        # Mock deactivation process
-        logger.info(f"Deactivating pipeline: {pipeline.id}")
-        return True
-        
-    except Exception as e:
-        logger.error(f"Error deactivating pipeline: {str(e)}")
-        return False
-
-def _chunk_text(text: str, config: Dict[str, Any]) -> List[str]:
-    """Split text into chunks based on configuration"""
-    chunk_size = config.get("chunk_size", 1000)
-    chunk_overlap = config.get("chunk_overlap", 200)
+    """Delete a collection and all its documents"""
     
-    chunks = []
-    start = 0
+    # Get pipeline
+    pipeline = await db.execute(
+        select(RAGPipeline).where(RAGPipeline.id == pipeline_id)
+    )
+    pipeline = pipeline.scalar_one_or_none()
     
-    while start < len(text):
-        end = start + chunk_size
-        chunk = text[start:end]
-        chunks.append(chunk)
-        start = end - chunk_overlap if end < len(text) else end
+    if not pipeline:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="RAG pipeline not found"
+        )
     
-    return chunks
+    # Delete collection
+    result = await rag_service.delete_collection(
+        pipeline_id=pipeline_id,
+        collection_name=collection_name
+    )
+    
+    return result
 
-# Health check endpoint
+@router.get("/{pipeline_id}/collections")
+async def list_collections(
+    pipeline_id: str,
+    db: AsyncSession = Depends(get_db)
+):
+    """List all collections in a RAG pipeline"""
+    
+    # Get pipeline
+    pipeline = await db.execute(
+        select(RAGPipeline).where(RAGPipeline.id == pipeline_id)
+    )
+    pipeline = pipeline.scalar_one_or_none()
+    
+    if not pipeline:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="RAG pipeline not found"
+        )
+    
+    # List collections
+    collections = await rag_service.list_collections(pipeline_id)
+    
+    return collections
+
+@router.get("/{pipeline_id}/collections/{collection_name}/stats")
+async def get_collection_stats(
+    pipeline_id: str,
+    collection_name: str,
+    db: AsyncSession = Depends(get_db)
+):
+    """Get statistics for a collection"""
+    
+    # Get collection stats
+    stats = await rag_service.get_collection_stats(
+        pipeline_id=pipeline_id,
+        collection_name=collection_name
+    )
+    
+    return stats
+
+@router.post("/{pipeline_id}/embedding-models/change")
+async def change_embedding_model(
+    pipeline_id: str,
+    new_model: str,
+    migrate_existing: bool = False,
+    db: AsyncSession = Depends(get_db)
+):
+    """Change the embedding model for a RAG pipeline"""
+    
+    # Get pipeline
+    pipeline = await db.execute(
+        select(RAGPipeline).where(RAGPipeline.id == pipeline_id)
+    )
+    pipeline = pipeline.scalar_one_or_none()
+    
+    if not pipeline:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="RAG pipeline not found"
+        )
+    
+    # Change embedding model
+    result = await rag_service.change_embedding_model(
+        pipeline_id=pipeline_id,
+        new_model=new_model,
+        migrate_existing=migrate_existing
+    )
+    
+    # Update pipeline configuration
+    vectorization_config = pipeline.vectorization_config or {}
+    vectorization_config["embedding_model"] = new_model
+    pipeline.vectorization_config = vectorization_config
+    pipeline.updated_at = datetime.utcnow()
+    
+    await db.commit()
+    
+    return result
+
+@router.get("/embedding-models")
+async def list_embedding_models():
+    """List available embedding models"""
+    
+    return {
+        "embedding_models": [
+            {
+                "name": "text-embedding-3-small",
+                "provider": "OpenAI",
+                "dimensions": 1536,
+                "description": "OpenAI's latest small embedding model"
+            },
+            {
+                "name": "text-embedding-3-large",
+                "provider": "OpenAI", 
+                "dimensions": 3072,
+                "description": "OpenAI's latest large embedding model"
+            },
+            {
+                "name": "text-embedding-ada-002",
+                "provider": "OpenAI",
+                "dimensions": 1536,
+                "description": "OpenAI's previous generation embedding model"
+            },
+            {
+                "name": "embed-english-v3.0",
+                "provider": "Cohere",
+                "dimensions": 1024,
+                "description": "Cohere's English embedding model"
+            },
+            {
+                "name": "sentence-transformers/all-MiniLM-L6-v2",
+                "provider": "HuggingFace",
+                "dimensions": 384,
+                "description": "Lightweight sentence transformer model"
+            },
+            {
+                "name": "sentence-transformers/all-mpnet-base-v2",
+                "provider": "HuggingFace",
+                "dimensions": 768,
+                "description": "High-quality sentence transformer model"
+            }
+        ]
+    }
+
+@router.post("/{pipeline_id}/run")
+async def run_pipeline(
+    pipeline_id: str,
+    run_type: str = "manual",
+    parameters: Optional[Dict[str, Any]] = None,
+    db: AsyncSession = Depends(get_db)
+):
+    """Execute a RAG pipeline run"""
+    
+    # Get pipeline
+    pipeline = await db.execute(
+        select(RAGPipeline).where(RAGPipeline.id == pipeline_id)
+    )
+    pipeline = pipeline.scalar_one_or_none()
+    
+    if not pipeline:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="RAG pipeline not found"
+        )
+    
+    # Create pipeline run
+    run_id = uuid.uuid4()
+    pipeline_run = RAGPipelineRun(
+        id=run_id,
+        pipeline_id=pipeline_id,
+        run_type=run_type,
+        status="running",
+        input_data=parameters or {},
+        started_at=datetime.utcnow()
+    )
+    
+    db.add(pipeline_run)
+    await db.commit()
+    
+    try:
+        # Execute pipeline
+        result = await rag_service.execute_pipeline(
+            pipeline_id=pipeline_id,
+            parameters=parameters or {}
+        )
+        
+        # Update run status
+        pipeline_run.status = "completed"
+        pipeline_run.output_summary = result
+        pipeline_run.completed_at = datetime.utcnow()
+        pipeline_run.duration_seconds = int(
+            (pipeline_run.completed_at - pipeline_run.started_at).total_seconds()
+        )
+        
+    except Exception as e:
+        logger.error(f"Pipeline run failed: {e}")
+        pipeline_run.status = "failed"
+        pipeline_run.error_details = str(e)
+        pipeline_run.completed_at = datetime.utcnow()
+    
+    await db.commit()
+    
+    return {
+        "run_id": str(run_id),
+        "status": pipeline_run.status,
+        "result": pipeline_run.output_summary,
+        "error": pipeline_run.error_details
+    }
+
+@router.get("/{pipeline_id}/runs")
+async def list_pipeline_runs(
+    pipeline_id: str,
+    skip: int = 0,
+    limit: int = 50,
+    db: AsyncSession = Depends(get_db)
+):
+    """List runs for a RAG pipeline"""
+    
+    runs = await db.execute(
+        select(RAGPipelineRun)
+        .where(RAGPipelineRun.pipeline_id == pipeline_id)
+        .order_by(RAGPipelineRun.created_at.desc())
+        .offset(skip)
+        .limit(limit)
+    )
+    
+    return runs.scalars().all()
+
 @router.get("/health")
 async def health_check():
     """

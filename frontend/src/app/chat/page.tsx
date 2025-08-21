@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { StandardPageLayout, StandardGrid } from '@/components/layout/StandardPageLayout';
 import { 
   Send, 
   Bot, 
@@ -179,54 +180,54 @@ export default function ChatPage() {
   const selectedWorkflowData = mockWorkflows.find(w => w.id === selectedWorkflow);
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <div className="container mx-auto px-4 py-8">
-        {/* Header */}
-        <div className="mb-6">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-            Chat Interface
-          </h1>
-          <p className="text-gray-600 dark:text-gray-300">
-            Interact with your multi-agent workflow system
-          </p>
+    <StandardPageLayout
+      title="Chat Interface"
+      description="Interact with your multi-agent workflow system"
+      actions={
+        <div className="flex items-center space-x-3">
+          <Button variant="outline" size="sm">
+            <Settings className="h-4 w-4 mr-2" />
+            Settings
+          </Button>
         </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          {/* Workflow Selector */}
-          <div className="lg:col-span-1">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <Workflow className="h-5 w-5" />
-                  <span>Workflows</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {mockWorkflows.map((workflow) => (
-                    <div
-                      key={workflow.id}
-                      className={`p-3 rounded-lg border cursor-pointer transition-colors ${
-                        selectedWorkflow === workflow.id
-                          ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
-                          : 'border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800'
-                      }`}
-                      onClick={() => setSelectedWorkflow(workflow.id)}
-                    >
-                      <div className="flex items-center justify-between mb-2">
-                        <h3 className="font-medium text-sm">{workflow.name}</h3>
-                        <Badge variant={workflow.status === 'active' ? 'default' : 'outline'}>
-                          {workflow.status}
-                        </Badge>
-                      </div>
-                      <p className="text-xs text-gray-600 dark:text-gray-300 mb-2">
-                        {workflow.description}
-                      </p>
-                      <div className="flex items-center space-x-1">
-                        <Bot className="h-3 w-3 text-gray-400" />
-                        <span className="text-xs text-gray-500">
-                          {workflow.agents.length} agents
-                        </span>
+      }
+    >
+      <StandardGrid cols={{ default: 1, lg: 4 }} gap="lg">
+        {/* Workflow Selector */}
+        <div className="lg:col-span-1">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <Workflow className="h-5 w-5" />
+                <span>Workflows</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {mockWorkflows.map((workflow) => (
+                  <div
+                    key={workflow.id}
+                    className={`p-3 rounded-lg border cursor-pointer transition-colors ${
+                      selectedWorkflow === workflow.id
+                        ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
+                        : 'border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800'
+                    }`}
+                    onClick={() => setSelectedWorkflow(workflow.id)}
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <h3 className="font-medium text-sm">{workflow.name}</h3>
+                      <Badge variant={workflow.status === 'active' ? 'default' : 'outline'}>
+                        {workflow.status}
+                      </Badge>
+                    </div>
+                    <p className="text-xs text-gray-600 dark:text-gray-300 mb-2">
+                      {workflow.description}
+                    </p>
+                    <div className="flex items-center space-x-1">
+                      <Bot className="h-3 w-3 text-gray-400" />
+                      <span className="text-xs text-gray-500">
+                        {workflow.agents.length} agents
+                      </span>
                       </div>
                     </div>
                   ))}
@@ -394,8 +395,7 @@ export default function ChatPage() {
               </div>
             </Card>
           </div>
-        </div>
-      </div>
-    </div>
+        </StandardGrid>
+    </StandardPageLayout>
   );
 }

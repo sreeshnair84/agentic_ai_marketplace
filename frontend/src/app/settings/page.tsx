@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { User, Lock, Bell, Globe, Database, Shield, Palette, Zap, Monitor, Save, RefreshCw, Users, AlertCircle, CheckCircle, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { StandardPageLayout, StandardSection } from '@/components/layout/StandardPageLayout';
 
 interface SettingsSection {
   id: string;
@@ -541,65 +542,58 @@ export default function Settings() {
   };
 
   return (
-    <div className="p-6">
-      {/* Header */}
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-            Settings
-          </h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-1">
-            Manage your platform configuration and preferences
-          </p>
+    <StandardPageLayout
+      title="Settings"
+      description="Manage your platform configuration and preferences"
+      actions={unsavedChanges && (
+        <div className="flex items-center space-x-3">
+          <span className="text-sm text-amber-600 dark:text-amber-400">
+            You have unsaved changes
+          </span>
+          <Button onClick={handleSave} className="flex items-center space-x-2">
+            <Save className="h-4 w-4" />
+            <span>Save Changes</span>
+          </Button>
         </div>
-        {unsavedChanges && (
-          <div className="flex items-center space-x-3">
-            <span className="text-sm text-amber-600 dark:text-amber-400">
-              You have unsaved changes
-            </span>
-            <Button onClick={handleSave} className="flex items-center space-x-2">
-              <Save className="h-4 w-4" />
-              <span>Save Changes</span>
-            </Button>
-          </div>
-        )}
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        {/* Sidebar */}
-        <div className="lg:col-span-1">
-          <nav className="space-y-2">
-            {settingsSections.map((section) => (
-              <button
-                key={section.id}
-                onClick={() => setActiveSection(section.id)}
-                className={`w-full text-left p-3 rounded-lg transition-colors ${
-                  activeSection === section.id
-                    ? 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300'
-                    : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
-                }`}
-              >
-                <div className="flex items-center space-x-3">
-                  <section.icon className="h-5 w-5" />
-                  <div>
-                    <div className="font-medium">{section.title}</div>
-                    <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                      {section.description}
+      )}
+    >
+      <StandardSection>
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+          {/* Sidebar */}
+          <div className="lg:col-span-1">
+            <nav className="space-y-2">
+              {settingsSections.map((section) => (
+                <button
+                  key={section.id}
+                  onClick={() => setActiveSection(section.id)}
+                  className={`w-full text-left p-3 rounded-lg transition-colors ${
+                    activeSection === section.id
+                      ? 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300'
+                      : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
+                  }`}
+                >
+                  <div className="flex items-center space-x-3">
+                    <section.icon className="h-5 w-5" />
+                    <div>
+                      <div className="font-medium">{section.title}</div>
+                      <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                        {section.description}
+                      </div>
                     </div>
                   </div>
-                </div>
-              </button>
-            ))}
-          </nav>
-        </div>
+                </button>
+              ))}
+            </nav>
+          </div>
 
-        {/* Content */}
-        <div className="lg:col-span-3">
-          <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
-            {renderContent()}
+          {/* Content */}
+          <div className="lg:col-span-3">
+            <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+              {renderContent()}
+            </div>
           </div>
         </div>
-      </div>
-    </div>
+      </StandardSection>
+    </StandardPageLayout>
   );
 }

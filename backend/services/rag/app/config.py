@@ -46,12 +46,12 @@ class RAGConfig:
     async def _load_embedding_config(self, async_session: AsyncSession) -> None:
         """Load embedding model configuration"""
         query = text("""
-            SELECT em.name, em.display_name, em.provider, em.api_endpoint,
-                   em.capabilities, em.pricing_info, em.performance_metrics,
+            SELECT em.name, em.display_name, em.provider, em.endpoint_url,
+                   em.model_config, em.pricing_info, em.performance_metrics,
                    em.input_signature, em.output_signature
             FROM embedding_models em 
-            WHERE em.status = 'active'
-            ORDER BY em.performance_metrics->>'availability' DESC
+            WHERE em.is_active = true
+            ORDER BY (em.performance_metrics->>'availability')::float DESC NULLS LAST
             LIMIT 1
         """)
         
@@ -59,17 +59,21 @@ class RAGConfig:
         row = result.fetchone()
         
         if row:
+            # model_config is stored as JSONB; parse and extract capabilities/pricing
+            model_config = row[4] or {}
+            capabilities = model_config.get('capabilities', {}) if isinstance(model_config, dict) else {}
+            dimensions = capabilities.get('dimensions', 1536)
             self.embedding_config = {
                 'name': row[0],
                 'display_name': row[1],
                 'provider': row[2],
                 'api_endpoint': row[3],
-                'capabilities': row[4] or {},
+                'capabilities': capabilities,
                 'pricing_info': row[5] or {},
                 'performance_metrics': row[6] or {},
                 'input_signature': row[7] or {},
                 'output_signature': row[8] or {},
-                'dimensions': row[4].get('dimensions', 1536) if row[4] else 1536
+                'dimensions': dimensions
             }
             logger.info(f"Loaded embedding model: {self.embedding_config['name']}")
         else:
@@ -79,12 +83,12 @@ class RAGConfig:
     async def _load_llm_config(self, async_session: AsyncSession) -> None:
         """Load LLM configuration"""
         query = text("""
-            SELECT lm.name, lm.display_name, lm.provider, lm.api_endpoint,
-                   lm.capabilities, lm.pricing_info, lm.performance_metrics,
+            SELECT lm.name, lm.display_name, lm.provider, lm.endpoint_url,
+                   lm.model_config, lm.pricing_info, lm.performance_metrics,
                    lm.input_signature, lm.output_signature
             FROM llm_models lm 
-            WHERE lm.status = 'active' AND lm.model_type = 'text-generation'
-            ORDER BY lm.performance_metrics->>'availability' DESC
+            WHERE lm.is_active = true AND lm.model_type = 'text-generation'
+            ORDER BY (lm.performance_metrics->>'availability')::float DESC NULLS LAST
             LIMIT 1
         """)
         
@@ -92,12 +96,14 @@ class RAGConfig:
         row = result.fetchone()
         
         if row:
+            model_config = row[4] or {}
+            capabilities = model_config.get('capabilities', {}) if isinstance(model_config, dict) else {}
             self.llm_config = {
                 'name': row[0],
                 'display_name': row[1],
                 'provider': row[2],
                 'api_endpoint': row[3],
-                'capabilities': row[4] or {},
+                'capabilities': capabilities,
                 'pricing_info': row[5] or {},
                 'performance_metrics': row[6] or {},
                 'input_signature': row[7] or {},

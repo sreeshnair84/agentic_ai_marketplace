@@ -49,7 +49,7 @@ interface ToolInstance {
   template?: ToolTemplate;
 }
 
-interface EnhancedToolInstanceFormProps {
+interface ToolInstanceFormProps {
   instance?: ToolInstance;
   templates: ToolTemplate[];
   onSave: (instance: ToolInstance) => void;
@@ -79,12 +79,12 @@ const getTemplateTypeIcon = (templateType: string) => {
   }
 };
 
-export default function EnhancedToolInstanceForm({ 
+export default function ToolInstanceForm({ 
   instance, 
   templates,
   onSave, 
   onCancel 
-}: EnhancedToolInstanceFormProps) {
+}: ToolInstanceFormProps) {
   const [formData, setFormData] = useState<ToolInstance>({
     template_id: '',
     name: '',

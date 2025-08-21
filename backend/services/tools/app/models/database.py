@@ -144,6 +144,8 @@ class LLMModel(Base):
     supports_streaming = Column(Boolean, nullable=False, default=False)
     supports_functions = Column(Boolean, nullable=False, default=False)
     cost_per_token = Column(String(20), nullable=True)
+    # Pricing information (JSON object with pricing tiers, currency, etc.)
+    pricing_info = Column(JSON, nullable=True, default=dict)
     is_active = Column(Boolean, nullable=False, default=True)
     
     # Metadata
@@ -164,6 +166,8 @@ class EmbeddingModel(Base):
     dimensions = Column(Integer, nullable=True)
     max_input_tokens = Column(Integer, nullable=True)
     cost_per_token = Column(String(20), nullable=True)
+    # Pricing information (JSON object)
+    pricing_info = Column(JSON, nullable=True, default=dict)
     is_active = Column(Boolean, nullable=False, default=True)
     
     # Metadata

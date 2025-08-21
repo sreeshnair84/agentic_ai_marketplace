@@ -1,3 +1,5 @@
+import type { Agent } from './agent';
+
 export interface Project {
   id: string;
   name: string;
@@ -36,7 +38,7 @@ export interface Tool {
   tags: string[];
   version: string;
   status: 'active' | 'inactive' | 'deprecated';
-  config: Record<string, any>;
+  config: Record<string, unknown>;
   createdAt: Date;
   updatedAt: Date;
   usageCount: number;
@@ -66,7 +68,7 @@ export interface WorkflowNode {
     label: string;
     agentId?: string;
     toolId?: string;
-    config?: Record<string, any>;
+    config?: Record<string, unknown>;
   };
   position: { x: number; y: number };
 }
@@ -88,7 +90,7 @@ export interface ProjectContext {
 }
 
 export interface ProjectFilteredData {
-  agents: any[];
+  agents: Agent[];
   tools: Tool[];
   workflows: Workflow[];
 }

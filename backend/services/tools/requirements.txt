@@ -38,6 +38,9 @@ Pillow
 # File handling
 python-multipart
 aiofiles
+pypdf
+python-docx
+chardet
 
 # Process execution
 # subprocess32 # For Windows compatibility - not needed in Python 3.3+

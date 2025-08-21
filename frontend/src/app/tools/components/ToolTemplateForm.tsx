@@ -2,11 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { 
-  X, 
-  Plus, 
-  Trash2, 
+  X,  
   Save, 
-  ArrowLeft,
   Settings,
   Code,
   Database,
@@ -15,13 +12,12 @@ import {
   Cloud,
   Workflow,
   Zap,
-  Bot,
   Info,
   CheckCircle,
   AlertCircle
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 
@@ -38,7 +34,7 @@ interface ToolTemplate {
   is_active: boolean;
 }
 
-interface EnhancedToolTemplateFormProps {
+interface ToolTemplateFormProps {
   template?: ToolTemplate;
   onSave: (template: ToolTemplate) => void;
   onCancel: () => void;
@@ -155,11 +151,11 @@ const toolTemplateTypes = [
   }
 ];
 
-export default function EnhancedToolTemplateForm({ 
+export default function ToolTemplateForm({ 
   template, 
   onSave, 
   onCancel 
-}: EnhancedToolTemplateFormProps) {
+}: ToolTemplateFormProps) {
   const [formData, setFormData] = useState<ToolTemplate>({
     name: '',
     description: '',

@@ -1,7 +1,8 @@
 import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
-  output: 'standalone',
+  // Temporarily disable standalone output due to Windows symlink permissions
+  // output: 'standalone',
   // Enable static optimization
   trailingSlash: false,
   // Disable ESLint during builds to focus on functionality

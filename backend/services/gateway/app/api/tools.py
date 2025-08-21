@@ -9,15 +9,12 @@ from typing import List, Optional, Dict, Any
 from ..core.database import get_database
 import json
 import logging
-
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/tools", tags=["tools"])
-
 
 @router.get("/")
 async def get_all_tools(db: AsyncSession = Depends(get_database)):
     """Get all tools with basic information"""
-    
     try:
         result_query = await db.execute(
             text("""
@@ -170,16 +167,17 @@ async def get_llm_models(db: AsyncSession = Depends(get_database)):
     
     try:
         result_query = await db.execute(
-            text("""
-                SELECT id, name, display_name, provider, model_type, api_endpoint, 
-                status, capabilities, pricing_info, performance_metrics,
-                model_config, api_key, health_url, dns_name,
-                created_at, updated_at
+            text(
+                """
+                SELECT id, name, display_name, provider, model_type, endpoint_url,
+                       is_active, model_config, api_key_env_var,
+                       created_at, updated_at
                 FROM llm_models
-            """)
+                """
+            )
         )
         models = result_query.fetchall()
-        
+
         result = []
         for model in models:
             # Parse JSON fields safely
@@ -192,26 +190,28 @@ async def get_llm_models(db: AsyncSession = Depends(get_database)):
                     return json.loads(value) if isinstance(value, str) else value
                 except (json.JSONDecodeError, TypeError):
                     return value
-            
+
+            mconf = safe_json_parse(model.model_config)
+
             result.append({
                 "id": str(model.id),
                 "name": model.name,
                 "display_name": model.display_name,
                 "provider": model.provider,
                 "model_type": model.model_type,
-                "api_endpoint": model.api_endpoint,
-                "status": model.status,
-                "capabilities": safe_json_parse(model.capabilities),
-                "pricing_info": safe_json_parse(model.pricing_info),
-                "performance_metrics": safe_json_parse(model.performance_metrics),
-                "model_config": safe_json_parse(model.model_config),
-                "api_key": "***" if model.api_key else None,  # Hide actual API key
-                "health_url": model.health_url,
-                "dns_name": model.dns_name,
+                "api_endpoint": model.endpoint_url,
+                "status": "active" if model.is_active else "inactive",
+                "capabilities": mconf.get("capabilities") if isinstance(mconf, dict) else None,
+                "pricing_info": mconf.get("pricing_info") if isinstance(mconf, dict) else None,
+                "performance_metrics": mconf.get("performance_metrics") if isinstance(mconf, dict) else None,
+                "model_config": mconf,
+                "api_key": "***" if model.api_key_env_var else None,
+                "health_url": None,
+                "dns_name": None,
                 "created_at": model.created_at.isoformat() if model.created_at else None,
-                "updated_at": model.updated_at.isoformat() if model.updated_at else None
+                "updated_at": model.updated_at.isoformat() if model.updated_at else None,
             })
-        
+
         return result
     except Exception as e:
         logger.error(f"Error getting LLM models: {e}")
@@ -228,32 +228,39 @@ async def create_llm_model(model_data: dict, db: AsyncSession = Depends(get_data
         performance_metrics = json.dumps(model_data.get('performance_metrics', {}))
         model_config = json.dumps(model_data.get('model_config', {}))
         
+        # Store data using current DB schema. Map incoming fields to endpoint_url and api_key_env_var
         query = text("""
             INSERT INTO llm_models (
-                name, display_name, provider, model_type, api_endpoint,
-                status, capabilities, pricing_info, performance_metrics,
-                model_config, api_key, health_url, dns_name, created_at, updated_at
+                name, display_name, provider, model_type, endpoint_url,
+                api_key_env_var, model_config, is_active, created_at, updated_at
             ) VALUES (
-                :name, :display_name, :provider, :model_type, :api_endpoint,
-                :status, :capabilities, :pricing_info, :performance_metrics,
-                :model_config, :api_key, :health_url, :dns_name, NOW(), NOW()
+                :name, :display_name, :provider, :model_type, :endpoint_url,
+                :api_key_env_var, :model_config, :is_active, NOW(), NOW()
             ) RETURNING id
         """)
-        
+
+        # derive is_active boolean
+        is_active_val = True if model_data.get('status', '').lower() == 'active' else False
+
+        # merge capabilities/pricing/performance into model_config to preserve data
+        try:
+            merged_config = json.loads(model_config) if isinstance(model_config, str) else model_config
+        except Exception:
+            merged_config = {}
+        if isinstance(merged_config, dict):
+            merged_config.setdefault('capabilities', json.loads(capabilities) if capabilities else {})
+            merged_config.setdefault('pricing_info', json.loads(pricing_info) if pricing_info else {})
+            merged_config.setdefault('performance_metrics', json.loads(performance_metrics) if performance_metrics else {})
+
         result = await db.execute(query, {
             'name': model_data['name'],
             'display_name': model_data['display_name'],
             'provider': model_data['provider'],
             'model_type': model_data['model_type'],
-            'api_endpoint': model_data.get('api_endpoint'),
-            'status': model_data.get('status', 'inactive'),
-            'capabilities': capabilities,
-            'pricing_info': pricing_info,
-            'performance_metrics': performance_metrics,
-            'model_config': model_config,
-            'api_key': model_data.get('api_key'),
-            'health_url': model_data.get('health_url'),
-            'dns_name': model_data.get('dns_name')
+            'endpoint_url': model_data.get('api_endpoint') or model_data.get('endpoint_url'),
+            'api_key_env_var': model_data.get('api_key'),
+            'model_config': json.dumps(merged_config),
+            'is_active': is_active_val
         })
         
         await db.commit()
@@ -279,40 +286,43 @@ async def update_llm_model(model_id: str, model_data: dict, db: AsyncSession = D
         performance_metrics = json.dumps(model_data.get('performance_metrics', {}))
         model_config = json.dumps(model_data.get('model_config', {}))
         
+        # Update using current DB schema
         query = text("""
             UPDATE llm_models SET
                 name = :name,
                 display_name = :display_name,
                 provider = :provider,
                 model_type = :model_type,
-                api_endpoint = :api_endpoint,
-                status = :status,
-                capabilities = :capabilities,
-                pricing_info = :pricing_info,
-                performance_metrics = :performance_metrics,
+                endpoint_url = :endpoint_url,
+                api_key_env_var = :api_key_env_var,
                 model_config = :model_config,
-                api_key = :api_key,
-                health_url = :health_url,
-                dns_name = :dns_name,
+                is_active = :is_active,
                 updated_at = NOW()
             WHERE id = :model_id
         """)
-        
+
+        is_active_val = True if model_data.get('status', '').lower() == 'active' else False
+
+        # merge capabilities/pricing/performance into model_config
+        try:
+            merged_config = json.loads(model_config) if isinstance(model_config, str) else model_config
+        except Exception:
+            merged_config = {}
+        if isinstance(merged_config, dict):
+            merged_config.setdefault('capabilities', json.loads(capabilities) if capabilities else {})
+            merged_config.setdefault('pricing_info', json.loads(pricing_info) if pricing_info else {})
+            merged_config.setdefault('performance_metrics', json.loads(performance_metrics) if performance_metrics else {})
+
         await db.execute(query, {
             'model_id': model_id,
             'name': model_data['name'],
             'display_name': model_data['display_name'],
             'provider': model_data['provider'],
             'model_type': model_data['model_type'],
-            'api_endpoint': model_data.get('api_endpoint'),
-            'status': model_data.get('status', 'inactive'),
-            'capabilities': capabilities,
-            'pricing_info': pricing_info,
-            'performance_metrics': performance_metrics,
-            'model_config': model_config,
-            'api_key': model_data.get('api_key'),
-            'health_url': model_data.get('health_url'),
-            'dns_name': model_data.get('dns_name')
+            'endpoint_url': model_data.get('api_endpoint') or model_data.get('endpoint_url'),
+            'api_key_env_var': model_data.get('api_key'),
+            'model_config': json.dumps(merged_config),
+            'is_active': is_active_val
         })
         
         await db.commit()
@@ -361,29 +371,14 @@ async def test_llm_model(model_id: str, db: AsyncSession = Depends(get_database)
         # Here you would implement actual model testing logic
         # For now, we'll return a mock response
         
-        # Update model status to testing
-        await db.execute(
-            text("UPDATE llm_models SET status = 'testing' WHERE id = :model_id"),
-            {'model_id': model_id}
-        )
-        await db.commit()
-        
-        # Simulate API test (replace with actual testing logic)
+        # For now, don't persist transient testing status to DB (schema uses is_active boolean).
         import asyncio
-        await asyncio.sleep(1)  # Simulate network delay
-        
-        # For demo purposes, randomly succeed or fail
+        await asyncio.sleep(1)
+
         import random
-        success = random.random() > 0.3  # 70% success rate
-        
-        # Update status based on test result
+        success = random.random() > 0.3
         new_status = 'active' if success else 'error'
-        await db.execute(
-            text("UPDATE llm_models SET status = :status WHERE id = :model_id"),
-            {'model_id': model_id, 'status': new_status}
-        )
-        await db.commit()
-        
+
         return {
             "success": success,
             "message": "Model connection successful" if success else "Model connection failed",
@@ -400,19 +395,20 @@ async def test_llm_model(model_id: str, db: AsyncSession = Depends(get_database)
 async def get_llm_model(model_id: str, db: AsyncSession = Depends(get_database)):
     """Get a specific LLM model by ID"""
     try:
-        query = text("""
-            SELECT id, name, display_name, provider, model_type, api_endpoint,
-                   status, capabilities, pricing_info, performance_metrics,
-                   model_config, api_key, health_url, dns_name,
+        query = text(
+            """
+            SELECT id, name, display_name, provider, model_type, endpoint_url,
+                   is_active, model_config, api_key_env_var,
                    created_at, updated_at
             FROM llm_models WHERE id = :model_id
-        """)
+            """
+        )
         result = await db.execute(query, {'model_id': model_id})
         model = result.fetchone()
-        
+
         if not model:
             raise HTTPException(status_code=404, detail="LLM model not found")
-        
+
         # Parse JSON fields safely
         def safe_json_parse(value):
             if value is None:
@@ -423,22 +419,24 @@ async def get_llm_model(model_id: str, db: AsyncSession = Depends(get_database))
                 return json.loads(value) if isinstance(value, str) else value
             except (json.JSONDecodeError, TypeError):
                 return value
-        
+
+        mconf = safe_json_parse(model.model_config)
+
         return {
             "id": str(model.id),
             "name": model.name,
             "display_name": model.display_name,
             "provider": model.provider,
             "model_type": model.model_type,
-            "api_endpoint": model.api_endpoint,
-            "status": model.status,
-            "capabilities": safe_json_parse(model.capabilities),
-            "pricing_info": safe_json_parse(model.pricing_info),
-            "performance_metrics": safe_json_parse(model.performance_metrics),
-            "model_config": safe_json_parse(model.model_config),
-            "api_key": "***" if model.api_key else None,  # Hide actual API key
-            "health_url": model.health_url,
-            "dns_name": model.dns_name,
+            "api_endpoint": model.endpoint_url,
+            "status": "active" if model.is_active else "inactive",
+            "capabilities": mconf.get("capabilities") if isinstance(mconf, dict) else None,
+            "pricing_info": mconf.get("pricing_info") if isinstance(mconf, dict) else None,
+            "performance_metrics": mconf.get("performance_metrics") if isinstance(mconf, dict) else None,
+            "model_config": mconf,
+            "api_key": "***" if model.api_key_env_var else None,
+            "health_url": None,
+            "dns_name": None,
             "created_at": model.created_at.isoformat() if model.created_at else None,
             "updated_at": model.updated_at.isoformat() if model.updated_at else None
         }
@@ -456,9 +454,8 @@ async def get_embedding_models(db: AsyncSession = Depends(get_database)):
     try:
         result_query = await db.execute(
             text("""
-                SELECT id, name, display_name, provider, model_type, api_endpoint,
-                status, capabilities, pricing_info, performance_metrics,
-                input_signature, output_signature, health_url, dns_name,
+                SELECT id, name, display_name, provider, model_type, endpoint_url,
+                is_active, model_config, api_key_env_var,
                 created_at, updated_at
                 FROM embedding_models
             """)
@@ -478,21 +475,22 @@ async def get_embedding_models(db: AsyncSession = Depends(get_database)):
                 except (json.JSONDecodeError, TypeError):
                     return value
             
+            mconf = safe_json_parse(model.model_config)
             result.append({
                 "id": str(model.id),
                 "name": model.name,
                 "display_name": model.display_name,
                 "provider": model.provider,
                 "model_type": model.model_type,
-                "api_endpoint": model.api_endpoint,
-                "status": model.status,
-                "capabilities": safe_json_parse(model.capabilities),
-                "pricing_info": safe_json_parse(model.pricing_info),
-                "performance_metrics": safe_json_parse(model.performance_metrics),
-                "input_signature": safe_json_parse(model.input_signature),
-                "output_signature": safe_json_parse(model.output_signature),
-                "health_url": model.health_url,
-                "dns_name": model.dns_name,
+                "api_endpoint": model.endpoint_url,
+                "status": "active" if model.is_active else "inactive",
+                "capabilities": mconf.get("capabilities") if isinstance(mconf, dict) else None,
+                "pricing_info": mconf.get("pricing_info") if isinstance(mconf, dict) else None,
+                "performance_metrics": mconf.get("performance_metrics") if isinstance(mconf, dict) else None,
+                "input_signature": None,
+                "output_signature": None,
+                "health_url": None,
+                "dns_name": None,
                 "created_at": model.created_at.isoformat() if model.created_at else None,
                 "updated_at": model.updated_at.isoformat() if model.updated_at else None
             })

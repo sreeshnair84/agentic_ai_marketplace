@@ -1,5 +1,43 @@
 import { NextResponse } from 'next/server';
 
+interface ServiceHealth {
+  status: string;
+}
+
+interface Tool {
+  name: string;
+}
+
+interface AgentConfig {
+  model: string;
+  temperature: number;
+  maxTokens: number;
+  systemPrompt: string;
+  tools: string[];
+  memory: boolean;
+  streaming: boolean;
+  timeout: number;
+  retryAttempts: number;
+}
+
+interface Agent {
+  id: string;
+  name: string;
+  description: string;
+  framework: string;
+  skills: string[];
+  status: string;
+  version: string;
+  createdAt: string;
+  updatedAt: string;
+  lastExecutedAt: string | null;
+  executionCount: number;
+  systemPrompt: string;
+  tags: string[];
+  responseTime: number;
+  config: AgentConfig;
+}
+
 const SERVICE_PORTS = {
   gateway: 8000,
   tools: 8005,
@@ -40,10 +78,12 @@ export async function GET() {
     // Get system health to determine if we can generate realistic agent data
     const healthData = await fetchFromService('gateway', '/health/detailed');
     const services = healthData.services || {};
-    const healthyServices = Object.values(services).filter((s: any) => s.status === 'healthy').length;
+    const healthyServices = Object.values(services).filter((s): s is ServiceHealth => 
+      typeof s === 'object' && s !== null && 'status' in s && (s as ServiceHealth).status === 'healthy'
+    ).length;
 
     // Get tools to create realistic agent configurations
-    let availableTools: any[] = [];
+    let availableTools: Tool[] = [];
     try {
       availableTools = await fetchFromService('tools', '/tools');
     } catch (error) {
@@ -51,7 +91,7 @@ export async function GET() {
     }
 
     // Generate realistic agent data based on system health and available tools
-    const agents: any[] = [];
+    const agents: Agent[] = [];
     const frameworks = ['langchain', 'llamaindex', 'crewai', 'semantic-kernel'];
     const skillCategories = [
       ['data-analysis', 'sql', 'visualization'],

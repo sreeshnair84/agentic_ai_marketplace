@@ -3,14 +3,22 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { XMarkIcon } from '@heroicons/react/24/outline';
+
+interface AgentData {
+  name: string;
+  description: string;
+  framework: string;
+  systemPrompt: string;
+  tags: string[];
+  [key: string]: unknown;
+}
 
 interface CreateAgentDialogProps {
   open: boolean;
   onClose: () => void;
-  onSave?: (agentData: any) => void;
+  onSave?: (agentData: AgentData) => void;
 }
 
 export function CreateAgentDialog({ open, onClose, onSave }: CreateAgentDialogProps) {

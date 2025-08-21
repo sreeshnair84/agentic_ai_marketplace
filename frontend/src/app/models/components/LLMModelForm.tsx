@@ -593,7 +593,7 @@ export default function LLMModelForm({ model, onSave, onCancel, onTest }: LLMMod
         {/* Header */}
         <div className="flex justify-between items-center p-6 border-b border-gray-200 dark:border-gray-700">
           <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-            {model ? 'Edit LLM Model' : 'Create LLM Model'}
+            {model ? 'Edit Model' : 'Create Model'}
           </h2>
           <button
             onClick={onCancel}

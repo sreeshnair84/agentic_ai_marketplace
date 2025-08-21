@@ -88,15 +88,25 @@ app.include_router(tools_router)
 # app.include_router(enhanced_router)  # Temporarily disabled 
 app.include_router(sample_queries_router)
 
-# Include simple tool management router
+# Include physical tools router
 try:
-    from .api.simple_tool_management import router as simple_tool_management_router
-    app.include_router(simple_tool_management_router)
-    logger.info("Simple tool management router included successfully")
+    from .api.physical_tools import router as physical_tools_router
+    app.include_router(physical_tools_router, prefix="/api")
+    logger.info("Physical tools router included successfully")
 except ImportError as e:
-    logger.warning(f"Could not import simple tool management router: {e}")
+    logger.warning(f"Could not import physical tools router: {e}")
 except Exception as e:
-    logger.error(f"Error including simple tool management router: {e}")
+    logger.error(f"Error including physical tools router: {e}")
+
+# Include optimized tool management router
+try:
+    from .api.tool_management import router as tool_management_router
+    app.include_router(tool_management_router)
+    logger.info("Tool management router included successfully")
+except ImportError as e:
+    logger.warning(f"Could not import tool management router: {e}")
+except Exception as e:
+    logger.error(f"Error including tool management router: {e}")
 
 # Include RAG pipeline router
 try:
@@ -122,6 +132,7 @@ async def health_check():
             "mcp_client": True,
             "standard_tools": True,
             "tool_management": True,
+            "physical_tools": True,
             "rag_pipelines": True,
             "langgraph_integration": True,
             "vector_search": True,
@@ -141,6 +152,7 @@ async def root():
         "endpoints": {
             "tools": "/tools",
             "tool_management": "/tool-management",
+            "physical_tools": "/api/physical-tools",
             "rag_pipelines": "/rag-pipelines",
             "health": "/health",
             "docs": "/docs"

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { 
   Search, Plus, Upload, FileText, Database, MoreHorizontal, 
   Settings2, Cloud, Activity, Target, Brain, Layers,
@@ -13,6 +13,8 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { StandardPageLayout, StandardSection, StandardGrid } from '@/components/layout/StandardPageLayout';
+import { useRAG } from '@/hooks/useRAG';
 
 // Simple Progress component for this page
 const Progress = ({ value, className }: { value: number; className?: string }) => (
@@ -24,258 +26,87 @@ const Progress = ({ value, className }: { value: number; className?: string }) =
   </div>
 );
 
-// Import the new types
-import {
-  VectorDatabase,
-  Collection,
-  EmbeddingModel,
-  CloudBucket,
-  DocumentProcessingJob,
-  RAGTool
-} from '@/types/rag';
-
-// Mock data for the enhanced UI
-const mockVectorDatabases: VectorDatabase[] = [
-  {
-    id: 'vdb-1',
-    name: 'Primary PGVector',
-    type: 'pgvector',
-    provider: 'postgresql',
-    status: 'connected',
-    configuration: {
-      connectionString: 'postgresql://user:pass@localhost:5432/vectordb',
-      ssl: true
-    },
-    collections: [],
-    dimensions: 1536,
-    maxCollections: 100,
-    createdAt: new Date('2024-01-01'),
-    lastSync: new Date()
-  },
-  {
-    id: 'vdb-2',
-    name: 'ChromaDB Instance',
-    type: 'chromadb',
-    provider: 'chroma',
-    status: 'connected',
-    configuration: {
-      host: 'localhost',
-      port: 8000
-    },
-    collections: [],
-    dimensions: 1536,
-    maxCollections: 50,
-    createdAt: new Date('2024-01-01'),
-    lastSync: new Date()
-  },
-  {
-    id: 'vdb-3',
-    name: 'Pinecone Production',
-    type: 'pinecone',
-    provider: 'pinecone',
-    status: 'disconnected',
-    configuration: {
-      apiKey: 'xxx-xxx-xxx',
-      region: 'us-east-1'
-    },
-    collections: [],
-    dimensions: 1536,
-    maxCollections: 10,
-    createdAt: new Date('2024-01-01'),
-    lastSync: new Date('2024-01-14')
-  }
-];
-
-const mockEmbeddingModels: EmbeddingModel[] = [
-  {
-    id: 'em-1',
-    name: 'text-embedding-3-small',
-    displayName: 'OpenAI Text Embedding 3 Small',
-    provider: 'openai',
-    dimensions: 1536,
-    maxTokens: 8191,
-    costPerToken: 0.00002,
-    isActive: true,
-    configuration: {
-      apiKey: 'sk-xxx',
-      modelName: 'text-embedding-3-small'
-    },
-    supportedLanguages: ['en', 'es', 'fr', 'de'],
-    tags: ['general', 'fast', 'cost-effective']
-  },
-  {
-    id: 'em-2',
-    name: 'text-embedding-3-large',
-    displayName: 'OpenAI Text Embedding 3 Large',
-    provider: 'openai',
-    dimensions: 3072,
-    maxTokens: 8191,
-    costPerToken: 0.00013,
-    isActive: true,
-    configuration: {
-      apiKey: 'sk-xxx',
-      modelName: 'text-embedding-3-large'
-    },
-    supportedLanguages: ['en', 'es', 'fr', 'de'],
-    tags: ['general', 'high-quality', 'premium']
-  }
-];
-
-const mockCollections: Collection[] = [
-  {
-    id: 'col-1',
-    name: 'Technical Documentation',
-    description: 'API references, code documentation, and technical guides',
-    embeddingModel: 'text-embedding-3-small',
-    vectorDatabaseId: 'vdb-1',
-    dimensions: 1536,
-    documentCount: 1247,
-    status: 'active',
-    metadata: {
-      totalDocuments: 1247,
-      totalChunks: 15834,
-      avgChunkSize: 512,
-      tags: ['technical', 'documentation', 'api']
-    },
-    createdAt: new Date('2024-01-01'),
-    lastIndexed: new Date()
-  },
-  {
-    id: 'col-2',
-    name: 'Customer Support KB',
-    description: 'FAQs, support tickets, and customer interaction data',
-    embeddingModel: 'text-embedding-3-small',
-    vectorDatabaseId: 'vdb-1',
-    dimensions: 1536,
-    documentCount: 8934,
-    status: 'indexing',
-    metadata: {
-      totalDocuments: 8934,
-      totalChunks: 45672,
-      avgChunkSize: 256,
-      indexingProgress: 75,
-      tags: ['support', 'faq', 'customer']
-    },
-    createdAt: new Date('2024-01-05'),
-    lastIndexed: new Date()
-  }
-];
-
-const mockCloudBuckets: CloudBucket[] = [
-  {
-    id: 'cb-1',
-    name: 'Documents S3 Bucket',
-    provider: 'aws-s3',
-    region: 'us-east-1',
-    bucketName: 'company-documents',
-    accessKey: 'AKIAXXXXX',
-    secretKey: 'xxx',
-    prefix: 'rag-documents/',
-    isActive: true,
-    lastSync: new Date(),
-    documentsCount: 1250
-  },
-  {
-    id: 'cb-2',
-    name: 'Azure Blob Storage',
-    provider: 'azure-blob',
-    containerName: 'documents',
-    accessKey: 'DefaultEndpointsProtocol=https;AccountName=xxx',
-    isActive: false,
-    documentsCount: 0
-  }
-];
-
-const mockProcessingJobs: DocumentProcessingJob[] = [
-  {
-    id: 'job-1',
-    name: 'Q1 Reports Processing',
-    description: 'Process quarterly financial reports with table extraction',
-    status: 'running',
-    progress: 65,
-    totalDocuments: 150,
-    processedDocuments: 98,
-    failedDocuments: 2,
-    source: {
-      type: 'cloud-bucket',
-      cloudBucketId: 'cb-1'
-    },
-    target: {
-      collectionId: 'col-1',
-      embeddingModelId: 'em-1',
-      vectorDatabaseId: 'vdb-1',
-      overwriteExisting: false
-    },
-    configuration: {
-      useDocling: true,
-      extractTables: true,
-      extractImages: false,
-      extractMetadata: true,
-      llmPreprocessing: true,
-      llmModelId: 'gpt-4o',
-      chunkSize: 1000,
-      chunkOverlap: 200,
-      chunkingStrategy: 'semantic',
-      separateTables: true,
-      separateImages: false,
-      preprocessing: {
-        removeHeaders: true,
-        removeFooters: true,
-        normalizeText: true,
-        removeExtraSpaces: true,
-        splitByParagraphs: false
-      },
-      filters: {
-        minChunkLength: 100,
-        maxChunkLength: 2000,
-        excludePatterns: [],
-        includePatterns: []
-      }
-    },
-    startedAt: new Date(),
-    logs: []
-  }
-];
-
-const mockRAGTools: RAGTool[] = [
-  {
-    id: 'tool-1',
-    name: 'Technical Q&A Assistant',
-    description: 'Semantic search and Q&A for technical documentation',
-    type: 'qa',
-    configuration: {
-      searchMethod: 'hybrid',
-      similarityThreshold: 0.7,
-      maxResults: 10,
-      useReranking: true,
-      rerankingModel: 'cross-encoder',
-      enableFiltering: true,
-      llmModel: 'gpt-4o',
-      temperature: 0.1,
-      maxTokens: 1000
-    },
-    collections: ['col-1'],
-    embeddingModel: 'text-embedding-3-small',
-    isActive: true,
-    usage: {
-      totalQueries: 1847,
-      successfulQueries: 1792,
-      averageResponseTime: 245,
-      averageAccuracy: 92.4,
-      lastUsed: new Date(),
-      popularFilters: ['api-reference', 'code-examples']
-    },
-    createdAt: new Date('2024-01-01'),
-    updatedAt: new Date()
-  }
-];
-
 export default function EnhancedRAGManagement() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedTab, setSelectedTab] = useState<'overview' | 'collections' | 'tools' | 'processing' | 'infrastructure'>('overview');
   const [selectedCollection, setSelectedCollection] = useState<string | null>(null);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [createDialogType, setCreateDialogType] = useState<'collection' | 'tool' | 'job' | 'vector-db' | 'embedding-model' | 'cloud-bucket'>('collection');
+
+  // Use RAG hooks
+  const {
+    knowledgeBases,
+    loading: ragLoading,
+    error: ragError,
+    fetchKnowledgeBases,
+    fetchDocuments,
+    fetchSearchHistory,
+    createKnowledgeBase,
+    deleteKnowledgeBase,
+    getDocument
+  } = useRAG();
+
+  // Mock data for enhanced features (since the hook provides a simpler interface)
+  // These would need to be implemented in the backend/API
+  const vectorDatabases = [
+    {
+      id: 'vdb-1',
+      name: 'Primary PGVector',
+      type: 'pgvector',
+      provider: 'postgresql',
+      status: 'connected',
+      collections: [],
+      dimensions: 1536,
+      maxCollections: 100,
+      createdAt: new Date('2024-01-01'),
+      lastSync: new Date()
+    }
+  ];
+
+  const collections = knowledgeBases.map(kb => ({
+    id: kb.id,
+    name: kb.name,
+    description: kb.description,
+    embeddingModel: 'text-embedding-3-small',
+    vectorDatabaseId: 'vdb-1',
+    dimensions: 1536,
+    documentCount: kb.stats.total_documents,
+    status: kb.status === 'active' ? 'active' : 'inactive',
+    metadata: {
+      totalDocuments: kb.stats.total_documents,
+      totalChunks: kb.stats.total_chunks,
+      avgChunkSize: 512,
+      tags: [] // KB doesn't have tags in this interface
+    },
+    createdAt: new Date(kb.created_at),
+    lastIndexed: new Date(kb.updated_at)
+  }));
+
+  const embeddingModels = [
+    {
+      id: 'em-1',
+      name: 'text-embedding-3-small',
+      displayName: 'OpenAI Text Embedding 3 Small',
+      provider: 'openai',
+      dimensions: 1536,
+      maxTokens: 8191,
+      costPerToken: 0.00002,
+      isActive: true,
+      supportedLanguages: ['en', 'es', 'fr', 'de'],
+      tags: ['general', 'fast', 'cost-effective']
+    }
+  ];
+
+  const cloudBuckets: any[] = [];
+  const processingJobs: any[] = [];
+  const ragTools: any[] = [];
+
+  // Fetch data on component mount
+  useEffect(() => {
+    fetchKnowledgeBases();
+    fetchDocuments();
+    fetchSearchHistory();
+  }, [fetchKnowledgeBases, fetchDocuments, fetchSearchHistory]);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -320,23 +151,119 @@ export default function EnhancedRAGManagement() {
     }
   };
 
-  const filteredCollections = mockCollections.filter(collection =>
+  const filteredCollections = collections.filter(collection =>
     collection.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     collection.description?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  return (
-    <div className="p-6 space-y-6">
-      {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-            Enhanced RAG Management
-          </h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-1">
-            Advanced document processing with vector databases, embedding models, and cloud integration
-          </p>
+  // Show loading state
+  if (ragLoading) {
+    return (
+      <StandardPageLayout
+        title="Enhanced RAG Management"
+        description="Advanced document processing with vector databases, embedding models, and cloud integration"
+      >
+        <div className="flex items-center justify-center h-64">
+          <div className="flex items-center space-x-2">
+            <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+            <span className="text-muted-foreground">Loading RAG data...</span>
+          </div>
         </div>
+      </StandardPageLayout>
+    );
+  }
+
+  // Show error state
+  if (ragError) {
+    return (
+      <StandardPageLayout
+        title="Enhanced RAG Management"
+        description="Advanced document processing with vector databases, embedding models, and cloud integration"
+      >
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Error Loading RAG Data</h3>
+            <p className="text-gray-600 mb-4">
+              {ragError || 'An unexpected error occurred'}
+            </p>
+            <Button onClick={() => window.location.reload()}>
+              Try Again
+            </Button>
+          </div>
+        </div>
+      </StandardPageLayout>
+    );
+  }
+
+  // Action handlers
+  const handleCreateDatabase = async (data: any) => {
+    try {
+      console.log('Create vector database:', data);
+      // This would need to be implemented in the backend
+    } catch (error) {
+      console.error('Failed to create vector database:', error);
+    }
+  };
+
+  const handleCreateCollection = async (data: any) => {
+    try {
+      await createKnowledgeBase(data);
+      setShowCreateDialog(false);
+    } catch (error) {
+      console.error('Failed to create collection:', error);
+    }
+  };
+
+  const handleStartProcessing = async (jobId: string) => {
+    try {
+      console.log('Start processing:', jobId);
+      // This would need to be implemented in the backend
+    } catch (error) {
+      console.error('Failed to start processing:', error);
+    }
+  };
+
+  const handleStopProcessing = async (jobId: string) => {
+    try {
+      console.log('Stop processing:', jobId);
+      // This would need to be implemented in the backend
+    } catch (error) {
+      console.error('Failed to stop processing:', error);
+    }
+  };
+
+  const handleDeleteCollection = async (collectionId: string) => {
+    try {
+      await deleteKnowledgeBase(collectionId);
+    } catch (error) {
+      console.error('Failed to delete collection:', error);
+    }
+  };
+
+  const handleDeleteDatabase = async (databaseId: string) => {
+    try {
+      console.log('Delete database:', databaseId);
+      // This would need to be implemented in the backend
+    } catch (error) {
+      console.error('Failed to delete database:', error);
+    }
+  };
+
+  const handleTestRAGTool = async (toolId: string) => {
+    try {
+      console.log('Test RAG tool:', toolId);
+      // This would need to be implemented in the backend
+    } catch (error) {
+      console.error('Failed to test RAG tool:', error);
+    }
+  };
+
+  return (
+    <StandardPageLayout
+      title="Enhanced RAG Management"
+      description="Advanced document processing with vector databases, embedding models, and cloud integration"
+      actions={
         <div className="flex space-x-3">
           <Button 
             variant="outline" 
@@ -360,11 +287,13 @@ export default function EnhancedRAGManagement() {
             <span>Create Collection</span>
           </Button>
         </div>
-      </div>
+      }
+    >
 
       {/* Main Tabs */}
-      <Tabs value={selectedTab} onValueChange={(value) => setSelectedTab(value as 'overview' | 'collections' | 'tools' | 'processing' | 'infrastructure')}>
-        <TabsList className="grid w-full grid-cols-5">
+      <StandardSection>
+        <Tabs value={selectedTab} onValueChange={(value) => setSelectedTab(value as 'overview' | 'collections' | 'tools' | 'processing' | 'infrastructure')}>
+          <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="overview" className="flex items-center gap-2">
             <BarChart3 className="h-4 w-4" />
             Overview
@@ -396,9 +325,9 @@ export default function EnhancedRAGManagement() {
                 <Layers className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{mockCollections.length}</div>
+                <div className="text-2xl font-bold">{collections.length}</div>
                 <p className="text-xs text-muted-foreground">
-                  {mockCollections.filter(c => c.status === 'active').length} active
+                  {collections.filter(c => c.status === 'active').length} active
                 </p>
               </CardContent>
             </Card>
@@ -410,7 +339,7 @@ export default function EnhancedRAGManagement() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">
-                  {mockCollections.reduce((sum, c) => sum + c.documentCount, 0).toLocaleString()}
+                  {collections.reduce((sum, c) => sum + c.documentCount, 0).toLocaleString()}
                 </div>
                 <p className="text-xs text-muted-foreground">
                   Across all collections
@@ -424,9 +353,9 @@ export default function EnhancedRAGManagement() {
                 <Database className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{mockVectorDatabases.length}</div>
+                <div className="text-2xl font-bold">{vectorDatabases.length}</div>
                 <p className="text-xs text-muted-foreground">
-                  {mockVectorDatabases.filter(db => db.status === 'connected').length} connected
+                  {vectorDatabases.filter(db => db.status === 'connected').length} connected
                 </p>
               </CardContent>
             </Card>
@@ -437,9 +366,9 @@ export default function EnhancedRAGManagement() {
                 <Workflow className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{mockProcessingJobs.length}</div>
+                <div className="text-2xl font-bold">{processingJobs.length}</div>
                 <p className="text-xs text-muted-foreground">
-                  {mockProcessingJobs.filter(j => j.status === 'running').length} running
+                  {processingJobs.filter(j => j.status === 'running').length} running
                 </p>
               </CardContent>
             </Card>
@@ -455,7 +384,7 @@ export default function EnhancedRAGManagement() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {mockProcessingJobs.filter(job => job.status === 'running').map((job) => (
+                {processingJobs.filter(job => job.status === 'running').map((job) => (
                   <div key={job.id} className="flex items-center justify-between p-4 border rounded-lg">
                     <div className="flex-1">
                       <h4 className="font-medium">{job.name}</h4>
@@ -469,7 +398,11 @@ export default function EnhancedRAGManagement() {
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Button variant="outline" size="sm">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => handleStopProcessing(job.id)}
+                      >
                         <Pause className="h-4 w-4" />
                       </Button>
                       <Button variant="outline" size="sm">
@@ -551,16 +484,6 @@ export default function EnhancedRAGManagement() {
                       </span>
                     </div>
                     
-                    {collection.status === 'indexing' && collection.metadata.indexingProgress && (
-                      <div>
-                        <div className="flex justify-between text-sm mb-1">
-                          <span>Indexing Progress</span>
-                          <span>{collection.metadata.indexingProgress}%</span>
-                        </div>
-                        <Progress value={collection.metadata.indexingProgress} />
-                      </div>
-                    )}
-
                     <div className="grid grid-cols-2 gap-4 text-sm">
                       <div>
                         <p className="text-muted-foreground">Chunks</p>
@@ -606,7 +529,7 @@ export default function EnhancedRAGManagement() {
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {mockRAGTools.map((tool) => (
+            {ragTools.map((tool) => (
               <Card key={tool.id}>
                 <CardHeader>
                   <div className="flex items-start justify-between">
@@ -657,8 +580,8 @@ export default function EnhancedRAGManagement() {
                     <div>
                       <p className="text-sm text-muted-foreground mb-2">Linked Collections</p>
                       <div className="flex flex-wrap gap-1">
-                        {tool.collections.map((collectionId) => {
-                          const collection = mockCollections.find(c => c.id === collectionId);
+                        {tool.collections?.map((collectionId: string) => {
+                          const collection = collections.find(c => c.id === collectionId);
                           return collection ? (
                             <Badge key={collectionId} variant="outline" className="text-xs">
                               {collection.name}
@@ -694,7 +617,7 @@ export default function EnhancedRAGManagement() {
           </div>
 
           <div className="space-y-6">
-            {mockProcessingJobs.map((job) => (
+            {processingJobs.map((job: any) => (
               <Card key={job.id}>
                 <CardHeader>
                   <div className="flex items-start justify-between">
@@ -795,7 +718,7 @@ export default function EnhancedRAGManagement() {
                           {job.source.cloudBucketId && (
                             <p className="text-sm">
                               <span className="text-muted-foreground">Bucket:</span>{' '}
-                              {mockCloudBuckets.find(b => b.id === job.source.cloudBucketId)?.name}
+                              {cloudBuckets.find(b => b.id === job.source.cloudBucketId)?.name}
                             </p>
                           )}
                         </div>
@@ -805,11 +728,11 @@ export default function EnhancedRAGManagement() {
                         <div className="p-3 bg-muted rounded-lg">
                           <p className="text-sm">
                             <span className="text-muted-foreground">Collection:</span>{' '}
-                            {mockCollections.find(c => c.id === job.target.collectionId)?.name}
+                            {collections.find(c => c.id === job.target.collectionId)?.name}
                           </p>
                           <p className="text-sm">
                             <span className="text-muted-foreground">Vector DB:</span>{' '}
-                            {mockVectorDatabases.find(db => db.id === job.target.vectorDatabaseId)?.name}
+                            {vectorDatabases.find(db => db.id === job.target.vectorDatabaseId)?.name}
                           </p>
                         </div>
                       </div>
@@ -834,7 +757,7 @@ export default function EnhancedRAGManagement() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  {mockVectorDatabases.map((db) => (
+                  {vectorDatabases.map((db) => (
                     <div key={db.id} className="flex items-center justify-between p-3 border rounded-lg">
                       <div className="flex items-center gap-3">
                         <div className="flex items-center justify-center w-8 h-8 bg-blue-100 dark:bg-blue-900 rounded">
@@ -873,7 +796,7 @@ export default function EnhancedRAGManagement() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  {mockEmbeddingModels.map((model) => (
+                  {embeddingModels.map((model) => (
                     <div key={model.id} className="flex items-center justify-between p-3 border rounded-lg">
                       <div className="flex items-center gap-3">
                         <div className="flex items-center justify-center w-8 h-8 bg-purple-100 dark:bg-purple-900 rounded">
@@ -912,7 +835,7 @@ export default function EnhancedRAGManagement() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  {mockCloudBuckets.map((bucket) => (
+                  {cloudBuckets.map((bucket) => (
                     <div key={bucket.id} className="flex items-center justify-between p-3 border rounded-lg">
                       <div className="flex items-center gap-3">
                         <div className="flex items-center justify-center w-8 h-8 bg-green-100 dark:bg-green-900 rounded">
@@ -964,6 +887,7 @@ export default function EnhancedRAGManagement() {
           </div>
         </DialogContent>
       </Dialog>
-    </div>
+      </StandardSection>
+    </StandardPageLayout>
   );
 }

@@ -23,7 +23,7 @@ export interface VectorDatabaseConfig {
   namespace?: string;
   ssl?: boolean;
   timeout?: number;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 export interface Collection {
@@ -71,7 +71,7 @@ export interface EmbeddingModelConfig {
   apiVersion?: string;
   timeout?: number;
   batchSize?: number;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 export interface CloudBucket {
@@ -164,7 +164,7 @@ export interface ProcessingLog {
   timestamp: Date;
   level: 'info' | 'warning' | 'error' | 'debug';
   message: string;
-  details?: any;
+  details?: Record<string, unknown>;
   documentName?: string;
   stepName?: string;
 }
@@ -190,7 +190,7 @@ export interface RAGToolConfig {
   useReranking: boolean;
   rerankingModel?: string;
   enableFiltering: boolean;
-  filters?: any;
+  filters?: Record<string, unknown>;
   llmModel?: string;
   temperature?: number;
   maxTokens?: number;
@@ -208,7 +208,7 @@ export interface RAGToolUsage {
 export interface SearchQuery {
   query: string;
   collections?: string[];
-  filters?: any;
+  filters?: Record<string, unknown>;
   limit?: number;
   similarityThreshold?: number;
   searchMethod?: 'semantic' | 'hybrid' | 'keyword';
@@ -220,7 +220,7 @@ export interface SearchResult {
   id: string;
   content: string;
   similarity: number;
-  metadata: any;
+  metadata: Record<string, unknown>;
   source: {
     documentId: string;
     documentName: string;
@@ -237,7 +237,7 @@ export interface DocumentUpload {
     description?: string;
     tags?: string[];
     category?: string;
-    [key: string]: any;
+    [key: string]: unknown;
   };
 }
 
@@ -274,7 +274,7 @@ export interface ProcessingStep {
   type: 'extraction' | 'transformation' | 'validation' | 'enrichment';
   enabled: boolean;
   order: number;
-  configuration: any;
+  configuration: Record<string, unknown>;
 }
 
 export interface PreprocessingRule {
@@ -282,7 +282,7 @@ export interface PreprocessingRule {
   name: string;
   condition: string; // JavaScript expression
   action: 'skip' | 'transform' | 'flag' | 'separate';
-  parameters: any;
+  parameters: Record<string, unknown>;
 }
 
 export interface RAGMetrics {
@@ -299,7 +299,7 @@ export interface ActivityMetric {
   timestamp: Date;
   action: 'upload' | 'query' | 'index' | 'delete';
   count: number;
-  details?: any;
+  details?: Record<string, unknown>;
 }
 
 // Form types for the UI
@@ -333,7 +333,7 @@ export interface CloudBucketFormData {
     region?: string;
     bucketName?: string;
     endpoint?: string;
-    [key: string]: any;
+    [key: string]: unknown;
   };
 }
 

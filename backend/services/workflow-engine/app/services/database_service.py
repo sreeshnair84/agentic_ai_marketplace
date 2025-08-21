@@ -85,7 +85,7 @@ class DatabaseService:
             result = await session.execute(query)
             workflows = result.scalars().all()
             
-            return [WorkflowSummary.from_orm(workflow) for workflow in workflows]
+            return [WorkflowSummary.model_validate(workflow) for workflow in workflows]
     
     async def get_workflow(self, workflow_id: str) -> Optional[WorkflowDefinitionResponse]:
         """Get workflow definition by ID"""
@@ -95,7 +95,7 @@ class DatabaseService:
             result = await session.execute(query)
             workflow = result.scalar_one_or_none()
             
-            return WorkflowDefinitionResponse.from_orm(workflow) if workflow else None
+            return WorkflowDefinitionResponse.model_validate(workflow) if workflow else None
     
     async def get_workflow_by_name(self, name: str) -> Optional[WorkflowDefinitionResponse]:
         """Get workflow definition by name"""
@@ -105,7 +105,7 @@ class DatabaseService:
             result = await session.execute(query)
             workflow = result.scalar_one_or_none()
             
-            return WorkflowDefinitionResponse.from_orm(workflow) if workflow else None
+            return WorkflowDefinitionResponse.model_validate(workflow) if workflow else None
     
     # Workflow Execution methods
     async def get_executions(
@@ -140,7 +140,7 @@ class DatabaseService:
             result = await session.execute(query)
             executions = result.scalars().all()
             
-            return [ExecutionSummary.from_orm(execution) for execution in executions]
+            return [ExecutionSummary.model_validate(execution) for execution in executions]
     
     async def get_execution(self, execution_id: str) -> Optional[WorkflowExecutionResponse]:
         """Get workflow execution by ID"""
@@ -150,7 +150,7 @@ class DatabaseService:
             result = await session.execute(query)
             execution = result.scalar_one_or_none()
             
-            return WorkflowExecutionResponse.from_orm(execution) if execution else None
+            return WorkflowExecutionResponse.model_validate(execution) if execution else None
     
     # Workflow Template methods
     async def get_templates(
@@ -185,7 +185,7 @@ class DatabaseService:
             result = await session.execute(query)
             templates = result.scalars().all()
             
-            return [WorkflowTemplateResponse.from_orm(template) for template in templates]
+            return [WorkflowTemplateResponse.model_validate(template) for template in templates]
     
     async def get_template(self, template_id: str) -> Optional[WorkflowTemplateResponse]:
         """Get workflow template by ID"""
@@ -195,7 +195,7 @@ class DatabaseService:
             result = await session.execute(query)
             template = result.scalar_one_or_none()
             
-            return WorkflowTemplateResponse.from_orm(template) if template else None
+            return WorkflowTemplateResponse.model_validate(template) if template else None
     
     # Workflow Schedule methods
     async def get_schedules(
@@ -230,7 +230,7 @@ class DatabaseService:
             result = await session.execute(query)
             schedules = result.scalars().all()
             
-            return [WorkflowScheduleResponse.from_orm(schedule) for schedule in schedules]
+            return [WorkflowScheduleResponse.model_validate(schedule) for schedule in schedules]
     
     async def get_schedule(self, schedule_id: str) -> Optional[WorkflowScheduleResponse]:
         """Get workflow schedule by ID"""
@@ -240,7 +240,7 @@ class DatabaseService:
             result = await session.execute(query)
             schedule = result.scalar_one_or_none()
             
-            return WorkflowScheduleResponse.from_orm(schedule) if schedule else None
+            return WorkflowScheduleResponse.model_validate(schedule) if schedule else None
 
 # Global database service instance
 _database_service: Optional[DatabaseService] = None

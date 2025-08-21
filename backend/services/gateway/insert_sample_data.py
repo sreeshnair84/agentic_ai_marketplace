@@ -35,19 +35,19 @@ async def insert_sample_data():
         print('✅ Inserted tool instances')
         
         # Sample LLM model
-        await conn.execute("""
-            INSERT INTO llm_models (name, display_name, provider, model_type, api_endpoint, status, capabilities, health_url, dns_name) 
-            VALUES ('gpt-4o', 'GPT-4 Omni', 'OpenAI', 'text-generation', 'https://api.openai.com/v1/chat/completions', 'active', 
-                   '{"max_tokens": 128000, "supports_functions": true}', 'https://status.openai.com/api/v2/status.json', 'api.openai.com')
+        await conn.execute(""" 
+            INSERT INTO llm_models (name, display_name, provider, model_type, endpoint_url, is_active, model_config, health_url, dns_name) 
+            VALUES ('gpt-4o', 'GPT-4 Omni', 'OpenAI', 'text-generation', 'https://api.openai.com/v1/chat/completions', true, 
+                   '{"capabilities": {"max_tokens": 128000, "supports_functions": true}, "pricing_info": {}}', 'https://status.openai.com/api/v2/status.json', 'api.openai.com')
             ON CONFLICT (name) DO NOTHING
         """)
         print('✅ Inserted LLM models')
-        
+
         # Sample embedding model  
-        await conn.execute("""
-            INSERT INTO embedding_models (name, display_name, provider, model_type, api_endpoint, status, capabilities, health_url, dns_name) 
-            VALUES ('text-embedding-3-large', 'OpenAI Text Embedding 3 Large', 'OpenAI', 'embedding', 'https://api.openai.com/v1/embeddings', 'active',
-                   '{"dimensions": 3072, "max_input_tokens": 8191}', 'https://status.openai.com/api/v2/status.json', 'api.openai.com')
+        await conn.execute(""" 
+            INSERT INTO embedding_models (name, display_name, provider, model_type, endpoint_url, is_active, model_config, health_url, dns_name) 
+            VALUES ('text-embedding-3-large', 'OpenAI Text Embedding 3 Large', 'OpenAI', 'embedding', 'https://api.openai.com/v1/embeddings', true,
+                   '{"capabilities": {"dimensions": 3072, "max_input_tokens": 8191}, "pricing_info": {}}', 'https://status.openai.com/api/v2/status.json', 'api.openai.com')
             ON CONFLICT (name) DO NOTHING
         """)
         print('✅ Inserted embedding models')

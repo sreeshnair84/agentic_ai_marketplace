@@ -168,7 +168,7 @@ def test_delete_model(model_id):
 
 def main():
     """Run all tests"""
-    print("=== LLM Models API Test Suite ===")
+    print("=== Models API Test Suite ===")
     
     # Test basic functionality
     success = test_get_models()

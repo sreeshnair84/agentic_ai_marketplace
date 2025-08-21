@@ -1,8 +1,177 @@
-# Frontend UI - Technical Specifications & Requirements
+# Frontend UI - Technical Specifications & Design System
 
 ## Overview
 
-The Enterprise AI Platform frontend is built with Next.js 15.4.0, TypeScript, and modern React patterns. It provides a comprehensive interface for managing AI agents, workflows, and monitoring agent interactions with real-time A2A protocol visualization.
+The Enterprise AI Platform frontend is built with Next.js 15.4.0, TypeScript, and modern React patterns. This document establishes the **mandatory design system and layout standards** that all modules must follow to ensure consistency, maintainability, and excellent user experience.
+
+## Design System Principles
+
+### 1. Consistency First
+- All pages must use the same layout pattern
+- Components must follow established naming conventions
+- UI spacing, typography, and colors must be standardized
+
+### 2. Accessibility & Performance
+- WCAG 2.1 AA compliance is mandatory
+- Components must be keyboard navigable
+- Performance optimizations are built-in to the design system
+
+### 3. Responsive Design
+- Mobile-first approach
+- Consistent breakpoints across all components
+- Flexible layouts that work on all screen sizes
+
+### 4. Maintainability
+- Centralized component library
+- Standardized props and patterns
+- Clear separation of concerns
+
+## MANDATORY Layout Standards
+
+### 1. Page Structure Requirements
+
+All pages MUST follow this exact structure:
+
+```tsx
+'use client';
+
+import { AuthGuard } from '@/components/auth/AuthGuard';
+import { StandardPageLayout, StandardSection, StandardGrid, StandardCard } from '@/components/layout/StandardPageLayout';
+// Other imports...
+
+export default function PageName() {
+  return (
+    <AuthGuard>
+      <StandardPageLayout
+        title="Page Title"
+        description="Page description"
+        actions={<div><!-- Action buttons --></div>}
+      >
+        <StandardSection>
+          <!-- Page content sections -->
+        </StandardSection>
+      </StandardPageLayout>
+    </AuthGuard>
+  );
+}
+```
+
+### 2. Layout Component Standards
+
+#### StandardPageLayout
+**REQUIRED PROPS:**
+- `title`: string - The main page title
+- `description`: string - Page description/subtitle
+- `actions`: ReactNode - Action buttons (optional)
+
+**OPTIONAL PROPS:**
+- `variant`: 'default' | 'narrow' | 'wide' | 'full'
+- `breadcrumbs`: Array<{ label: string; href?: string }>
+
+#### StandardSection
+Used for grouping related content within a page.
+
+**PROPS:**
+- `title`: string (optional) - Section title
+- `description`: string (optional) - Section description
+- `actions`: ReactNode (optional) - Section-specific actions
+- `variant`: 'default' | 'card' | 'bordered'
+
+#### StandardGrid
+Responsive grid system for consistent layouts.
+
+**PROPS:**
+- `cols`: Object - Responsive column configuration
+  ```tsx
+  cols={{ default: 1, sm: 2, md: 3, lg: 4 }}
+  ```
+- `gap`: 'sm' | 'md' | 'lg' | 'xl'
+
+#### StandardCard
+Consistent card component for content containers.
+
+**PROPS:**
+- `title`: string (optional) - Card title
+- `description`: string (optional) - Card description
+- `actions`: ReactNode (optional) - Card actions
+- `variant`: 'default' | 'elevated' | 'outlined' | 'ghost'
+- `padding`: 'sm' | 'md' | 'lg'
+
+### 3. Typography Standards
+
+**MANDATORY CLASSES:**
+- Page titles: `text-display-2`
+- Section titles: `text-heading-1`
+- Card titles: `text-heading-2`
+- Subsection titles: `text-heading-3`
+- Body text: `text-body`
+- Small text: `text-body-sm`
+- Captions: `text-caption`
+
+### 4. Color & Spacing Standards
+
+**STATUS COLORS:**
+- Success: `text-green-600`, `bg-green-50`, `border-green-200`
+- Warning: `text-yellow-600`, `bg-yellow-50`, `border-yellow-200`
+- Error: `text-red-600`, `bg-red-50`, `border-red-200`
+- Info: `text-blue-600`, `bg-blue-50`, `border-blue-200`
+
+**SPACING:**
+- Section spacing: `space-y-6`
+- Card padding: `p-6`
+- Grid gaps: `gap-6`
+- Button spacing: `space-x-3`
+
+### 5. Component Patterns
+
+#### Search & Filters Pattern
+```tsx
+<StandardSection>
+  <div className="flex flex-col sm:flex-row gap-4">
+    <div className="relative flex-1">
+      <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+      <Input
+        placeholder="Search..."
+        value={searchTerm}
+        onChange={(e) => setSearchTerm(e.target.value)}
+        className="pl-10"
+      />
+    </div>
+    <!-- Filter components -->
+  </div>
+</StandardSection>
+```
+
+#### Stats Cards Pattern
+```tsx
+<StandardSection>
+  <StandardGrid cols={{ default: 1, sm: 2, lg: 4 }} gap="md">
+    <StandardCard>
+      <div className="pb-2">
+        <div className="text-3xl font-bold text-blue-600">
+          {statValue}
+        </div>
+        <p className="text-body-sm text-gray-600 dark:text-gray-400">
+          Stat Label
+        </p>
+      </div>
+    </StandardCard>
+  </StandardGrid>
+</StandardSection>
+```
+
+#### Data Grid Pattern
+```tsx
+<StandardSection>
+  <StandardGrid cols={{ default: 1, md: 2, lg: 3 }} gap="md">
+    {items.map((item) => (
+      <StandardCard key={item.id}>
+        <!-- Card content -->
+      </StandardCard>
+    ))}
+  </StandardGrid>
+</StandardSection>
+```
 
 ## Technology Stack
 

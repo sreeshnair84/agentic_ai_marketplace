@@ -76,7 +76,7 @@ class DatabaseService:
             result = await session.execute(query)
             templates = result.scalars().all()
             
-            return [ToolTemplateResponse.from_orm(template) for template in templates]
+            return [ToolTemplateResponse.model_validate(template) for template in templates]
     
     async def get_tool_template(self, template_id: str) -> Optional[ToolTemplateResponse]:
         """Get tool template by ID"""
@@ -88,7 +88,7 @@ class DatabaseService:
             result = await session.execute(query)
             template = result.scalar_one_or_none()
             
-            return ToolTemplateResponse.from_orm(template) if template else None
+            return ToolTemplateResponse.model_validate(template) if template else None
     
     # Tool Instance methods
     async def get_tool_instances(
@@ -118,7 +118,7 @@ class DatabaseService:
             result = await session.execute(query)
             instances = result.scalars().all()
             
-            return [ToolInstanceResponse.from_orm(instance) for instance in instances]
+            return [ToolInstanceResponse.model_validate(instance) for instance in instances]
     
     async def get_tool_instance(self, instance_id: str) -> Optional[ToolInstanceResponse]:
         """Get tool instance by ID"""
@@ -130,7 +130,7 @@ class DatabaseService:
             result = await session.execute(query)
             instance = result.scalar_one_or_none()
             
-            return ToolInstanceResponse.from_orm(instance) if instance else None
+            return ToolInstanceResponse.model_validate(instance) if instance else None
     
     # LLM Model methods
     async def get_llm_models(
@@ -160,7 +160,7 @@ class DatabaseService:
             result = await session.execute(query)
             models = result.scalars().all()
             
-            return [LLMModelResponse.from_orm(model) for model in models]
+            return [LLMModelResponse.model_validate(model) for model in models]
     
     # Embedding Model methods
     async def get_embedding_models(
@@ -190,7 +190,7 @@ class DatabaseService:
             result = await session.execute(query)
             models = result.scalars().all()
             
-            return [EmbeddingModelResponse.from_orm(model) for model in models]
+            return [EmbeddingModelResponse.model_validate(model) for model in models]
 
 # Global database service instance
 _database_service: Optional[DatabaseService] = None

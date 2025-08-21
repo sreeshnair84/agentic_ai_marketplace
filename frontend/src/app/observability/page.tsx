@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { StandardPageLayout, StandardSection } from '@/components/layout/StandardPageLayout';
 import { 
   Activity, 
   Eye, 
@@ -284,43 +285,34 @@ export default function ObservabilityPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <div className="container mx-auto px-4 py-8">
-        {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-                Observability Dashboard
-              </h1>
-              <p className="text-gray-600 dark:text-gray-300">
-                Monitor A2A communications, agent performance, and system traces
-              </p>
-            </div>
-            <div className="flex items-center space-x-3">
-              <Button
-                variant="outline"
-                onClick={() => setIsRealTimeEnabled(!isRealTimeEnabled)}
-              >
-                {isRealTimeEnabled ? (
-                  <PauseCircle className="mr-2 h-4 w-4" />
-                ) : (
-                  <PlayCircle className="mr-2 h-4 w-4" />
-                )}
-                {isRealTimeEnabled ? 'Pause' : 'Resume'} Real-time
-              </Button>
-              <Button variant="outline">
-                <Download className="mr-2 h-4 w-4" />
-                Export
-              </Button>
-              <Button variant="outline">
-                <Settings className="mr-2 h-4 w-4" />
-                Settings
-              </Button>
-            </div>
-          </div>
+    <StandardPageLayout
+      title="Observability Dashboard"
+      description="Monitor A2A communications, agent performance, and system traces"
+      actions={
+        <div className="flex items-center space-x-3">
+          <Button
+            variant="outline"
+            onClick={() => setIsRealTimeEnabled(!isRealTimeEnabled)}
+          >
+            {isRealTimeEnabled ? (
+              <PauseCircle className="mr-2 h-4 w-4" />
+            ) : (
+              <PlayCircle className="mr-2 h-4 w-4" />
+            )}
+            {isRealTimeEnabled ? 'Pause' : 'Resume'} Real-time
+          </Button>
+          <Button variant="outline">
+            <Download className="mr-2 h-4 w-4" />
+            Export
+          </Button>
+          <Button variant="outline">
+            <Settings className="mr-2 h-4 w-4" />
+            Settings
+          </Button>
         </div>
-
+      }
+    >
+      <StandardSection>
         {/* System Overview */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           <Card>
@@ -582,7 +574,7 @@ export default function ObservabilityPage() {
             </CardContent>
           </Card>
         </div>
-      </div>
-    </div>
+      </StandardSection>
+    </StandardPageLayout>
   );
 }

@@ -68,6 +68,7 @@ class ToolCategory(str, Enum):
     LLM = "llm"
     RAG = "rag"
     WORKFLOW = "workflow"
+    COMMUNICATION = "Communication"
 
 class FieldType(str, Enum):
     TEXT = "text"

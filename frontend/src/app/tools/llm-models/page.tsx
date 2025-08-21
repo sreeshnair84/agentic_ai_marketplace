@@ -20,7 +20,7 @@ import {
   Clock,
   X
 } from 'lucide-react';
-import LLMModelForm from '../LLMModelForm';
+import LLMModelForm from '../components/LLMModelForm';
 import { useLLMModels, LLMModel, CreateLLMModelData } from '@/hooks/useLLMModels';
 
 export default function LLMModelsManagement() {
@@ -158,10 +158,10 @@ export default function LLMModelsManagement() {
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-            LLM Models Management
+            Models Management
           </h1>
           <p className="text-gray-600 dark:text-gray-400">
-            Manage and configure language models for your applications
+            Manage and configure language models/Embedding Model for your applications
           </p>
         </div>
         <div className="flex space-x-3">

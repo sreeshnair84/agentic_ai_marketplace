@@ -59,50 +59,49 @@ async def load_rag_configuration():
     
     try:
         async with async_session_maker() as session:
-            # Load LLM models
+            # Load LLM models (text-generation types)
             result = await session.execute(text("""
-                SELECT name, display_name, provider, endpoint_url, model_config, cost_per_token
+                SELECT name, display_name, provider, endpoint_url, model_config, pricing_info
                 FROM llm_models 
-                WHERE is_active = true
+                WHERE is_active = true AND model_type = 'text-generation'
             """))
-            llm_models_cache = {row[0]: {
-                'name': row[0],
-                'display_name': row[1],
-                'provider': row[2],
-                'api_endpoint': row[3],
-                'capabilities': row[4] or {},
-                'pricing_info': row[5]
-            } for row in result}
-            
+            llm_models_cache = {}
+            for row in result:
+                mconf = row[4] or {}
+                capabilities = mconf.get('capabilities', {}) if isinstance(mconf, dict) else {}
+                llm_models_cache[row[0]] = {
+                    'name': row[0],
+                    'display_name': row[1],
+                    'provider': row[2],
+                    'api_endpoint': row[3],
+                    'capabilities': capabilities,
+                    'pricing_info': row[5]
+                }
+
             # Load embedding models
             result = await session.execute(text("""
-                SELECT name, display_name, provider, endpoint_url, model_config, cost_per_token
+                SELECT name, display_name, provider, endpoint_url, model_config, pricing_info
                 FROM embedding_models 
-                WHERE is_active = true
+                WHERE is_active = true AND model_type = 'embedding'
             """))
-            embedding_models_cache = {row[0]: {
-                'name': row[0],
-                'display_name': row[1],
-                'provider': row[2],
-                'api_endpoint': row[3],
-                'capabilities': row[4] or {},
-                'pricing_info': row[5]
-            } for row in result}
-            embedding_models_cache = {row[0]: {
-                'name': row[0],
-                'display_name': row[1],
-                'provider': row[2],
-                'api_endpoint': row[3],
-                'capabilities': row[4],
-                'pricing_info': row[5]
-            } for row in result}
+            embedding_models_cache = {}
+            for row in result:
+                mconf = row[4] or {}
+                capabilities = mconf.get('capabilities', {}) if isinstance(mconf, dict) else {}
+                embedding_models_cache[row[0]] = {
+                    'name': row[0],
+                    'display_name': row[1],
+                    'provider': row[2],
+                    'api_endpoint': row[3],
+                    'capabilities': capabilities,
+                    'pricing_info': row[5]
+                }
             
             # Load RAG tool instances (could be vector store configs, API keys, etc.)
             result = await session.execute(text("""
-                SELECT ti.name, ti.display_name, tt.name as template_name, ti.configuration
-                FROM tool_instances ti
-                JOIN tool_templates tt ON ti.tool_template_id = tt.id
-                WHERE ti.status = 'active' AND (tt.name LIKE '%rag%' OR tt.name LIKE '%embedding%' OR tt.name LIKE '%vector%')
+                SELECT name, display_name, template_name, configuration
+                FROM tool_instances 
+                WHERE status = 'active' AND (template_name LIKE '%rag%' OR template_name LIKE '%embedding%' OR template_name LIKE '%vector%')
             """))
             rag_tool_instances_cache = {row[0]: {
                 'name': row[0],
@@ -136,7 +135,6 @@ async def load_rag_configuration():
                 'pricing_info': {}
             }
         }
-
 async def get_embedding_from_model(text: str, model_name: str = 'text-embedding-3-small') -> List[float]:
     """Get embedding for text using specified model"""
     if model_name not in embedding_models_cache:

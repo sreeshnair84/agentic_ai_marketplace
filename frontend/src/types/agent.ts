@@ -31,7 +31,7 @@ export interface AgentConfig {
   streaming: boolean;
   timeout: number;
   retryAttempts: number;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 export interface AgentTemplate {
@@ -54,15 +54,15 @@ export interface AgentTemplate {
 export interface AgentExecution {
   id: string;
   agentId: string;
-  input: any;
-  output?: any;
+  input: Record<string, unknown>;
+  output?: Record<string, unknown>;
   status: ExecutionStatus;
   startTime: Date;
   endTime?: Date;
   duration?: number;
   traceId: string;
   error?: string;
-  metadata: Record<string, any>;
+  metadata: Record<string, unknown>;
 }
 
 export interface AgentMetrics {
@@ -92,7 +92,7 @@ export interface SkillParameter {
   type: 'string' | 'number' | 'boolean' | 'array' | 'object';
   required: boolean;
   description: string;
-  default?: any;
+  default?: unknown;
   enum?: string[];
   validation?: string;
 }
