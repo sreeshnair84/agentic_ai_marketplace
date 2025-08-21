@@ -117,10 +117,11 @@ class RAGConfig:
     async def _load_vector_store_config(self, async_session: AsyncSession) -> None:
         """Load vector store configuration from tool instances"""
         query = text("""
-            SELECT ti.name, ti.display_name, ti.template_name, ti.configuration
+            SELECT ti.name, ti.display_name, tt.name as template_name, ti.configuration
             FROM tool_instances ti 
+            JOIN tool_templates tt ON ti.tool_template_id = tt.id
             WHERE ti.status = 'active' 
-            AND (ti.template_name LIKE '%vector%' OR ti.template_name LIKE '%pgvector%' OR ti.template_name LIKE '%rag%')
+            AND (tt.name LIKE '%vector%' OR tt.name LIKE '%pgvector%' OR tt.name LIKE '%rag%')
             ORDER BY ti.created_at DESC
             LIMIT 1
         """)

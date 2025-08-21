@@ -82,7 +82,7 @@ async def load_rag_configuration():
             result = await session.execute(text("""
                 SELECT name, display_name, provider, endpoint_url, model_config, pricing_info
                 FROM embedding_models 
-                WHERE is_active = true AND model_type = 'embedding'
+                WHERE is_active = true
             """))
             embedding_models_cache = {}
             for row in result:
@@ -99,9 +99,10 @@ async def load_rag_configuration():
             
             # Load RAG tool instances (could be vector store configs, API keys, etc.)
             result = await session.execute(text("""
-                SELECT name, display_name, template_name, configuration
-                FROM tool_instances 
-                WHERE status = 'active' AND (template_name LIKE '%rag%' OR template_name LIKE '%embedding%' OR template_name LIKE '%vector%')
+                SELECT ti.name, ti.display_name, tt.name as template_name, ti.configuration
+                FROM tool_instances ti
+                JOIN tool_templates tt ON ti.tool_template_id = tt.id
+                WHERE ti.status = 'active' AND (tt.name LIKE '%rag%' OR tt.name LIKE '%embedding%' OR tt.name LIKE '%vector%')
             """))
             rag_tool_instances_cache = {row[0]: {
                 'name': row[0],
