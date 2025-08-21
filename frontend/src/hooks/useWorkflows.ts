@@ -4,9 +4,9 @@ export interface WorkflowData {
   id: string;
   name: string;
   description: string;
-  status: 'active' | 'paused' | 'draft' | 'error' | 'completed';
+  status: 'active' | 'running' | 'inactive' | 'paused' | 'draft' | 'error' | 'completed';
   category: 'automation' | 'data-processing' | 'ai-pipeline' | 'integration' | 'monitoring';
-  complexity: 'simple' | 'medium' | 'complex';
+  complexity: 'simple' | 'moderate' | 'complex';
   execution: {
     totalRuns: number;
     successfulRuns: number;
@@ -81,7 +81,39 @@ export function useWorkflows() {
         throw new Error(`Failed to fetch workflows: ${response.statusText}`);
       }
       const data = await response.json();
-      setWorkflows(Array.isArray(data) ? data : []);
+      console.log('Raw workflow API response:', data);
+      
+      // Transform backend data to frontend format
+      const workflows = data.workflows || [];
+      const transformedWorkflows = workflows.map((w: any) => ({
+        id: w.name || w.id,
+        name: w.display_name || w.name,
+        description: w.description,
+        status: w.status,
+        category: w.category,
+        complexity: 'simple', // Default since backend doesn't have this
+        execution: {
+          totalRuns: w.execution_count || 0,
+          successfulRuns: w.success_rate ? Math.round((w.execution_count || 0) * (w.success_rate / 100)) : 0,
+          failedRuns: w.execution_count ? (w.execution_count - (w.success_rate ? Math.round((w.execution_count || 0) * (w.success_rate / 100)) : 0)) : 0,
+          lastRun: null,
+          nextScheduled: null,
+          avgDuration: 120 // Default
+        },
+        agents: [], // Default empty array
+        tools: [], // Default empty array
+        owner: 'system',
+        tags: w.tags || [],
+        schedule: {
+          type: 'manual' as const,
+          triggers: []
+        },
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      }));
+      
+      console.log('Transformed workflows:', transformedWorkflows);
+      setWorkflows(transformedWorkflows);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch workflows');
       setWorkflows([]);
@@ -299,7 +331,7 @@ export function useWorkflowAnalytics() {
     },
     complexityBreakdown: {
       simple: workflows.filter(w => w.complexity === 'simple').length,
-      medium: workflows.filter(w => w.complexity === 'medium').length,
+      moderate: workflows.filter(w => w.complexity === 'moderate').length,
       complex: workflows.filter(w => w.complexity === 'complex').length,
     },
     executionStats: {

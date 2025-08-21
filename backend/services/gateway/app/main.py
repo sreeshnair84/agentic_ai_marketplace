@@ -23,6 +23,7 @@ from .api.sample_queries import router as sample_queries_router
 from .api.agents import router as agents_router
 from .api.tools import router as tools_router
 from .api.workflows import router as workflows_router
+from .api.rag import router as rag_router
 from .api.mcp_registry import router as mcp_registry_router
 from .api.mcp_gateway import router as mcp_gateway_router
 
@@ -141,6 +142,17 @@ def create_application() -> FastAPI:
         workflows_router, 
         prefix="/api", 
         tags=["workflows-legacy"]
+    )
+    app.include_router(
+        rag_router, 
+        prefix=f"{settings.API_V1_STR}", 
+        tags=["rag"]
+    )
+    # Also mount RAG router under /api/rag for frontend compatibility
+    app.include_router(
+        rag_router, 
+        prefix="/api", 
+        tags=["rag-legacy"]
     )
     app.include_router(
         mcp_registry_router, 

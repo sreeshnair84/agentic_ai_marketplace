@@ -417,6 +417,65 @@ async def register_mcp_tool(
         raise HTTPException(status_code=500, detail=f"Failed to register MCP tool: {str(e)}")
 
 
+@router.get("/tools", response_model=List[MCPToolResponse])
+async def list_tools_compatibility(
+    server_id: Optional[str] = Query(None, description="Server ID to filter tools"),
+    is_available: Optional[bool] = None,
+    db: AsyncSession = Depends(get_database)
+):
+    """List MCP tools with optional server_id filter (compatibility endpoint)"""
+    try:
+        query = """
+            SELECT id, server_id, tool_name, display_name, description, input_schema,
+                   output_schema, tool_config, capabilities, version, is_available,
+                   usage_count, success_rate, avg_execution_time, tags,
+                   created_at, updated_at, last_discovered
+            FROM mcp_tools_registry
+            WHERE 1=1
+        """
+        params = {}
+        
+        if server_id:
+            query += " AND server_id = :server_id"
+            params['server_id'] = server_id
+        
+        if is_available is not None:
+            query += " AND is_available = :is_available"
+            params['is_available'] = is_available
+            
+        query += " ORDER BY tool_name"
+        
+        result = await db.execute(text(query), params)
+        tools = result.fetchall()
+        
+        return [
+            MCPToolResponse(
+                id=str(tool.id),
+                server_id=str(tool.server_id),
+                tool_name=tool.tool_name,
+                display_name=tool.display_name,
+                description=tool.description,
+                input_schema=tool.input_schema or {},
+                output_schema=tool.output_schema or {},
+                tool_config=tool.tool_config or {},
+                capabilities=tool.capabilities or [],
+                version=tool.version,
+                is_available=tool.is_available,
+                usage_count=tool.usage_count,
+                success_rate=float(tool.success_rate) if tool.success_rate else 0.0,
+                avg_execution_time=tool.avg_execution_time,
+                tags=tool.tags or [],
+                created_at=tool.created_at,
+                updated_at=tool.updated_at,
+                last_discovered=tool.last_discovered
+            )
+            for tool in tools
+        ]
+    except Exception as e:
+        logger.error(f"Error listing MCP tools: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to list MCP tools: {str(e)}")
+
+
 @router.post("/servers/{server_id}/discover-tools")
 async def discover_mcp_tools(
     server_id: str,
