@@ -6,7 +6,7 @@ from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, text
 from typing import List, Optional, Dict, Any
-from ..core.database import get_database
+from ...core.database import get_database
 import json
 import logging
 

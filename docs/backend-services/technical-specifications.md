@@ -40,7 +40,7 @@ httpx
 
 ### Environment Variables
 ```bash
-DATABASE_URL=postgresql+asyncpg://lcnc_user:lcnc_password@postgres:5432/lcnc_platform
+DATABASE_URL=postgresql+asyncpg://agenticai_user:agenticai_password@postgres:5432/agenticai_platform
 REDIS_URL=redis://redis:6379/0
 JWT_SECRET_KEY=your-secret-key-here
 CORS_ORIGINS_STR=http://localhost:3000,*

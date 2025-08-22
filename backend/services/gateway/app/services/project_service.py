@@ -1,3 +1,12 @@
+from tenacity import retry, stop_after_attempt, wait_fixed, retry_if_exception_type
+
+def db_async_retry():
+    return retry(
+        reraise=True,
+        stop=stop_after_attempt(3),
+        wait=wait_fixed(1),
+        retry=retry_if_exception_type(Exception)
+    )
 """
 Project service layer for CRUD operations
 """
@@ -12,9 +21,13 @@ from ..models.project import ProjectCreate, ProjectUpdate
 
 
 class ProjectService:
+    @staticmethod
+    def db_async_retry():
+        return db_async_retry()
     """Service class for project operations"""
     
     @staticmethod
+    @db_async_retry()
     async def get_projects(db: AsyncSession, skip: int = 0, limit: int = 100) -> List[Project]:
         """Get all projects"""
         query = select(Project).offset(skip).limit(limit)
@@ -22,6 +35,7 @@ class ProjectService:
         return result.scalars().all()
     
     @staticmethod
+    @db_async_retry()
     async def get_project(db: AsyncSession, project_id: str) -> Optional[Project]:
         """Get project by ID"""
         query = select(Project).where(Project.id == project_id)
@@ -29,6 +43,7 @@ class ProjectService:
         return result.scalar_one_or_none()
     
     @staticmethod
+    @db_async_retry()
     async def get_default_project(db: AsyncSession) -> Optional[Project]:
         """Get the default project"""
         query = select(Project).where(Project.is_default == True)
@@ -36,6 +51,7 @@ class ProjectService:
         return result.scalar_one_or_none()
     
     @staticmethod
+    @db_async_retry()
     async def create_project(db: AsyncSession, project: ProjectCreate, created_by: Optional[str] = None) -> Project:
         """Create a new project"""
         db_project = Project(
@@ -51,6 +67,7 @@ class ProjectService:
         return db_project
     
     @staticmethod
+    @db_async_retry()
     async def update_project(db: AsyncSession, project_id: str, project: ProjectUpdate, updated_by: Optional[str] = None) -> Optional[Project]:
         """Update an existing project"""
         query = select(Project).where(Project.id == project_id)
@@ -76,6 +93,7 @@ class ProjectService:
         return db_project
     
     @staticmethod
+    @db_async_retry()
     async def delete_project(db: AsyncSession, project_id: str) -> bool:
         """Delete a project"""
         query = select(Project).where(Project.id == project_id)

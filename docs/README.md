@@ -34,7 +34,7 @@ This documentation is organized into four main categories:
 ```bash
 # Clone the repository
 git clone <repository-url>
-cd lcnc-multiagent-platform
+cd agenticai-multiagent-platform
 
 # Start all services
 docker-compose up -d
@@ -172,12 +172,12 @@ pnpm build
 
 ### Development Environment
 - **Admin User**: 
-  - Email: `admin@lcnc.local`
+  - Email: `admin@agenticai.local`
   - Password: `admin123`
 - **Database**: 
-  - User: `lcnc_user`
-  - Password: `lcnc_password`
-  - Database: `lcnc_platform`
+  - User: `agenticai_user`
+  - Password: `agenticai_password`
+  - Database: `agenticai_platform`
 
 > ⚠️ **Security Warning**: Change all default credentials in production environments!
 

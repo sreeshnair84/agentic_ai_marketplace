@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { mockA2AService } from '@/services/mockA2AService';
+import { a2aService, A2AAgent } from '@/services/a2aService';
 import { SelectedContext, WorkflowMetadata, AgentMetadata, ToolMetadata } from '@/components/chat/MetadataSelector';
 
 // A2A Message Types
@@ -143,7 +144,7 @@ export interface RoutingInfo {
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 const AGENTS_BASE = process.env.NEXT_PUBLIC_AGENTS_URL || 'http://localhost:8002';
 const ORCHESTRATOR_BASE = process.env.NEXT_PUBLIC_ORCHESTRATOR_URL || 'http://localhost:8003';
-const USE_MOCK_SERVICE = process.env.NODE_ENV === 'development' || true; // Enable mock service for now
+const USE_MOCK_SERVICE = process.env.NODE_ENV === 'development' && process.env.NEXT_PUBLIC_USE_MOCK_A2A === 'true';
 
 export function useA2AChatEnhanced() {
   const [sessions, setSessions] = useState<ChatSession[]>([]);
@@ -158,9 +159,46 @@ export function useA2AChatEnhanced() {
   const [error, setError] = useState<string | null>(null);
   const [agentCommunications, setAgentCommunications] = useState<AgentCommunication[]>([]);
   
+  // A2A specific state
+  const [availableAgents, setAvailableAgents] = useState<A2AAgent[]>([]);
+  const [selectedAgent, setSelectedAgent] = useState<A2AAgent | null>(null);
+  const [a2aBackendAvailable, setA2aBackendAvailable] = useState(false);
+  
   // WebSocket connection for real-time updates
   const wsRef = useRef<WebSocket | null>(null);
   const eventSourceRef = useRef<EventSource | null>(null);
+
+  // Initialize A2A backend connection and fetch agents
+  const initializeA2A = useCallback(async () => {
+    try {
+      // Check if A2A backend is available
+      const isAvailable = await a2aService.isAvailable();
+      setA2aBackendAvailable(isAvailable);
+
+      if (isAvailable) {
+        // Fetch available agents
+        const agentsResponse = await a2aService.listAgents();
+        if (agentsResponse.success) {
+          setAvailableAgents(agentsResponse.agents);
+          
+          // Set default agent if available
+          if (agentsResponse.agents.length > 0 && !selectedAgent) {
+            const defaultAgent = agentsResponse.agents.find(a => a.id === 'general_assistant') 
+              || agentsResponse.agents[0];
+            setSelectedAgent(defaultAgent);
+          }
+        }
+      }
+    } catch (error) {
+      console.warn('A2A initialization failed:', error);
+      setA2aBackendAvailable(false);
+    }
+  }, [selectedAgent]);
+
+  // Use effect to initialize A2A on mount
+  useEffect(() => {
+    initializeA2A();
+  }, [initializeA2A]);
 
   // Create new chat session with context
   const createSession = useCallback(async (name: string, context?: SelectedContext): Promise<ChatSession> => {
@@ -381,8 +419,8 @@ export function useA2AChatEnhanced() {
         chunks: []
       });
 
-      if (USE_MOCK_SERVICE) {
-        // Use mock service for development with context
+      if (USE_MOCK_SERVICE || !a2aBackendAvailable) {
+        // Use mock service for development with context or when A2A backend is not available
         const messageText = rpcRequest.params.message.parts[0]?.text || '';
         
         for await (const chunk of mockA2AService.generateMockA2AResponse(
@@ -393,68 +431,64 @@ export function useA2AChatEnhanced() {
           await processStreamChunk(chunk, null, '', context);
         }
       } else {
-        // Use real A2A service with context-aware routing
-        const response = await fetch(targetUrl, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            // Add context headers for routing
-            'X-A2A-Context-Type': context.type || 'default',
-            'X-A2A-Context-ID': context.workflow?.id || context.agent?.id || 'default'
-          },
-          body: JSON.stringify(rpcRequest)
-        });
+        // Use real A2A service
+        const chatRequest = {
+          message: rpcRequest.params.message.parts[0]?.text || '',
+          agent_id: selectedAgent?.id,
+          session_id: currentSession.id,
+          conversation_history: currentSession.messages
+            .filter(m => m.type !== 'system' && m.type !== 'inter_agent')
+            .slice(-10) // Keep last 10 messages for context
+            .map(m => ({
+              role: m.type === 'user' ? 'user' : 'assistant',
+              content: m.content,
+              timestamp: m.timestamp.toISOString()
+            }))
+        };
 
-        if (!response.ok) {
-          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-        }
-
-        const reader = response.body?.getReader();
-        if (!reader) {
-          throw new Error('No response body');
-        }
-
-        const decoder = new TextDecoder();
-        let buffer = '';
+        // Stream responses from A2A backend
         let currentAgentMessage: ChatMessage | null = null;
         let fullContent = '';
 
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-
-          buffer += decoder.decode(value, { stream: true });
-          const lines = buffer.split('\n');
-          buffer = lines.pop() || '';
-
-          for (const line of lines) {
-            if (line.startsWith('data: ')) {
-              const data = line.slice(6);
-              if (data === '[DONE]') {
-                // Mark message as complete
-                if (currentAgentMessage) {
-                  const completedMessage: ChatMessage = {
-                    ...(currentAgentMessage as ChatMessage),
-                    isComplete: true,
-                    context
-                  };
-                  updateCurrentMessage(completedMessage);
+        try {
+          for await (const chunk of a2aService.streamChatMessage(chatRequest)) {
+            // Map A2A response format to expected chunk format
+            const mappedChunk = {
+              result: {
+                type: 'task_status_update',
+                status: {
+                  type: chunk.final ? 'completed' : 'in_progress',
+                  message: {
+                    parts: [{ text: chunk.message }]
+                  },
+                  result: chunk.final ? {
+                    content: chunk.message,
+                    citations: [],
+                    tool_calls: [],
+                    scratchpad: null
+                  } : null
                 }
-                setStreamingState({
-                  isStreaming: false,
-                  currentMessage: '',
-                  chunks: []
-                });
-                return;
               }
+            };
 
-              try {
-                const chunk = JSON.parse(data);
-                await processStreamChunk(chunk, currentAgentMessage, fullContent, context);
-              } catch (parseError) {
-                console.warn('Failed to parse chunk:', data, parseError);
-              }
+            await processStreamChunk(mappedChunk, currentAgentMessage, fullContent, context);
+            
+            if (chunk.final) {
+              break;
             }
+            
+            fullContent += chunk.message || '';
+          }
+        } catch (streamError) {
+          console.error('A2A streaming error:', streamError);
+          // Fallback to mock service
+          const messageText = rpcRequest.params.message.parts[0]?.text || '';
+          for await (const chunk of mockA2AService.generateMockA2AResponse(
+            messageText, 
+            currentSession.id,
+            context
+          )) {
+            await processStreamChunk(chunk, null, '', context);
           }
         }
       }
@@ -749,6 +783,13 @@ export function useA2AChatEnhanced() {
     
     // Routing
     getRoutingInfo,
+    
+    // A2A Agent management
+    availableAgents,
+    selectedAgent,
+    setSelectedAgent,
+    a2aBackendAvailable,
+    initializeA2A,
     
     // State
     streamingState,

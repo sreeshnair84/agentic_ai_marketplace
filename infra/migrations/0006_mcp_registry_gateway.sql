@@ -393,3 +393,20 @@ SET last_health_check = CURRENT_TIMESTAMP
 WHERE status = 'active';
 
 COMMIT;
+
+ALTER TABLE workflow_definitions                                                                 │
+│   ADD COLUMN IF NOT EXISTS url TEXT,                                                               │
+│   ADD COLUMN IF NOT EXISTS capabilities JSONB DEFAULT '{}',                                        │
+│   ADD COLUMN IF NOT EXISTS default_input_modes TEXT[] DEFAULT ARRAY['text'],                       │
+│   ADD COLUMN IF NOT EXISTS default_output_modes TEXT[] DEFAULT ARRAY['text'];                      │
+│                                                                                                    │
+│   ALTER TABLE agents                                                                               │
+│   ADD COLUMN IF NOT EXISTS default_input_modes TEXT[] DEFAULT ARRAY['text'],                       │
+│   ADD COLUMN IF NOT EXISTS default_output_modes TEXT[] DEFAULT ARRAY['text'];                      │
+│                                                                                                    │
+│   ALTER TABLE tool_templates                                                                       │
+│   ADD COLUMN IF NOT EXISTS capabilities JSONB DEFAULT '{}',                                        │
+│   ADD COLUMN IF NOT EXISTS input_signature JSONB,                                                  │
+│   ADD COLUMN IF NOT EXISTS output_signature JSONB,                                                 │
+│   ADD COLUMN IF NOT EXISTS default_input_modes TEXT[] DEFAULT ARRAY['text'],                       │
+│   ADD COLUMN IF NOT EXISTS default_output_modes TEXT[] DEFAULT ARRAY['text'];  

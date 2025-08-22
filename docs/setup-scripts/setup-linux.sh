@@ -383,12 +383,12 @@ setup_database() {
     # Switch to postgres user and run commands
     sudo -u postgres psql << EOF
 -- Create user and database
-CREATE USER lcnc_user WITH PASSWORD 'lcnc_password';
-CREATE DATABASE lcnc_platform OWNER lcnc_user;
-GRANT ALL PRIVILEGES ON DATABASE lcnc_platform TO lcnc_user;
+CREATE USER agenticai_user WITH PASSWORD 'agenticai_password';
+CREATE DATABASE agenticai_platform OWNER agenticai_user;
+GRANT ALL PRIVILEGES ON DATABASE agenticai_platform TO agenticai_user;
 
 -- Connect to the new database and create extensions
-\c lcnc_platform;
+\c agenticai_platform;
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE EXTENSION IF NOT EXISTS vector;
 \q
@@ -471,8 +471,8 @@ run_database_migrations() {
     if [[ -f "$migration_path" ]]; then
         log_step "Running database migrations..."
         
-        export PGPASSWORD="lcnc_password"
-        psql -h localhost -U lcnc_user -d lcnc_platform -f "$migration_path"
+        export PGPASSWORD="agenticai_password"
+        psql -h localhost -U agenticai_user -d agenticai_platform -f "$migration_path"
         
         log_step "Database migrations completed successfully"
     else
@@ -486,7 +486,7 @@ create_environment_files() {
     # Backend environment file
     cat > .env << 'EOF'
 # Database Configuration
-DATABASE_URL=postgresql+asyncpg://lcnc_user:lcnc_password@localhost:5432/lcnc_platform
+DATABASE_URL=postgresql+asyncpg://agenticai_user:agenticai_password@localhost:5432/agenticai_platform
 
 # Redis Configuration
 REDIS_URL=redis://localhost:6379/0
@@ -634,7 +634,7 @@ echo -e "\033[0;36mBackend API: http://localhost:8000\033[0m"
 echo -e "\033[0;36mAPI Documentation: http://localhost:8000/docs\033[0m"
 echo ""
 echo -e "\033[1;33mDefault Admin Credentials:\033[0m"
-echo "Email: admin@lcnc.local"
+echo "Email: admin@agenticai.local"
 echo "Password: admin123"
 echo ""
 echo -e "\033[1;33mPress Ctrl+C to stop all services\033[0m"
@@ -693,7 +693,7 @@ test_installation() {
     fi
     
     # Test database connection
-    if PGPASSWORD="lcnc_password" psql -h localhost -U lcnc_user -d lcnc_platform -c "SELECT 1;" > /dev/null 2>&1; then
+    if PGPASSWORD="agenticai_password" psql -h localhost -U agenticai_user -d agenticai_platform -c "SELECT 1;" > /dev/null 2>&1; then
         log_step "✓ Database: Connection successful"
     else
         errors+=("Database connection failed")
@@ -730,7 +730,7 @@ show_summary() {
     echo "• Tools:         http://localhost:8005"
     echo ""
     echo -e "${YELLOW}Default Admin Credentials:${NC}"
-    echo "Email: admin@lcnc.local"
+    echo "Email: admin@agenticai.local"
     echo "Password: admin123"
     echo ""
     echo -e "${BLUE}Support:${NC}"

@@ -39,10 +39,13 @@ import {
   AlertCircle,
   HelpCircle,
   Brain,
-  TestTube
+  TestTube,
+  PanelLeftClose,
+  PanelLeftOpen,
+  Sparkles
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import {  NotificationBell } from '@/components/ui/notification-bell';
+import { NotificationBell } from '@/components/ui/notification-bell';
 
 interface NavigationItem {
   id: string;
@@ -62,14 +65,15 @@ interface NavigationSection {
 
 const navigationSections = [
   {
-    id: 'main',
-    label: 'Main',
+    id: 'overview',
+    label: 'Overview',
     items: [
       {
         id: 'dashboard',
         label: 'Dashboard',
         href: '/dashboard',
         icon: LayoutDashboard,
+        description: 'System overview and analytics',
         shortcut: '⌘D'
       },
       {
@@ -77,6 +81,7 @@ const navigationSections = [
         label: 'Projects',
         href: '/projects',
         icon: FolderOpen,
+        description: 'Manage your projects',
         shortcut: '⌘P'
       }
     ]
@@ -87,28 +92,33 @@ const navigationSections = [
     items: [
       {
         id: 'chat',
-        label: 'Chat Interface',
+        label: 'AI Chat',
         href: '/chat',
         icon: MessageSquare,
-        shortcut: '⌘C'
+        description: 'Interactive AI conversations',
+        shortcut: '⌘C',
+        highlight: true
       },
       {
         id: 'agents',
         label: 'Agents',
         href: '/agents',
         icon: Bot,
+        description: 'AI agent management',
         children: [
           {
             id: 'agents-active',
             label: 'Active Agents',
             href: '/agents?status=active',
-            icon: TrendingUp
+            icon: TrendingUp,
+            description: 'Currently running agents'
           },
           {
             id: 'agents-templates',
-            label: 'Agent Templates',
+            label: 'Templates',
             href: '/agents/templates',
-            icon: Star
+            icon: Star,
+            description: 'Pre-built agent templates'
           }
         ]
       },
@@ -116,45 +126,58 @@ const navigationSections = [
         id: 'workflows',
         label: 'Workflows',
         href: '/workflows',
-        icon: Workflow
+        icon: Workflow,
+        description: 'Automated processes'
       },
       {
         id: 'tools',
         label: 'Tools',
         href: '/tools',
         icon: Zap,
+        description: 'Available tools and integrations',
         children: [
           {
             id: 'tools-templates',
-            label: 'Tool Templates',
+            label: 'Templates',
             href: '/templates/tools',
-            icon: Star
+            icon: Star,
+            description: 'Tool templates'
           }
         ]
-      },
+      }
+    ]
+  },
+  {
+    id: 'platform',
+    label: 'Platform',
+    items: [
       {
         id: 'mcp',
-        label: 'MCP Management',
+        label: 'MCP Hub',
         href: '/mcp',
         icon: Command,
+        description: 'Model Context Protocol management',
         children: [
           {
             id: 'mcp-servers',
-            label: 'MCP Servers',
+            label: 'Servers',
             href: '/mcp?tab=servers',
-            icon: Bot
+            icon: Bot,
+            description: 'MCP server instances'
           },
           {
             id: 'mcp-endpoints',
-            label: 'Gateway Endpoints',
+            label: 'Endpoints',
             href: '/mcp?tab=endpoints',
-            icon: Zap
+            icon: Zap,
+            description: 'Gateway endpoints'
           },
           {
             id: 'mcp-tools',
-            label: 'Discovered Tools',
+            label: 'Tools',
             href: '/mcp?tab=tools',
-            icon: Command
+            icon: Command,
+            description: 'Discovered MCP tools'
           },
           {
             id: 'mcp-tester',
@@ -326,6 +349,8 @@ function Sidebar({ isOpen, onClose, isCollapsed, onToggleCollapse }: SidebarProp
 
   // Add badge counts to navigation items
   const getNavigationWithBadges = () => {
+    if (!stats) return navigationSections;
+    
     return navigationSections.map(section => ({
       ...section,
       items: section.items.map(item => {
@@ -371,7 +396,8 @@ function Sidebar({ isOpen, onClose, isCollapsed, onToggleCollapse }: SidebarProp
     );
   };
 
-  const filteredNavigation = getNavigationWithBadges().map(section => ({
+  const navSections = getNavigationWithBadges();
+  const filteredNavigation = (Array.isArray(navSections) ? navSections : []).map(section => ({
     ...section,
     items: section.items.filter(item => 
       item.label.toLowerCase().includes(searchQuery.toLowerCase())
@@ -671,7 +697,7 @@ function Sidebar({ isOpen, onClose, isCollapsed, onToggleCollapse }: SidebarProp
           {activeTab === 'nav' && (
             <nav className="p-4">
               {(searchQuery 
-                ? [{ id: 'search-results', label: 'Search Results', items: filteredNavigation.flatMap(s => s.items) } as NavigationSection] 
+                ? [{ id: 'search-results', label: 'Search Results', items: Array.isArray(filteredNavigation) ? filteredNavigation.flatMap(s => s.items) : [] } as NavigationSection] 
                 : filteredNavigation
               ).map((section) => (
                 <div key={section.id} className="mb-6">
@@ -693,7 +719,7 @@ function Sidebar({ isOpen, onClose, isCollapsed, onToggleCollapse }: SidebarProp
                     <ul className="space-y-1">
                       {section.items.map((item) => (
                         <li key={item.id}>
-                          {item.children && !isCollapsed ? (
+                          {'children' in item && item.children && !isCollapsed ? (
                             // Expandable item
                             <div>
                               <button
@@ -774,7 +800,7 @@ function Sidebar({ isOpen, onClose, isCollapsed, onToggleCollapse }: SidebarProp
                                   </>
                                 )}
                               </div>
-                              {!isCollapsed && item.badge && (
+                               {!isCollapsed && 'badge' in item && item.badge && (
                                 <span className={cn(
                                   "px-2 py-0.5 text-xs rounded-full",
                                   isActive(item.href)
@@ -963,9 +989,7 @@ function TopBar({ onMenuClick, isCollapsed }: TopBarProps) {
     return breadcrumbs;
   };
 
-  // notifications handled by NotificationBell
-
-  const unreadCount = notifications.filter(n => n.unread).length;
+  // notifications handled by NotificationBell component
 
   const getUserInitials = (user: any) => {
     if (user?.firstName && user?.lastName) {
@@ -1070,18 +1094,6 @@ function TopBar({ onMenuClick, isCollapsed }: TopBarProps) {
 
           {/* Notifications */}
           <div className="relative">
-            <button
-              onClick={() => setShowNotifications(!showNotifications)}
-              className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors relative"
-            >
-              <Bell className="h-5 w-5 text-gray-500 dark:text-gray-400" />
-              {unreadCount > 0 && (
-                <span className="absolute -top-0.5 -right-0.5 h-4 w-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
-                  {unreadCount}
-                </span>
-              )}
-            </button>
-
             {user?.id && <NotificationBell userId={user.id} />}
           </div>
 

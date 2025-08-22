@@ -21,7 +21,7 @@ class Notification(Base):
     is_read = Column(Boolean, default=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     read_at = Column(DateTime(timezone=True), nullable=True)
-    metadata = Column(JSON, nullable=True)
+    notification_metadata = Column("metadata", JSON, nullable=True)
 
 
 class Project(Base):

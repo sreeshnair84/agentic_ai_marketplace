@@ -14,20 +14,24 @@ export interface Notification {
 }
 
 export function NotificationBell({ userId }: { userId: string }) {
-  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [notifications, setNotifications] = useState<Notification[] | undefined>([]);
   const [showDropdown, setShowDropdown] = useState(false);
-  const unreadCount = notifications.filter(n => !n.is_read).length;
+  const safeNotifications = Array.isArray(notifications) ? notifications : [];
+  const unreadCount = safeNotifications.filter(n => !n.is_read).length;
 
   useEffect(() => {
     if (!userId) return;
     fetch(`/api/v1/notifications?user_id=${userId}`)
       .then(res => res.json())
-      .then(setNotifications);
+      .then(data => setNotifications(Array.isArray(data) ? data : []));
   }, [userId]);
 
   const markAsRead = async (id: number) => {
     await fetch(`/api/v1/notifications/${id}/read?user_id=${userId}`, { method: 'POST' });
-    setNotifications(notifications => notifications.map(n => n.id === id ? { ...n, is_read: true } : n));
+    setNotifications(notifications => {
+      const safe = Array.isArray(notifications) ? notifications : [];
+      return safe.map(n => n.id === id ? { ...n, is_read: true } : n);
+    });
   };
 
   const clearAll = async () => {
@@ -50,8 +54,8 @@ export function NotificationBell({ userId }: { userId: string }) {
             <button className="text-xs text-blue-600" onClick={clearAll}>Clear All</button>
           </div>
           <ul className="max-h-80 overflow-y-auto">
-            {notifications.length === 0 && <li className="p-4 text-gray-500">No notifications</li>}
-            {notifications.map(n => (
+            {safeNotifications.length === 0 && <li className="p-4 text-gray-500">No notifications</li>}
+            {safeNotifications.map(n => (
               <li key={n.id} className={cn('px-4 py-2 border-b flex flex-col', !n.is_read && 'bg-blue-50')}
                   onClick={() => !n.is_read && markAsRead(n.id)}>
                 <span className="font-medium">{n.message}</span>

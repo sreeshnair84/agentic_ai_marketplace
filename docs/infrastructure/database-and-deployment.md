@@ -384,7 +384,7 @@ services:
     depends_on:
       - gateway
     networks:
-      - lcnc-network
+      - agenticai-network
 
   # API Gateway - FastAPI
   gateway:
@@ -395,14 +395,14 @@ services:
       - "8000:8000"
     environment:
       - ENVIRONMENT=development
-      - DATABASE_URL=postgresql+asyncpg://lcnc_user:lcnc_password@postgres:5432/lcnc_platform
+      - DATABASE_URL=postgresql+asyncpg://agenticai_user:agenticai_password@postgres:5432/agenticai_platform
       - REDIS_URL=redis://redis:6379/0
       - JWT_SECRET_KEY=your-secret-key-here
     depends_on:
       - postgres
       - redis
     networks:
-      - lcnc-network
+      - agenticai-network
 ```
 
 #### Backend Microservices
@@ -416,7 +416,7 @@ services:
       - "8002:8002"
     environment:
       - ENVIRONMENT=development
-      - DATABASE_URL=postgresql+asyncpg://lcnc_user:lcnc_password@postgres:5432/lcnc_platform
+      - DATABASE_URL=postgresql+asyncpg://agenticai_user:agenticai_password@postgres:5432/agenticai_platform
       - REDIS_URL=redis://redis:6379/2
       - A2A_PROTOCOL_ENABLED=true
       - MCP_SERVER_ENABLED=true
@@ -444,9 +444,9 @@ services:
     image: pgvector/pgvector:pg16
     restart: always
     environment:
-      POSTGRES_USER: lcnc_user
-      POSTGRES_PASSWORD: lcnc_password
-      POSTGRES_DB: lcnc_platform
+      POSTGRES_USER: agenticai_user
+      POSTGRES_PASSWORD: agenticai_password
+      POSTGRES_DB: agenticai_platform
       POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=C"
     volumes:
       - postgres_data:/var/lib/postgresql/data
@@ -500,7 +500,7 @@ services:
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: lcnc-platform
+  name: agenticai-platform
 ---
 ```
 
@@ -509,18 +509,18 @@ metadata:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: lcnc-config
-  namespace: lcnc-platform
+  name: agenticai-config
+  namespace: agenticai-platform
 data:
-  DATABASE_URL: "postgresql+asyncpg://lcnc_user:lcnc_password@postgres:5432/lcnc_platform"
+  DATABASE_URL: "postgresql+asyncpg://agenticai_user:agenticai_password@postgres:5432/agenticai_platform"
   REDIS_URL: "redis://redis:6379/0"
   ENVIRONMENT: "production"
 ---
 apiVersion: v1
 kind: Secret
 metadata:
-  name: lcnc-secrets
-  namespace: lcnc-platform
+  name: agenticai-secrets
+  namespace: agenticai-platform
 type: Opaque
 data:
   JWT_SECRET_KEY: <base64-encoded-secret>
@@ -534,7 +534,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: gateway-deployment
-  namespace: lcnc-platform
+  namespace: agenticai-platform
 spec:
   replicas: 3
   selector:
@@ -547,14 +547,14 @@ spec:
     spec:
       containers:
       - name: gateway
-        image: lcnc-platform/gateway:latest
+        image: agenticai-platform/gateway:latest
         ports:
         - containerPort: 8000
         envFrom:
         - configMapRef:
-            name: lcnc-config
+            name: agenticai-config
         - secretRef:
-            name: lcnc-secrets
+            name: agenticai-secrets
         resources:
           requests:
             memory: "256Mi"
@@ -569,8 +569,8 @@ spec:
 ### Main Configuration
 ```hcl
 # infra/terraform/main.tf
-resource "aws_s3_bucket" "lcnc_bucket" {
-  bucket = "lcnc-multiagent-platform-bucket"
+resource "aws_s3_bucket" "agenticai_bucket" {
+  bucket = "agenticai-multiagent-platform-bucket"
   
   tags = {
     Name        = "Agentic AI Acceleration Bucket"
@@ -594,8 +594,8 @@ resource "aws_dynamodb_table" "agents_table" {
   }
 }
 
-resource "aws_ecs_cluster" "lcnc_cluster" {
-  name = "lcnc-platform"
+resource "aws_ecs_cluster" "agenticai_cluster" {
+  name = "agenticai-platform"
 
   setting {
     name  = "containerInsights"
@@ -605,7 +605,7 @@ resource "aws_ecs_cluster" "lcnc_cluster" {
 
 resource "aws_ecs_service" "gateway_service" {
   name            = "gateway"
-  cluster         = aws_ecs_cluster.lcnc_cluster.id
+  cluster         = aws_ecs_cluster.agenticai_cluster.id
   task_definition = aws_ecs_task_definition.gateway.arn
   desired_count   = 3
 
@@ -634,11 +634,11 @@ variable "aws_region" {
 
 # infra/terraform/outputs.tf
 output "bucket_name" {
-  value = aws_s3_bucket.lcnc_bucket.bucket
+  value = aws_s3_bucket.agenticai_bucket.bucket
 }
 
 output "cluster_name" {
-  value = aws_ecs_cluster.lcnc_cluster.name
+  value = aws_ecs_cluster.agenticai_cluster.name
 }
 
 output "gateway_endpoint" {
@@ -659,7 +659,7 @@ rule_files:
   - "rules/*.yml"
 
 scrape_configs:
-  - job_name: 'lcnc-platform'
+  - job_name: 'agenticai-platform'
     static_configs:
       - targets: ['gateway:8000', 'agents:8002', 'orchestrator:8003']
     metrics_path: '/metrics'
@@ -691,7 +691,7 @@ alerting:
         "type": "stat",
         "targets": [
           {
-            "expr": "up{job=\"lcnc-platform\"}",
+            "expr": "up{job=\"agenticai-platform\"}",
             "legendFormat": "{{instance}}"
           }
         ]
@@ -716,8 +716,8 @@ alerting:
 ### Network Security
 ```yaml
 # Security groups for AWS
-resource "aws_security_group" "lcnc_platform" {
-  name_prefix = "lcnc-platform"
+resource "aws_security_group" "agenticai_platform" {
+  name_prefix = "agenticai-platform"
   
   ingress {
     from_port   = 80
@@ -747,10 +747,10 @@ resource "aws_security_group" "lcnc_platform" {
 # Nginx configuration for SSL termination
 server {
     listen 443 ssl http2;
-    server_name api.lcnc-platform.com;
+    server_name api.agenticai-platform.com;
     
-    ssl_certificate /etc/ssl/certs/lcnc-platform.crt;
-    ssl_certificate_key /etc/ssl/private/lcnc-platform.key;
+    ssl_certificate /etc/ssl/certs/agenticai-platform.crt;
+    ssl_certificate_key /etc/ssl/private/agenticai-platform.key;
     
     location / {
         proxy_pass http://gateway:8000;
@@ -770,16 +770,16 @@ server {
 # backup-database.sh
 BACKUP_DIR="/backups/postgres"
 DATE=$(date +%Y%m%d_%H%M%S)
-BACKUP_FILE="lcnc_platform_backup_${DATE}.sql"
+BACKUP_FILE="agenticai_platform_backup_${DATE}.sql"
 
 # Create backup
-pg_dump -h postgres -U lcnc_user -d lcnc_platform > "${BACKUP_DIR}/${BACKUP_FILE}"
+pg_dump -h postgres -U agenticai_user -d agenticai_platform > "${BACKUP_DIR}/${BACKUP_FILE}"
 
 # Compress backup
 gzip "${BACKUP_DIR}/${BACKUP_FILE}"
 
 # Upload to S3 (optional)
-aws s3 cp "${BACKUP_DIR}/${BACKUP_FILE}.gz" s3://lcnc-backups/database/
+aws s3 cp "${BACKUP_DIR}/${BACKUP_FILE}.gz" s3://agenticai-backups/database/
 ```
 
 ### Disaster Recovery Plan
@@ -819,7 +819,7 @@ from fastapi_cache.backends.redis import RedisBackend
 @app.on_event("startup")
 async def startup():
     redis = aioredis.from_url("redis://redis:6379")
-    FastAPICache.init(RedisBackend(redis), prefix="lcnc-cache")
+    FastAPICache.init(RedisBackend(redis), prefix="agenticai-cache")
 ```
 
 This infrastructure documentation provides a comprehensive guide for deploying and managing the Enterprise AI Platform across different environments and cloud providers.

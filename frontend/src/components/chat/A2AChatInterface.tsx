@@ -40,6 +40,7 @@ import { Separator } from '@/components/ui/separator';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useA2AChatEnhanced, ChatMessage, FileAttachment, AgentScratchpad, Citation, ToolCall, AgentCommunication } from '@/hooks/useA2AChat';
 import { MetadataSelector, SelectedContext } from './MetadataSelector';
 import { MemoryViewer } from './MemoryViewer';
@@ -460,6 +461,11 @@ export const A2AChatInterface: React.FC = () => {
     sendA2AMessage,
     uploadFile,
     startVoiceRecording,
+    availableAgents,
+    selectedAgent,
+    setSelectedAgent,
+    a2aBackendAvailable,
+    initializeA2A,
     streamingState,
     loading,
     error,
@@ -626,32 +632,92 @@ export const A2AChatInterface: React.FC = () => {
         {/* Chat Header */}
         <div className="p-4 border-b border-gray-200 dark:border-gray-700">
           <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-xl font-semibold">
-                {currentSession?.name || 'Select a conversation'}
-              </h1>
-              {selectedContext.type && (
-                <div className="flex items-center space-x-2 mt-1">
-                  {selectedContext.type === 'workflow' && selectedContext.workflow && (
-                    <Badge variant="outline" className="text-xs">
-                      <Workflow className="h-3 w-3 mr-1" />
-                      {selectedContext.workflow.display_name}
-                    </Badge>
+            <div className="flex-1">
+              <div className="flex items-center justify-between">
+                <h1 className="text-xl font-semibold">
+                  {currentSession?.name || 'Select a conversation'}
+                </h1>
+                
+                {/* A2A Agent Selector */}
+                {a2aBackendAvailable && availableAgents.length > 0 && (
+                  <div className="flex items-center space-x-2">
+                    <span className="text-sm text-gray-600 dark:text-gray-400">Agent:</span>
+                    <Select
+                      value={selectedAgent?.id || ''}
+                      onValueChange={(value) => {
+                        const agent = availableAgents.find(a => a.id === value);
+                        setSelectedAgent(agent || null);
+                      }}
+                    >
+                      <SelectTrigger className="w-40">
+                        <SelectValue placeholder="Select agent..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {availableAgents.map((agent) => (
+                          <SelectItem key={agent.id} value={agent.id}>
+                            <div className="flex items-center space-x-2">
+                              <div className={`h-2 w-2 rounded-full ${
+                                agent.status === 'active' ? 'bg-green-500' : 'bg-gray-400'
+                              }`} />
+                              <span>{agent.name}</span>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+              </div>
+              
+              <div className="flex items-center space-x-2 mt-1">
+                {/* Backend Status */}
+                <Badge variant={a2aBackendAvailable ? "default" : "secondary"} className="text-xs">
+                  {a2aBackendAvailable ? (
+                    <>
+                      <CheckCircle className="h-3 w-3 mr-1" />
+                      A2A Connected
+                    </>
+                  ) : (
+                    <>
+                      <AlertCircle className="h-3 w-3 mr-1" />
+                      Mock Mode
+                    </>
                   )}
-                  {selectedContext.type === 'agent' && selectedContext.agent && (
-                    <Badge variant="outline" className="text-xs">
-                      <Bot className="h-3 w-3 mr-1" />
-                      {selectedContext.agent.display_name}
-                    </Badge>
-                  )}
-                  {selectedContext.type === 'tools' && selectedContext.tools && (
-                    <Badge variant="outline" className="text-xs">
-                      <Wrench className="h-3 w-3 mr-1" />
-                      {selectedContext.tools.length} tools
-                    </Badge>
-                  )}
-                </div>
-              )}
+                </Badge>
+                
+                {/* Selected Agent Info */}
+                {selectedAgent && a2aBackendAvailable && (
+                  <Badge variant="outline" className="text-xs">
+                    <Bot className="h-3 w-3 mr-1" />
+                    {selectedAgent.name}
+                  </Badge>
+                )}
+                
+                {/* Context Info */}
+                {selectedContext.type && (
+                  <>
+                    {selectedContext.type === 'workflow' && selectedContext.workflow && (
+                      <Badge variant="outline" className="text-xs">
+                        <Workflow className="h-3 w-3 mr-1" />
+                        {selectedContext.workflow.display_name}
+                      </Badge>
+                    )}
+                    {selectedContext.type === 'agent' && selectedContext.agent && (
+                      <Badge variant="outline" className="text-xs">
+                        <Bot className="h-3 w-3 mr-1" />
+                        {selectedContext.agent.display_name}
+                      </Badge>
+                    )}
+                    {selectedContext.type === 'tools' && selectedContext.tools && (
+                      <Badge variant="outline" className="text-xs">
+                        <Wrench className="h-3 w-3 mr-1" />
+                        {selectedContext.tools.length} tools
+                      </Badge>
+                    )}
+                  </>
+                )}
+              </div>
+              
               {streamingState.isStreaming && (
                 <p className="text-sm text-gray-500 flex items-center mt-1">
                   <Loader2 className="h-3 w-3 animate-spin mr-1" />
@@ -661,6 +727,25 @@ export const A2AChatInterface: React.FC = () => {
             </div>
             
             <div className="flex items-center space-x-2">
+              {/* Retry A2A Connection */}
+              {!a2aBackendAvailable && (
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={initializeA2A}
+                        className="text-orange-600 border-orange-300 hover:bg-orange-50"
+                      >
+                        <Zap className="h-4 w-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Retry A2A connection</TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              )}
+              
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>

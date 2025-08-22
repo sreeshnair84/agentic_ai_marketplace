@@ -22,6 +22,11 @@ from .api.v1.notification import router as notification_router
 from .api.v1.stats import router as stats_router
 from .api.v1.metadata import router as metadata_router
 from .api.v1.memory import router as memory_router
+from .api.v1.monitoring import router as monitoring_router
+from .api.v1.llm_models import router as llm_models_router
+from .api.v1.embedding_models import router as embedding_models_router
+from .api.v1.default_chat import router as default_chat_router
+from .api.v1.a2a_chat import router as a2a_chat_router
 from .api.sample_queries import router as sample_queries_router
 from .api.agents import router as agents_router
 from .api.tools import router as tools_router
@@ -29,7 +34,6 @@ from .api.workflows import router as workflows_router
 from .api.rag import router as rag_router
 from .api.mcp_registry import router as mcp_registry_router
 from .api.mcp_gateway import router as mcp_gateway_router
-from .api.chat_a2a import router as chat_a2a_router
 
 # Configure logging
 logging.basicConfig(
@@ -130,6 +134,31 @@ def create_application() -> FastAPI:
         tags=["memory"]
     )
     app.include_router(
+        monitoring_router, 
+        prefix=f"{settings.API_V1_STR}", 
+        tags=["monitoring"]
+    )
+    app.include_router(
+        llm_models_router, 
+        prefix=f"{settings.API_V1_STR}", 
+        tags=["llm-models"]
+    )
+    app.include_router(
+        embedding_models_router, 
+        prefix=f"{settings.API_V1_STR}", 
+        tags=["embedding-models"]
+    )
+    app.include_router(
+        default_chat_router, 
+        prefix=f"{settings.API_V1_STR}", 
+        tags=["default-chat"]
+    )
+    app.include_router(
+        a2a_chat_router, 
+        prefix=f"{settings.API_V1_STR}", 
+        tags=["a2a-chat"]
+    )
+    app.include_router(
         agents_router, 
         prefix=f"{settings.API_V1_STR}", 
         tags=["agents"]
@@ -158,11 +187,6 @@ def create_application() -> FastAPI:
         mcp_gateway_router, 
         prefix=f"{settings.API_V1_STR}", 
         tags=["mcp-gateway"]
-    )
-    app.include_router(
-        chat_a2a_router, 
-        prefix=f"{settings.API_V1_STR}", 
-        tags=["chat-a2a"]
     )
     
     # Legacy API compatibility routers
@@ -200,11 +224,6 @@ def create_application() -> FastAPI:
         mcp_gateway_router, 
         prefix="/api", 
         tags=["mcp-gateway-legacy"]
-    )
-    app.include_router(
-        chat_a2a_router, 
-        prefix="/api", 
-        tags=["chat-a2a-legacy"]
     )
     
     # Global exception handlers

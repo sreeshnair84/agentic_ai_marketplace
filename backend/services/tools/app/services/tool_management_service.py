@@ -10,6 +10,8 @@ import logging
 from typing import Dict, Any, List, Optional, Union
 from datetime import datetime
 import uuid
+import os
+from tenacity import retry, stop_after_attempt, wait_fixed
 
 logger = logging.getLogger(__name__)
 
@@ -21,18 +23,46 @@ class ToolManagementService:
         self.logger = logger
     
     async def initialize(self, database_url: str):
-        """Initialize the service with database connection"""
-        self.connection_pool = await asyncpg.create_pool(database_url)
+        """Initialize the service with database connection pool and async limits"""
+        min_size = int(os.getenv("TOOLS_DB_POOL_MIN_SIZE", 2))
+        max_size = int(os.getenv("TOOLS_DB_POOL_MAX_SIZE", 10))
+        self.connection_pool = await asyncpg.create_pool(
+            database_url,
+            min_size=min_size,
+            max_size=max_size,
+            timeout=10
+        )
+
+    def _get_pool(self):
+        if self.connection_pool is None:
+            raise RuntimeError("Database connection pool is not initialized. Call initialize() first.")
+        return self.connection_pool
+
+    # Retry decorator for DB operations
+    @staticmethod
+    def db_retry():
+        return retry(stop=stop_after_attempt(3), wait=wait_fixed(1))
+
+    # Health check method
+    async def health_check(self) -> Dict[str, Any]:
+        try:
+            pool = self._get_pool()
+            async with pool.acquire() as conn:
+                await conn.execute("SELECT 1")
+            return {"status": "healthy", "db": "connected"}
+        except Exception as e:
+            self.logger.error(f"DB health check failed: {e}")
+            return {"status": "unhealthy", "db": "disconnected", "error": str(e)}
     
     # Tool Template Methods
     
+    @db_retry.__func__()
     async def create_tool_template(self, template_data: Dict[str, Any]) -> Dict[str, Any]:
         """Create a new tool template"""
-        
         try:
             template_id = str(uuid.uuid4())
-            
-            async with self.connection_pool.acquire() as conn:
+            pool = self._get_pool()
+            async with pool.acquire() as conn:
                 await conn.execute("""
                     INSERT INTO tool_templates 
                     (id, name, description, tool_type, category, version, 
@@ -40,7 +70,7 @@ class ToolManagementService:
                      template_config, default_config, is_active, 
                      created_at, updated_at)
                     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
-                """, 
+                """,
                     template_id,
                     template_data["name"],
                     template_data["description"],
@@ -56,30 +86,26 @@ class ToolManagementService:
                     datetime.utcnow(),
                     datetime.utcnow()
                 )
-            
-            return await self.get_tool_template(template_id)
-            
+            result = await self.get_tool_template(template_id)
+            return result or {"error": "Tool template not found after creation."}
         except Exception as e:
             self.logger.error(f"Error creating tool template: {e}")
-            raise
+            return {"error": str(e)}
     
-    async def get_tool_template(self, template_id: str) -> Optional[Dict[str, Any]]:
+    async def get_tool_template(self, template_id: str) -> Dict[str, Any]:
         """Get a tool template by ID"""
-        
         try:
-            async with self.connection_pool.acquire() as conn:
+            pool = self._get_pool()
+            async with pool.acquire() as conn:
                 result = await conn.fetchrow("""
                     SELECT * FROM tool_templates WHERE id = $1
                 """, template_id)
-            
             if not result:
-                return None
-            
+                return {"error": f"Tool template {template_id} not found"}
             return self._format_template_result(result)
-            
         except Exception as e:
             self.logger.error(f"Error getting tool template {template_id}: {e}")
-            raise
+            return {"error": str(e)}
     
     async def list_tool_templates(
         self, 
@@ -90,63 +116,54 @@ class ToolManagementService:
         limit: int = 100
     ) -> Dict[str, Any]:
         """List tool templates with filtering"""
-        
         try:
+            pool = self._get_pool()
             conditions = []
             params = []
             param_count = 0
-            
             if category:
                 param_count += 1
                 conditions.append(f"category = ${param_count}")
                 params.append(category)
-            
             if tool_type:
                 param_count += 1
                 conditions.append(f"tool_type = ${param_count}")
                 params.append(tool_type)
-            
             if is_active is not None:
                 param_count += 1
                 conditions.append(f"is_active = ${param_count}")
                 params.append(is_active)
-            
             where_clause = "WHERE " + " AND ".join(conditions) if conditions else ""
-            
             # Add pagination
             param_count += 1
             limit_clause = f"LIMIT ${param_count}"
             params.append(limit)
-            
             param_count += 1
             offset_clause = f"OFFSET ${param_count}"
             params.append(offset)
-            
-            async with self.connection_pool.acquire() as conn:
+            async with pool.acquire() as conn:
                 results = await conn.fetch(f"""
                     SELECT * FROM tool_templates 
                     {where_clause}
                     ORDER BY created_at DESC
                     {limit_clause} {offset_clause}
                 """, *params)
-                
                 # Get total count
                 count_result = await conn.fetchval(f"""
                     SELECT COUNT(*) FROM tool_templates {where_clause}
                 """, *params[:-2])  # Exclude limit and offset
-            
             templates = [self._format_template_result(row) for row in results]
-            
             return {
                 "templates": templates,
                 "total": count_result,
                 "offset": offset,
                 "limit": limit
             }
-            
         except Exception as e:
             self.logger.error(f"Error listing tool templates: {e}")
-            raise
+            return {"error": str(e)}
+# NOTE: You must install the 'tenacity' package for retry logic:
+#   pip install tenacity
     
     async def update_tool_template(self, template_id: str, update_data: Dict[str, Any]) -> Dict[str, Any]:
         """Update a tool template"""
@@ -168,7 +185,8 @@ class ToolManagementService:
                     params.append(json.dumps(value))
             
             if not set_clauses:
-                return await self.get_tool_template(template_id)
+                result = await self.get_tool_template(template_id)
+                return result or {"error": f"Tool template {template_id} not found after update."}
             
             # Add updated_at
             param_count += 1
@@ -179,29 +197,29 @@ class ToolManagementService:
             param_count += 1
             params.append(template_id)
             
-            async with self.connection_pool.acquire() as conn:
+            pool = self._get_pool()
+            async with pool.acquire() as conn:
                 await conn.execute(f"""
                     UPDATE tool_templates 
                     SET {', '.join(set_clauses)}
                     WHERE id = ${param_count}
                 """, *params)
-            
-            return await self.get_tool_template(template_id)
-            
+            result = await self.get_tool_template(template_id)
+            return result or {"error": f"Tool template {template_id} not found after update."}
         except Exception as e:
             self.logger.error(f"Error updating tool template {template_id}: {e}")
-            raise
+            return {"error": str(e)}
     
-    async def delete_tool_template(self, template_id: str) -> bool:
+    async def delete_tool_template(self, template_id: str) -> Dict[str, Any]:
         """Delete a tool template"""
         
         try:
-            async with self.connection_pool.acquire() as conn:
+            pool = self._get_pool()
+            async with pool.acquire() as conn:
                 # Check if template has instances
                 instance_count = await conn.fetchval("""
                     SELECT COUNT(*) FROM tool_instances WHERE template_id = $1
                 """, template_id)
-                
                 if instance_count > 0:
                     # Soft delete - just mark as inactive
                     await conn.execute("""
@@ -214,12 +232,10 @@ class ToolManagementService:
                     await conn.execute("""
                         DELETE FROM tool_templates WHERE id = $1
                     """, template_id)
-            
-            return True
-            
+            return {"success": True}
         except Exception as e:
             self.logger.error(f"Error deleting tool template {template_id}: {e}")
-            raise
+            return {"error": str(e)}
     
     # Tool Instance Methods
     
@@ -228,8 +244,8 @@ class ToolManagementService:
         
         try:
             instance_id = str(uuid.uuid4())
-            
-            async with self.connection_pool.acquire() as conn:
+            pool = self._get_pool()
+            async with pool.acquire() as conn:
                 await conn.execute("""
                     INSERT INTO tool_instances 
                     (id, name, description, template_id, configuration, 
@@ -247,33 +263,30 @@ class ToolManagementService:
                     datetime.utcnow(),
                     datetime.utcnow()
                 )
-            
-            return await self.get_tool_instance(instance_id)
-            
+            result = await self.get_tool_instance(instance_id)
+            return result or {"error": f"Tool instance {instance_id} not found after creation."}
         except Exception as e:
             self.logger.error(f"Error creating tool instance: {e}")
-            raise
+            return {"error": str(e)}
     
-    async def get_tool_instance(self, instance_id: str) -> Optional[Dict[str, Any]]:
+    async def get_tool_instance(self, instance_id: str) -> Dict[str, Any]:
         """Get a tool instance by ID"""
         
         try:
-            async with self.connection_pool.acquire() as conn:
+            pool = self._get_pool()
+            async with pool.acquire() as conn:
                 result = await conn.fetchrow("""
                     SELECT ti.*, tt.name as template_name, tt.tool_type
                     FROM tool_instances ti
                     LEFT JOIN tool_templates tt ON ti.template_id = tt.id
                     WHERE ti.id = $1
                 """, instance_id)
-            
             if not result:
-                return None
-            
+                return {"error": f"Tool instance {instance_id} not found"}
             return self._format_instance_result(result)
-            
         except Exception as e:
             self.logger.error(f"Error getting tool instance {instance_id}: {e}")
-            raise
+            return {"error": str(e)}
     
     async def list_tool_instances(
         self,
@@ -316,7 +329,8 @@ class ToolManagementService:
             offset_clause = f"OFFSET ${param_count}"
             params.append(offset)
             
-            async with self.connection_pool.acquire() as conn:
+            pool = self._get_pool()
+            async with pool.acquire() as conn:
                 results = await conn.fetch(f"""
                     SELECT ti.*, tt.name as template_name, tt.tool_type
                     FROM tool_instances ti
@@ -364,7 +378,8 @@ class ToolManagementService:
                     params.append(json.dumps(value))
             
             if not set_clauses:
-                return await self.get_tool_instance(instance_id)
+                result = await self.get_tool_instance(instance_id)
+                return result or {"error": f"Tool instance {instance_id} not found after update."}
             
             # Add updated_at
             param_count += 1
@@ -375,33 +390,32 @@ class ToolManagementService:
             param_count += 1
             params.append(instance_id)
             
-            async with self.connection_pool.acquire() as conn:
+            pool = self._get_pool()
+            async with pool.acquire() as conn:
                 await conn.execute(f"""
                     UPDATE tool_instances 
                     SET {', '.join(set_clauses)}
                     WHERE id = ${param_count}
                 """, *params)
-            
-            return await self.get_tool_instance(instance_id)
-            
+            result = await self.get_tool_instance(instance_id)
+            return result or {"error": f"Tool instance {instance_id} not found after update."}
         except Exception as e:
             self.logger.error(f"Error updating tool instance {instance_id}: {e}")
-            raise
+            return {"error": str(e)}
     
-    async def delete_tool_instance(self, instance_id: str) -> bool:
+    async def delete_tool_instance(self, instance_id: str) -> Dict[str, Any]:
         """Delete a tool instance"""
         
         try:
-            async with self.connection_pool.acquire() as conn:
+            pool = self._get_pool()
+            async with pool.acquire() as conn:
                 await conn.execute("""
                     DELETE FROM tool_instances WHERE id = $1
                 """, instance_id)
-            
-            return True
-            
+            return {"success": True}
         except Exception as e:
             self.logger.error(f"Error deleting tool instance {instance_id}: {e}")
-            raise
+            return {"error": str(e)}
     
     # Utility Methods
     
@@ -409,55 +423,52 @@ class ToolManagementService:
         """Get all unique template categories"""
         
         try:
-            async with self.connection_pool.acquire() as conn:
+            pool = self._get_pool()
+            async with pool.acquire() as conn:
                 results = await conn.fetch("""
                     SELECT DISTINCT category 
                     FROM tool_templates 
                     WHERE category IS NOT NULL 
                     ORDER BY category
                 """)
-            
             return [row["category"] for row in results]
-            
         except Exception as e:
             self.logger.error(f"Error getting template categories: {e}")
-            raise
+            return []
     
     async def get_template_types(self) -> List[str]:
         """Get all unique template types"""
         
         try:
-            async with self.connection_pool.acquire() as conn:
+            pool = self._get_pool()
+            async with pool.acquire() as conn:
                 results = await conn.fetch("""
                     SELECT DISTINCT tool_type 
                     FROM tool_templates 
                     WHERE tool_type IS NOT NULL 
                     ORDER BY tool_type
                 """)
-            
             return [row["tool_type"] for row in results]
-            
         except Exception as e:
             self.logger.error(f"Error getting template types: {e}")
-            raise
+            return []
     
     async def get_instance_statistics(self) -> Dict[str, Any]:
         """Get statistics about tool instances"""
         
         try:
-            async with self.connection_pool.acquire() as conn:
+            pool = self._get_pool()
+            async with pool.acquire() as conn:
                 # Total instances
                 total_instances = await conn.fetchval("""
                     SELECT COUNT(*) FROM tool_instances
                 """)
-                
                 # Instances by status
                 status_stats = await conn.fetch("""
                     SELECT status, COUNT(*) as count 
                     FROM tool_instances 
                     GROUP BY status
                 """)
-                
                 # Instances by template
                 template_stats = await conn.fetch("""
                     SELECT tt.name, COUNT(ti.id) as count
@@ -466,7 +477,6 @@ class ToolManagementService:
                     GROUP BY tt.id, tt.name
                     ORDER BY count DESC
                 """)
-                
                 # Recent instances
                 recent_instances = await conn.fetch("""
                     SELECT id, name, status, created_at
@@ -474,7 +484,6 @@ class ToolManagementService:
                     ORDER BY created_at DESC
                     LIMIT 10
                 """)
-            
             return {
                 "total_instances": total_instances,
                 "status_distribution": [
@@ -495,10 +504,9 @@ class ToolManagementService:
                     for row in recent_instances
                 ]
             }
-            
         except Exception as e:
             self.logger.error(f"Error getting instance statistics: {e}")
-            raise
+            return {"error": str(e)}
     
     # Private helper methods
     

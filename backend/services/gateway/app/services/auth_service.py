@@ -1,3 +1,12 @@
+from tenacity import retry, stop_after_attempt, wait_fixed, retry_if_exception_type
+
+def db_async_retry():
+    return retry(
+        reraise=True,
+        stop=stop_after_attempt(3),
+        wait=wait_fixed(1),
+        retry=retry_if_exception_type(Exception)
+    )
 """
 Authentication service implementation
 """
@@ -24,6 +33,9 @@ from ..models.database.user import UserDB, RefreshTokenDB, UserSessionDB
 
 
 class AuthService:
+    @staticmethod
+    def db_async_retry():
+        return db_async_retry()
     """Service for handling authentication and JWT tokens"""
     
     def __init__(self, db: AsyncSession):
@@ -193,6 +205,7 @@ class AuthService:
         
         return access_token, refresh_token, user
     
+    @db_async_retry()
     async def create_user(self, user_data: UserCreate) -> User:
         """Create a new user"""
         
@@ -252,6 +265,7 @@ class AuthService:
         
         return user
     
+    @db_async_retry()
     async def get_user_by_id(self, user_id: str) -> Optional[User]:
         """Get user by ID"""
         
@@ -281,6 +295,7 @@ class AuthService:
         
         return user
     
+    @db_async_retry()
     async def get_user_by_email(self, email: str) -> Optional[UserDB]:
         """Get user by email"""
         
@@ -288,6 +303,7 @@ class AuthService:
         result = await self.db.execute(query)
         return result.scalar_one_or_none()
     
+    @db_async_retry()
     async def get_user_by_username(self, username: str) -> Optional[UserDB]:
         """Get user by username"""
         
@@ -295,6 +311,7 @@ class AuthService:
         result = await self.db.execute(query)
         return result.scalar_one_or_none()
     
+    @db_async_retry()
     async def update_user(self, user_id: str, user_update: UserUpdate) -> User:
         """Update user information"""
         

@@ -40,6 +40,24 @@ prometheus-client
 structlog
 python-json-logger
 psutil
+tenacity
+
+# A2A Protocol Integration
+a2a-sdk>=0.3.0
+
+# AI and Machine Learning
+langchain
+langchain-core
+langchain-community
+langchain-openai>=0.1.0
+langchain-google-genai>=2.0.10
+langgraph>=0.3.18
+
+
+# HTTP and Web Framework
+httpx
+starlette
+uvicorn
 
 # Utilities
 python-dotenv

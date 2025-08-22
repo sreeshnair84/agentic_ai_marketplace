@@ -869,7 +869,7 @@ const nextConfig = {
     appDir: true,
   },
   images: {
-    domains: ['localhost', 'api.lcnc-platform.com'],
+    domains: ['localhost', 'api.agenticai-platform.com'],
     formats: ['image/webp', 'image/avif'],
   },
   async redirects() {

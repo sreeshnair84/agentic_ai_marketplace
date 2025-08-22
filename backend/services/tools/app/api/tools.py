@@ -6,10 +6,13 @@ from fastapi import APIRouter, HTTPException, Depends, status, Query
 from typing import Dict, Any, List, Optional
 import logging
 import time
+from datetime import datetime
 
 from ..services.tool_executor import ToolExecutor, ToolExecutionResult
 from ..services.tool_registry import get_tool_registry
 from ..services.database_service import get_database_service, DatabaseService
+from ..services.enhanced_model_service import get_enhanced_model_service, EnhancedModelService
+from ..services.enhanced_chat_service import get_enhanced_chat_service, EnhancedChatService
 from ..core.config import get_settings
 from ..models.execution_models import (
     ToolExecutionRequest, 
@@ -106,21 +109,23 @@ async def list_tool_instances(
 
 @router.get("/llm-models", response_model=List[Dict[str, Any]])
 async def list_llm_models(
-    project_tags: Optional[List[str]] = Query(None, description="Filter by project tags"),
     provider: Optional[str] = None,
-    is_active: Optional[bool] = True,
-    db_service: DatabaseService = Depends(get_database_service)
+    status: Optional[str] = None,
+    limit: int = Query(100, ge=1, le=1000),
+    offset: int = Query(0, ge=0),
+    enhanced_service: EnhancedModelService = Depends(get_enhanced_model_service)
 ):
-    """List LLM models with project-based filtering"""
+    """List LLM models with enhanced LangGraph support"""
     
     try:
-        models = await db_service.get_llm_models(
-            project_tags=project_tags,
+        models = await enhanced_service.list_llm_models(
             provider=provider,
-            is_active=is_active
+            status=status,
+            limit=limit,
+            offset=offset
         )
         
-        return [model.dict() for model in models]
+        return models
         
     except Exception as e:
         logger.error(f"Error listing LLM models: {e}")
@@ -132,21 +137,23 @@ async def list_llm_models(
 
 @router.get("/embedding-models", response_model=List[Dict[str, Any]])
 async def list_embedding_models(
-    project_tags: Optional[List[str]] = Query(None, description="Filter by project tags"),
     provider: Optional[str] = None,
-    is_active: Optional[bool] = True,
-    db_service: DatabaseService = Depends(get_database_service)
+    status: Optional[str] = None,
+    limit: int = Query(100, ge=1, le=1000),
+    offset: int = Query(0, ge=0),
+    enhanced_service: EnhancedModelService = Depends(get_enhanced_model_service)
 ):
-    """List embedding models with project-based filtering"""
+    """List embedding models with enhanced LangGraph support"""
     
     try:
-        models = await db_service.get_embedding_models(
-            project_tags=project_tags,
+        models = await enhanced_service.list_embedding_models(
             provider=provider,
-            is_active=is_active
+            status=status,
+            limit=limit,
+            offset=offset
         )
         
-        return [model.dict() for model in models]
+        return models
         
     except Exception as e:
         logger.error(f"Error listing embedding models: {e}")
@@ -325,23 +332,29 @@ async def execute_mcp_tool(
 @router.post("/create/llm-model", response_model=Dict[str, Any])
 async def create_llm_model(
     model_data: Dict[str, Any],
-    db_service: DatabaseService = Depends(get_database_service)
+    enhanced_service: EnhancedModelService = Depends(get_enhanced_model_service)
 ):
-    """Create a new LLM model (demo endpoint)"""
+    """Create a new LLM model with enhanced LangGraph support"""
     
     try:
-        # For now, just return success with the provided data
-        # In a real implementation, this would validate and save to database
-        model_id = f"llm-{model_data.get('name', 'unnamed')}-{int(time.time())}"
+        result = await enhanced_service.create_llm_model(model_data)
+        
+        if not result.get("success"):
+            raise HTTPException(
+                status_code=400,
+                detail=result.get("error", "Failed to create LLM model")
+            )
         
         return {
             "success": True,
             "message": "LLM model created successfully",
-            "model_id": model_id,
-            "model_data": model_data,
-            "timestamp": "2024-01-01T00:00:00Z"
+            "model_id": result.get("id"),
+            "model": result.get("model"),
+            "timestamp": datetime.utcnow().isoformat()
         }
         
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Error creating LLM model: {e}")
         raise HTTPException(
@@ -382,22 +395,30 @@ async def create_tool_instance(
 async def edit_llm_model(
     model_id: str,
     model_data: Dict[str, Any],
-    db_service: DatabaseService = Depends(get_database_service)
+    enhanced_service: EnhancedModelService = Depends(get_enhanced_model_service)
 ):
-    """Edit an existing LLM model (demo endpoint)"""
+    """Edit an existing LLM model with enhanced LangGraph support"""
     
     try:
-        # For now, just return success with the provided data
-        # In a real implementation, this would validate and update in database
+        result = await enhanced_service.update_model(model_id, "llm", model_data)
+        
+        if not result.get("success"):
+            error_message = result.get("error", "Failed to update LLM model")
+            if "not found" in error_message.lower():
+                raise HTTPException(status_code=404, detail=error_message)
+            else:
+                raise HTTPException(status_code=400, detail=error_message)
         
         return {
             "success": True,
             "message": f"LLM model {model_id} updated successfully",
             "model_id": model_id,
-            "updated_data": model_data,
-            "timestamp": "2024-01-01T00:00:00Z"
+            "model": result.get("model"),
+            "timestamp": datetime.utcnow().isoformat()
         }
         
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Error editing LLM model: {e}")
         raise HTTPException(
@@ -431,4 +452,551 @@ async def edit_tool_instance(
         raise HTTPException(
             status_code=500,
             detail=f"Failed to edit tool instance: {str(e)}"
+        )
+
+
+# ============================================================================
+# ENHANCED LANGGRAPH MODEL ENDPOINTS
+# ============================================================================
+
+@router.get("/llm-models/{model_id}", response_model=Dict[str, Any])
+async def get_llm_model(
+    model_id: str,
+    enhanced_service: EnhancedModelService = Depends(get_enhanced_model_service)
+):
+    """Get a specific LLM model with enhanced details"""
+    
+    try:
+        model = await enhanced_service.get_model(model_id, "llm")
+        if not model:
+            raise HTTPException(status_code=404, detail=f"LLM model {model_id} not found")
+        
+        return model
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting LLM model: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to get LLM model: {str(e)}"
+        )
+
+
+@router.get("/embedding-models/{model_id}", response_model=Dict[str, Any])
+async def get_embedding_model(
+    model_id: str,
+    enhanced_service: EnhancedModelService = Depends(get_enhanced_model_service)
+):
+    """Get a specific embedding model with enhanced details"""
+    
+    try:
+        model = await enhanced_service.get_model(model_id, "embedding")
+        if not model:
+            raise HTTPException(status_code=404, detail=f"Embedding model {model_id} not found")
+        
+        return model
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting embedding model: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to get embedding model: {str(e)}"
+        )
+
+
+@router.post("/create/embedding-model", response_model=Dict[str, Any])
+async def create_embedding_model(
+    model_data: Dict[str, Any],
+    enhanced_service: EnhancedModelService = Depends(get_enhanced_model_service)
+):
+    """Create a new embedding model with enhanced LangGraph support"""
+    
+    try:
+        result = await enhanced_service.create_embedding_model(model_data)
+        
+        if not result.get("success"):
+            raise HTTPException(
+                status_code=400,
+                detail=result.get("error", "Failed to create embedding model")
+            )
+        
+        return {
+            "success": True,
+            "message": "Embedding model created successfully",
+            "model_id": result.get("id"),
+            "model": result.get("model"),
+            "timestamp": datetime.utcnow().isoformat()
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error creating embedding model: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to create embedding model: {str(e)}"
+        )
+
+
+@router.put("/edit/embedding-model/{model_id}", response_model=Dict[str, Any])
+async def edit_embedding_model(
+    model_id: str,
+    model_data: Dict[str, Any],
+    enhanced_service: EnhancedModelService = Depends(get_enhanced_model_service)
+):
+    """Edit an existing embedding model with enhanced LangGraph support"""
+    
+    try:
+        result = await enhanced_service.update_model(model_id, "embedding", model_data)
+        
+        if not result.get("success"):
+            error_message = result.get("error", "Failed to update embedding model")
+            if "not found" in error_message.lower():
+                raise HTTPException(status_code=404, detail=error_message)
+            else:
+                raise HTTPException(status_code=400, detail=error_message)
+        
+        return {
+            "success": True,
+            "message": f"Embedding model {model_id} updated successfully",
+            "model_id": model_id,
+            "model": result.get("model"),
+            "timestamp": datetime.utcnow().isoformat()
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error editing embedding model: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to edit embedding model: {str(e)}"
+        )
+
+
+@router.post("/llm-models/{model_id}/test", response_model=Dict[str, Any])
+async def test_llm_model(
+    model_id: str,
+    enhanced_service: EnhancedModelService = Depends(get_enhanced_model_service)
+):
+    """Test an LLM model's connectivity and functionality"""
+    
+    try:
+        result = await enhanced_service.test_model(model_id, "llm")
+        
+        return {
+            "success": result.get("success", False),
+            "response": result.get("response"),
+            "status": result.get("status", "unknown"),
+            "error": result.get("error"),
+            "timestamp": datetime.utcnow().isoformat()
+        }
+        
+    except Exception as e:
+        logger.error(f"Error testing LLM model: {e}")
+        return {
+            "success": False,
+            "response": None,
+            "status": "error",
+            "error": f"Failed to test model: {str(e)}",
+            "timestamp": datetime.utcnow().isoformat()
+        }
+
+
+@router.post("/embedding-models/{model_id}/test", response_model=Dict[str, Any])
+async def test_embedding_model(
+    model_id: str,
+    enhanced_service: EnhancedModelService = Depends(get_enhanced_model_service)
+):
+    """Test an embedding model's connectivity and functionality"""
+    
+    try:
+        result = await enhanced_service.test_model(model_id, "embedding")
+        
+        return {
+            "success": result.get("success", False),
+            "dimensions": result.get("dimensions"),
+            "status": result.get("status", "unknown"),
+            "error": result.get("error"),
+            "timestamp": datetime.utcnow().isoformat()
+        }
+        
+    except Exception as e:
+        logger.error(f"Error testing embedding model: {e}")
+        return {
+            "success": False,
+            "dimensions": None,
+            "status": "error",
+            "error": f"Failed to test model: {str(e)}",
+            "timestamp": datetime.utcnow().isoformat()
+        }
+
+
+@router.post("/llm-models/{model_id}/set-default", response_model=Dict[str, Any])
+async def set_default_llm(
+    model_id: str,
+    enhanced_service: EnhancedModelService = Depends(get_enhanced_model_service)
+):
+    """Set an LLM model as the default"""
+    
+    try:
+        result = await enhanced_service.set_default_model(model_id, "llm")
+        
+        if not result.get("success"):
+            error_message = result.get("error", "Failed to set default LLM")
+            if "not found" in error_message.lower():
+                raise HTTPException(status_code=404, detail=error_message)
+            else:
+                raise HTTPException(status_code=400, detail=error_message)
+        
+        return {
+            "success": True,
+            "message": f"Set model {model_id} as default LLM",
+            "default_llm_id": result.get("default_llm_id"),
+            "timestamp": datetime.utcnow().isoformat()
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error setting default LLM: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to set default LLM: {str(e)}"
+        )
+
+
+@router.post("/embedding-models/{model_id}/set-default", response_model=Dict[str, Any])
+async def set_default_embedding(
+    model_id: str,
+    enhanced_service: EnhancedModelService = Depends(get_enhanced_model_service)
+):
+    """Set an embedding model as the default"""
+    
+    try:
+        result = await enhanced_service.set_default_model(model_id, "embedding")
+        
+        if not result.get("success"):
+            error_message = result.get("error", "Failed to set default embedding model")
+            if "not found" in error_message.lower():
+                raise HTTPException(status_code=404, detail=error_message)
+            else:
+                raise HTTPException(status_code=400, detail=error_message)
+        
+        return {
+            "success": True,
+            "message": f"Set model {model_id} as default embedding model",
+            "default_embedding_id": result.get("default_embedding_id"),
+            "timestamp": datetime.utcnow().isoformat()
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error setting default embedding model: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to set default embedding model: {str(e)}"
+        )
+
+
+@router.delete("/llm-models/{model_id}", response_model=Dict[str, Any])
+async def delete_llm_model(
+    model_id: str,
+    enhanced_service: EnhancedModelService = Depends(get_enhanced_model_service)
+):
+    """Delete an LLM model"""
+    
+    try:
+        result = await enhanced_service.delete_model(model_id, "llm")
+        
+        if not result.get("success"):
+            raise HTTPException(
+                status_code=400,
+                detail=result.get("error", "Failed to delete LLM model")
+            )
+        
+        return {
+            "success": True,
+            "message": "LLM model deleted successfully",
+            "timestamp": datetime.utcnow().isoformat()
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error deleting LLM model: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to delete LLM model: {str(e)}"
+        )
+
+
+@router.delete("/embedding-models/{model_id}", response_model=Dict[str, Any])
+async def delete_embedding_model(
+    model_id: str,
+    enhanced_service: EnhancedModelService = Depends(get_enhanced_model_service)
+):
+    """Delete an embedding model"""
+    
+    try:
+        result = await enhanced_service.delete_model(model_id, "embedding")
+        
+        if not result.get("success"):
+            raise HTTPException(
+                status_code=400,
+                detail=result.get("error", "Failed to delete embedding model")
+            )
+        
+        return {
+            "success": True,
+            "message": "Embedding model deleted successfully",
+            "timestamp": datetime.utcnow().isoformat()
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error deleting embedding model: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to delete embedding model: {str(e)}"
+        )
+
+
+@router.get("/models/providers", response_model=Dict[str, Any])
+async def get_supported_providers():
+    """Get list of supported model providers"""
+    
+    return {
+        "providers": [
+            {
+                "id": "openai",
+                "name": "OpenAI",
+                "type": "both",
+                "description": "OpenAI language and embedding models"
+            },
+            {
+                "id": "azure_openai",
+                "name": "Azure OpenAI",
+                "type": "both",
+                "description": "Azure-hosted OpenAI models"
+            },
+            {
+                "id": "google_gemini",
+                "name": "Google Gemini",
+                "type": "both",
+                "description": "Google Gemini models"
+            },
+            {
+                "id": "ollama",
+                "name": "Ollama",
+                "type": "both",
+                "description": "Local Ollama models"
+            }
+        ]
+    }
+
+
+@router.get("/models/defaults", response_model=Dict[str, Any])
+async def get_default_models(
+    enhanced_service: EnhancedModelService = Depends(get_enhanced_model_service)
+):
+    """Get current default models"""
+    
+    try:
+        default_llm = await enhanced_service.get_default_model("llm")
+        default_embedding = await enhanced_service.get_default_model("embedding")
+        
+        return {
+            "default_llm": default_llm,
+            "default_embedding": default_embedding,
+            "has_default_llm": default_llm is not None,
+            "has_default_embedding": default_embedding is not None,
+            "timestamp": datetime.utcnow().isoformat()
+        }
+        
+    except Exception as e:
+        logger.error(f"Error getting default models: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to get default models: {str(e)}"
+        )
+
+
+@router.get("/models/health", response_model=Dict[str, Any])
+async def get_model_service_health(
+    enhanced_service: EnhancedModelService = Depends(get_enhanced_model_service)
+):
+    """Get health status of the model service"""
+    
+    try:
+        return enhanced_service.get_health_status()
+        
+    except Exception as e:
+        logger.error(f"Error getting model service health: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to get model service health: {str(e)}"
+        )
+
+
+# ============================================================================
+# ENHANCED CHAT ENDPOINTS
+# ============================================================================
+
+@router.post("/chat", response_model=Dict[str, Any])
+async def enhanced_chat(
+    message: str,
+    conversation_history: Optional[List[Dict[str, Any]]] = None,
+    session_id: Optional[str] = None,
+    model_id: Optional[str] = None,
+    stream: bool = False,
+    chat_service: EnhancedChatService = Depends(get_enhanced_chat_service)
+):
+    """Enhanced chat with LangGraph model support"""
+    
+    try:
+        if stream:
+            raise HTTPException(
+                status_code=400,
+                detail="Use /chat/stream endpoint for streaming responses"
+            )
+        
+        response = await chat_service.chat(
+            message=message,
+            conversation_history=conversation_history or [],
+            session_id=session_id,
+            model_id=model_id,
+            stream=False
+        )
+        
+        if not response.get("success"):
+            raise HTTPException(
+                status_code=400,
+                detail=response.get("error", "Chat request failed")
+            )
+        
+        return response
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Chat error: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Chat error: {str(e)}"
+        )
+
+
+@router.post("/chat/stream")
+async def enhanced_chat_stream(
+    message: str,
+    conversation_history: Optional[List[Dict[str, Any]]] = None,
+    session_id: Optional[str] = None,
+    model_id: Optional[str] = None,
+    chat_service: EnhancedChatService = Depends(get_enhanced_chat_service)
+):
+    """Enhanced streaming chat with LangGraph model support"""
+    
+    from fastapi.responses import StreamingResponse
+    import json
+    
+    try:
+        async def generate_stream():
+            try:
+                async for chunk in chat_service.chat(
+                    message=message,
+                    conversation_history=conversation_history or [],
+                    session_id=session_id,
+                    model_id=model_id,
+                    stream=True
+                ):
+                    # Format as Server-Sent Events
+                    data = json.dumps(chunk)
+                    yield f"data: {data}\n\n"
+                
+                # Send final event to close stream
+                yield f"data: {json.dumps({'final': True, 'success': True})}\n\n"
+                
+            except Exception as e:
+                error_data = {
+                    "success": False,
+                    "error": str(e),
+                    "timestamp": datetime.utcnow().isoformat(),
+                    "final": True
+                }
+                yield f"data: {json.dumps(error_data)}\n\n"
+        
+        return StreamingResponse(
+            generate_stream(),
+            media_type="text/plain",
+            headers={
+                "Cache-Control": "no-cache",
+                "Connection": "keep-alive",
+                "Content-Type": "text/event-stream",
+            }
+        )
+        
+    except Exception as e:
+        logger.error(f"Streaming chat error: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Streaming chat error: {str(e)}"
+        )
+
+
+@router.post("/chat/summary", response_model=Dict[str, Any])
+async def get_conversation_summary(
+    conversation_history: List[Dict[str, Any]],
+    max_length: int = 200,
+    chat_service: EnhancedChatService = Depends(get_enhanced_chat_service)
+):
+    """Generate a summary of the conversation"""
+    
+    try:
+        summary = await chat_service.get_conversation_summary(
+            conversation_history=conversation_history,
+            max_length=max_length
+        )
+        
+        if summary is None:
+            return {
+                "success": False,
+                "error": "Could not generate summary - no default model configured",
+                "summary": None
+            }
+        
+        return {
+            "success": True,
+            "summary": summary,
+            "message_count": len(conversation_history),
+            "timestamp": datetime.utcnow().isoformat()
+        }
+        
+    except Exception as e:
+        logger.error(f"Error generating summary: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to generate summary: {str(e)}"
+        )
+
+
+@router.get("/chat/health", response_model=Dict[str, Any])
+async def get_chat_health(
+    chat_service: EnhancedChatService = Depends(get_enhanced_chat_service)
+):
+    """Get health status of the enhanced chat service"""
+    
+    try:
+        return chat_service.get_health_status()
+        
+    except Exception as e:
+        logger.error(f"Error getting chat health: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to get chat health: {str(e)}"
         )

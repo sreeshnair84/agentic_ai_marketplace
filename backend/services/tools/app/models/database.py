@@ -23,7 +23,7 @@ async def init_db():
     global engine, async_session_local
     
     # Database URL from environment - use the main platform database
-    database_url = os.getenv("DATABASE_URL", "postgresql+asyncpg://lcnc_user:lcnc_password@postgres:5432/lcnc_platform")
+    database_url = os.getenv("DATABASE_URL", "postgresql+asyncpg://agenticai_user:agenticai_password@postgres:5432/agenticai_platform")
     
     # Create async engine
     engine = create_async_engine(
@@ -128,51 +128,37 @@ class ToolInstance(Base):
     # Relationships
     template = relationship("ToolTemplate", back_populates="instances")
 
-class LLMModel(Base):
-    """LLM model configurations"""
-    __tablename__ = "llm_models"
+
+# Unified Model: LLM and Embedding
+class Model(Base):
+    """Unified model for LLM and Embedding configurations"""
+    __tablename__ = "models"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     name = Column(String(255), nullable=False, unique=True)
     display_name = Column(String(255), nullable=False)
     provider = Column(String(100), nullable=False)
-    model_type = Column(String(50), nullable=False)
+    model_type = Column(String(50), nullable=False)  # 'llm' or 'embedding'
     endpoint_url = Column(String(500), nullable=True)
     api_key_env_var = Column(String(255), nullable=True)
-    model_config = Column(JSON, nullable=True)  # This matches the actual database column
+    model_config = Column(JSON, nullable=True)
     max_tokens = Column(Integer, nullable=True)
     supports_streaming = Column(Boolean, nullable=False, default=False)
     supports_functions = Column(Boolean, nullable=False, default=False)
     cost_per_token = Column(String(20), nullable=True)
-    # Pricing information (JSON object with pricing tiers, currency, etc.)
     pricing_info = Column(JSON, nullable=True, default=dict)
     is_active = Column(Boolean, nullable=False, default=True)
-    
-    # Metadata
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
-
-class EmbeddingModel(Base):
-    """Embedding model configurations"""
-    __tablename__ = "embedding_models"
-
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    name = Column(String(255), nullable=False, unique=True)
-    display_name = Column(String(255), nullable=False)
-    provider = Column(String(100), nullable=False)
-    endpoint_url = Column(String(500), nullable=True)
-    api_key_env_var = Column(String(255), nullable=True)
-    model_config = Column(JSON, nullable=True)  # This matches the actual database column
+    # Embedding-specific fields
     dimensions = Column(Integer, nullable=True)
     max_input_tokens = Column(Integer, nullable=True)
-    cost_per_token = Column(String(20), nullable=True)
-    # Pricing information (JSON object)
-    pricing_info = Column(JSON, nullable=True, default=dict)
-    is_active = Column(Boolean, nullable=False, default=True)
-    
+    # Default model flag
+    is_default = Column(Boolean, nullable=False, default=False)
     # Metadata
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+
+# EmbeddingModel removed; merged into LLMModel
 
 class RAGPipeline(Base):
     """RAG pipeline configurations"""

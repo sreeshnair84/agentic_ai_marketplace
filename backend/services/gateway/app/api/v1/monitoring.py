@@ -14,7 +14,7 @@ import redis
 import logging
 import httpx
 
-from ..core.database import get_database
+from ...core.database import get_database
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/monitoring", tags=["monitoring"])

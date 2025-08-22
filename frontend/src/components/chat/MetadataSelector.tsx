@@ -212,7 +212,7 @@ const MetadataItem: React.FC<MetadataItemProps> = ({
               )}
             </div>
             
-            {item.tags.length > 0 && (
+            {Array.isArray(item.tags) && item.tags.length > 0 && (
               <div className="flex flex-wrap gap-1 mt-2">
                 {item.tags.slice(0, 3).map((tag, index) => (
                   <Badge key={index} variant="secondary" className="text-xs">
@@ -480,7 +480,7 @@ export const MetadataSelector: React.FC<MetadataSelectorProps> = ({
                       key={workflow.id}
                       item={workflow}
                       isSelected={selectedContext.workflow?.id === workflow.id}
-                      onSelect={() => handleWorkflowSelect(workflow)}
+                      onSelect={() => handleWorkflowSelect(workflow as WorkflowMetadata)}
                     />
                   ))}
                   {filterItems(metadata.workflows).length === 0 && (
@@ -502,7 +502,7 @@ export const MetadataSelector: React.FC<MetadataSelectorProps> = ({
                       key={agent.id}
                       item={agent}
                       isSelected={selectedContext.agent?.id === agent.id}
-                      onSelect={() => handleAgentSelect(agent)}
+                      onSelect={() => handleAgentSelect(agent as AgentMetadata)}
                     />
                   ))}
                   {filterItems(metadata.agents).length === 0 && (
@@ -524,7 +524,7 @@ export const MetadataSelector: React.FC<MetadataSelectorProps> = ({
                       key={tool.id}
                       item={tool}
                       isSelected={selectedContext.tools?.some(t => t.id === tool.id) || false}
-                      onSelect={() => handleToolSelect(tool)}
+                      onSelect={() => handleToolSelect(tool as ToolMetadata)}
                       isMultiSelect={true}
                     />
                   ))}

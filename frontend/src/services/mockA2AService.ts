@@ -126,9 +126,25 @@ export class MockA2AService {
   // Simulate A2A streaming response
   async *generateMockA2AResponse(
     userMessage: string, 
-    sessionId: string
+    sessionId: string,
+    context?: any
   ): AsyncGenerator<any, void, unknown> {
-    // Step 1: Route to appropriate agent
+    // Step 1: Determine context-aware routing
+    let contextMessage = 'Analyzing your request...';
+    let targetAgent = this.determineTargetAgent(userMessage);
+    
+    if (context?.type === 'workflow') {
+      contextMessage = `Routing to ${context.workflow?.display_name || 'selected workflow'}...`;
+      targetAgent = this.agents.find(a => a.id === 'workflow-agent') || targetAgent;
+    } else if (context?.type === 'agent') {
+      contextMessage = `Connecting to ${context.agent?.display_name || 'selected agent'}...`;
+      targetAgent = this.agents.find(a => a.id === 'custom-agent') || targetAgent;
+    } else if (context?.type === 'tools') {
+      const toolCount = context.tools?.length || 0;
+      contextMessage = `Using ${toolCount} specialized tools for your request...`;
+      targetAgent = this.agents.find(a => a.id === 'tool-agent') || targetAgent;
+    }
+    
     const routingAgent = this.agents.find(a => a.id === 'classifier-agent')!;
     
     yield {
@@ -141,7 +157,7 @@ export class MockA2AService {
           type: 'in_progress',
           message: {
             role: 'assistant',
-            parts: [{ type: 'text', text: `${routingAgent.name} is analyzing your request...` }]
+            parts: [{ type: 'text', text: contextMessage }]
           }
         }
       }
@@ -151,10 +167,9 @@ export class MockA2AService {
     await this.delay(routingAgent.responseDelay);
 
     // Log agent communication
-    this.logCommunication('system', routingAgent.id, 'Routing user query for intent analysis');
+    this.logCommunication('system', targetAgent.id, `Routing to ${targetAgent.name} based on context: ${context?.type || 'auto'}`);
 
-    // Step 2: Determine target agent based on message content
-    const targetAgent = this.determineTargetAgent(userMessage);
+    // Step 2: Continue with context-aware processing
     
     yield {
       jsonrpc: '2.0',

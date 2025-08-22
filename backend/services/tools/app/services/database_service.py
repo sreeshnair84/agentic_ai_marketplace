@@ -9,7 +9,7 @@ from typing import List, Optional, Dict, Any
 import logging
 import os
 
-from ..models.database import Base, ToolTemplate, ToolTemplateField, ToolInstance, LLMModel, EmbeddingModel
+from ..models.database import Base, ToolTemplate, ToolTemplateField, ToolInstance, Model
 from ..models.tools import (
     ToolTemplateResponse, ToolInstanceResponse, LLMModelResponse, EmbeddingModelResponse
 )
@@ -138,29 +138,20 @@ class DatabaseService:
         project_tags: Optional[List[str]] = None,
         provider: Optional[str] = None,
         is_active: Optional[bool] = True
-    ) -> List[LLMModelResponse]:
-        """Get LLM models with optional filtering"""
-        
+    ) -> list:
+        """Get LLM models with optional filtering (using unified Model)"""
         async with self.SessionLocal() as session:
-            query = select(LLMModel)
-            
-            # Apply filters
-            filters = []
+            query = select(Model)
+            filters = [Model.model_type == "llm"]
             if is_active is not None:
-                filters.append(LLMModel.is_active == is_active)
+                filters.append(Model.is_active == is_active)
             if provider:
-                filters.append(LLMModel.provider == provider)
-            # project_tags filter removed since tags column doesn't exist
-            # if project_tags:
-            #     filters.append(LLMModel.project_tags.op('&&')(project_tags))
-            
+                filters.append(Model.provider == provider)
             if filters:
                 query = query.where(and_(*filters))
-            
             result = await session.execute(query)
             models = result.scalars().all()
-            
-            return [LLMModelResponse.model_validate(model) for model in models]
+            return [model for model in models]
     
     # Embedding Model methods
     async def get_embedding_models(
@@ -168,29 +159,20 @@ class DatabaseService:
         project_tags: Optional[List[str]] = None,
         provider: Optional[str] = None,
         is_active: Optional[bool] = True
-    ) -> List[EmbeddingModelResponse]:
-        """Get embedding models with optional filtering"""
-        
+    ) -> list:
+        """Get embedding models with optional filtering (using unified Model)"""
         async with self.SessionLocal() as session:
-            query = select(EmbeddingModel)
-            
-            # Apply filters
-            filters = []
+            query = select(Model)
+            filters = [Model.model_type == "embedding"]
             if is_active is not None:
-                filters.append(EmbeddingModel.is_active == is_active)
+                filters.append(Model.is_active == is_active)
             if provider:
-                filters.append(EmbeddingModel.provider == provider)
-            # project_tags filter removed since tags column doesn't exist
-            # if project_tags:
-            #     filters.append(EmbeddingModel.project_tags.op('&&')(project_tags))
-            
+                filters.append(Model.provider == provider)
             if filters:
                 query = query.where(and_(*filters))
-            
             result = await session.execute(query)
             models = result.scalars().all()
-            
-            return [EmbeddingModelResponse.model_validate(model) for model in models]
+            return [model for model in models]
 
 # Global database service instance
 _database_service: Optional[DatabaseService] = None
