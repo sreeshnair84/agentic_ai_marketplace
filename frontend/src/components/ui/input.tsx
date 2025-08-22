@@ -1,3 +1,14 @@
+
+/**
+ * Input component (shadcn/ui pattern)
+ *
+ * @param {InputProps} props - Input props
+ * @returns {JSX.Element}
+ * @example
+ * <Input type="text" placeholder="Enter value" />
+ * @accessibility
+ * - Use with <Label htmlFor> for accessible forms.
+ */
 import * as React from "react";
 import clsx from 'clsx';
 
@@ -15,6 +26,8 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
           className
         )}
         ref={ref}
+        aria-label={props["aria-label"]}
+        aria-invalid={props["aria-invalid"]}
         {...props}
       />
     );

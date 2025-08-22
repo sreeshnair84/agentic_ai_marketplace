@@ -26,6 +26,7 @@ from .api.workflows import router as workflows_router
 from .api.rag import router as rag_router
 from .api.mcp_registry import router as mcp_registry_router
 from .api.mcp_gateway import router as mcp_gateway_router
+from .api.chat_a2a import router as chat_a2a_router
 
 # Configure logging
 logging.basicConfig(
@@ -163,6 +164,17 @@ def create_application() -> FastAPI:
         mcp_gateway_router, 
         prefix=f"{settings.API_V1_STR}", 
         tags=["mcp-gateway"]
+    )
+    app.include_router(
+        chat_a2a_router, 
+        prefix=f"{settings.API_V1_STR}", 
+        tags=["chat-a2a"]
+    )
+    # Also mount A2A chat router under /api/chat for frontend compatibility
+    app.include_router(
+        chat_a2a_router, 
+        prefix="/api", 
+        tags=["chat-a2a-legacy"]
     )
     
     # Global exception handlers

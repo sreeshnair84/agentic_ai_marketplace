@@ -13,6 +13,19 @@ from .config import get_settings
 metadata = MetaData()
 Base = declarative_base(metadata=metadata)
 
+# Import all models to ensure they're registered with SQLAlchemy
+def _import_all_models():
+    """Import all models to ensure they're registered with SQLAlchemy"""
+    try:
+        from ..models import (
+            Project, SampleQueryCategory, SampleQuery, DemoSampleQuery,
+            ChatSession, ChatMessage, AgentCommunication, FileAttachment,
+            VoiceRecord, WebSocketConnection
+        )
+    except ImportError:
+        # Models may not be available during initial setup
+        pass
+
 # Global engine variable
 engine = None
 async_session_local = None
@@ -23,6 +36,9 @@ async def init_db():
     global engine, async_session_local
     
     settings = get_settings()
+    
+    # Import all models to ensure they're registered with SQLAlchemy
+    _import_all_models()
     
     # Create async engine
     engine = create_async_engine(
@@ -53,6 +69,9 @@ async def get_database() -> AsyncGenerator[AsyncSession, None]:
     
     if async_session_local is None:
         await init_db()
+    
+    if async_session_local is None:
+        raise RuntimeError("Database not initialized")
     
     async with async_session_local() as session:
         try:

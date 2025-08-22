@@ -1,3 +1,14 @@
+
+/**
+ * Badge component (shadcn/ui pattern)
+ *
+ * @param {BadgeProps} props - Badge props
+ * @returns {JSX.Element}
+ * @example
+ * <Badge variant="secondary">Label</Badge>
+ * @accessibility
+ * - Uses role="status" for status badges if needed.
+ */
 import * as React from "react";
 import clsx from 'clsx';
 
@@ -18,6 +29,8 @@ function Badge({ className, variant = "default", ...props }: BadgeProps) {
         },
         className
       )}
+      role="status"
+      aria-label={props["aria-label"]}
       {...props}
     />
   );

@@ -5,6 +5,7 @@ import { useProject } from '@/store/projectContext';
 import { Project } from '@/types/project';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Label } from '@/components/ui/label';
 import { StandardPageLayout, StandardSection, StandardGrid, StandardCard } from '@/components/layout/StandardPageLayout';
 import { 
   Plus, 
@@ -382,9 +383,9 @@ function CreateProjectModal({ onClose, onCreate }: CreateProjectModalProps) {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <Label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Project Name
-            </label>
+            </Label>
             <input
               type="text"
               value={formData.name}
@@ -396,9 +397,9 @@ function CreateProjectModal({ onClose, onCreate }: CreateProjectModalProps) {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <Label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Description
-            </label>
+            </Label>
             <textarea
               value={formData.description}
               onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
@@ -409,9 +410,9 @@ function CreateProjectModal({ onClose, onCreate }: CreateProjectModalProps) {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <Label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Tags
-            </label>
+            </Label>
             <div className="flex space-x-2 mb-2">
               <input
                 type="text"
@@ -449,9 +450,9 @@ function CreateProjectModal({ onClose, onCreate }: CreateProjectModalProps) {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <Label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Color
-            </label>
+            </Label>
             <input
               type="color"
               value={formData.color}
@@ -546,9 +547,9 @@ function EditProjectModal({ project, onClose, onUpdate }: EditProjectModalProps)
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <Label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Project Name
-            </label>
+            </Label>
             <input
               type="text"
               value={formData.name}
@@ -560,9 +561,9 @@ function EditProjectModal({ project, onClose, onUpdate }: EditProjectModalProps)
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <Label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Description
-            </label>
+            </Label>
             <textarea
               value={formData.description}
               onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
@@ -573,9 +574,9 @@ function EditProjectModal({ project, onClose, onUpdate }: EditProjectModalProps)
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <Label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Tags
-            </label>
+            </Label>
             <div className="flex space-x-2 mb-2">
               <input
                 type="text"
@@ -613,9 +614,9 @@ function EditProjectModal({ project, onClose, onUpdate }: EditProjectModalProps)
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <Label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Color
-            </label>
+            </Label>
             <input
               type="color"
               value={formData.color}
@@ -625,9 +626,9 @@ function EditProjectModal({ project, onClose, onUpdate }: EditProjectModalProps)
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <Label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Status
-            </label>
+            </Label>
             <select
               value={formData.status}
               onChange={(e) => setFormData(prev => ({ ...prev, status: e.target.value as Project['status'] }))}

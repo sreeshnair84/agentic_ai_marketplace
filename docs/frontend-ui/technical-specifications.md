@@ -238,135 +238,158 @@ Consistent card component for content containers.
 ```
 frontend/
 ├── public/                          # Static assets
-│   ├── icons/                      # Application icons
-│   ├── images/                     # Images and graphics
-│   └── favicon.ico
+│   ├── customers/                   # Customer avatars
+│   ├── favicon.ico
+│   ├── hero-desktop.png
+│   ├── hero-mobile.png
+│   └── opengraph-image.png
 ├── src/
 │   ├── app/                        # Next.js App Router
 │   │   ├── globals.css            # Global styles
 │   │   ├── layout.tsx             # Root layout
 │   │   ├── page.tsx               # Home page
-│   │   ├── loading.tsx            # Global loading UI
-│   │   ├── error.tsx              # Global error UI
-│   │   ├── not-found.tsx          # 404 page
 │   │   ├── (auth)/                # Auth group
-│   │   │   ├── login/
-│   │   │   ├── register/
-│   │   │   └── callback/
-│   │   ├── dashboard/             # Dashboard pages
-│   │   │   ├── page.tsx
-│   │   │   └── loading.tsx
+│   │   │   ├── login/page.tsx
+│   │   │   ├── register/page.tsx
+│   │   │   └── callback/[provider]/page.tsx
+│   │   ├── login/page.tsx         # Login page
+│   │   ├── dashboard/page.tsx     # Dashboard page
 │   │   ├── agents/                # Agent management
 │   │   │   ├── page.tsx
-│   │   │   ├── [id]/
-│   │   │   └── create/
-│   │   ├── workflows/             # Workflow management
-│   │   │   ├── page.tsx
-│   │   │   ├── [id]/
-│   │   │   ├── create/
-│   │   │   └── designer/
+│   │   │   └── components/
+│   │   │       ├── AgentCard.tsx
+│   │   │       ├── AgentFilters.tsx
+│   │   │       └── CreateAgentDialog.tsx
+│   │   ├── chat/page.tsx          # A2A Chat interface
+│   │   ├── workflows/page.tsx     # Workflow management
 │   │   ├── tools/                 # Tool management
 │   │   │   ├── page.tsx
-│   │   │   ├── [id]/
-│   │   │   └── create/
-│   │   ├── rag/                   # RAG management
+│   │   │   ├── llm-models/page.tsx
+│   │   │   └── components/
+│   │   │       ├── AgentTemplateBuilder.tsx
+│   │   │       ├── LLMModelForm.tsx
+│   │   │       ├── PhysicalToolTester.tsx
+│   │   │       ├── RAGPipelineBuilder.tsx
+│   │   │       ├── ToolInstanceForm.tsx
+│   │   │       └── ToolTemplateForm.tsx
+│   │   ├── models/                # Model management
+│   │   │   ├── layout.tsx
+│   │   │   ├── llm-models/page.tsx
+│   │   │   ├── embedding-models/page.tsx
+│   │   │   └── components/
+│   │   │       ├── EmbeddingModelForm.tsx
+│   │   │       └── LLMModelForm.tsx
+│   │   ├── mcp/                   # MCP management
 │   │   │   ├── page.tsx
-│   │   │   ├── documents/
-│   │   │   └── query/
-│   │   ├── observability/         # Monitoring
-│   │   │   ├── page.tsx
-│   │   │   ├── traces/
-│   │   │   ├── metrics/
-│   │   │   └── a2a/
+│   │   │   └── components/
+│   │   │       ├── MCPEndpointForm.tsx
+│   │   │       ├── MCPServerForm.tsx
+│   │   │       └── MCPToolTester.tsx
+│   │   ├── rag/page.tsx           # RAG management
+│   │   ├── observability/page.tsx # Monitoring
+│   │   ├── environment/page.tsx   # Environment settings
+│   │   ├── projects/page.tsx      # Project management
+│   │   ├── settings/page.tsx      # Settings
+│   │   ├── templates/tools/page.tsx # Tool templates
 │   │   └── api/                   # API routes
-│   │       ├── auth/
-│   │       ├── health/
-│   │       └── proxy/
+│   │       ├── agents/route.ts
+│   │       ├── dashboard/route.ts
+│   │       ├── query/route.ts
+│   │       ├── seed/route.ts
+│   │       ├── sidebar/
+│   │       │   ├── route.ts
+│   │       │   └── stats/route.ts
+│   │       └── test-backend/route.ts
 │   ├── components/                # React components
 │   │   ├── layout/               # Layout components
-│   │   │   ├── Sidebar.tsx
-│   │   │   ├── Header.tsx
-│   │   │   ├── PageLayout.tsx
+│   │   │   ├── ConsistentLayout.tsx
+│   │   │   ├── PageContainer.tsx
+│   │   │   └── StandardPageLayout.tsx
+│   │   ├── navigation/           # Navigation components
 │   │   │   └── Navigation.tsx
-│   │   ├── agents/               # Agent-specific components
-│   │   │   ├── AgentList.tsx
-│   │   │   ├── AgentCard.tsx
-│   │   │   ├── AgentForm.tsx
-│   │   │   ├── AgentDetails.tsx
-│   │   │   └── AgentExecutor.tsx
-│   │   ├── workflows/            # Workflow components
-│   │   │   ├── WorkflowList.tsx
-│   │   │   ├── WorkflowDesigner.tsx
-│   │   │   ├── WorkflowCanvas.tsx
-│   │   │   ├── NodePalette.tsx
-│   │   │   └── ExecutionMonitor.tsx
-│   │   ├── tools/                # Tool components
-│   │   │   ├── ToolList.tsx
-│   │   │   ├── ToolCard.tsx
-│   │   │   ├── ToolForm.tsx
-│   │   │   └── MCPRegistry.tsx
-│   │   ├── rag/                  # RAG components
-│   │   │   ├── DocumentUpload.tsx
-│   │   │   ├── DocumentList.tsx
-│   │   │   ├── QueryInterface.tsx
-│   │   │   └── SearchResults.tsx
-│   │   ├── observability/        # Monitoring components
-│   │   │   ├── TracingDashboard.tsx
-│   │   │   ├── MetricsDashboard.tsx
-│   │   │   ├── A2ANetworkView.tsx
-│   │   │   └── PerformanceCharts.tsx
-│   │   ├── visualization/        # Data visualization
-│   │   │   ├── NetworkDiagram.tsx
-│   │   │   ├── FlowChart.tsx
-│   │   │   ├── PerformanceCharts.tsx
-│   │   │   └── A2AMessageFlow.tsx
-│   │   ├── forms/                # Form components
-│   │   │   ├── DynamicFormBuilder.tsx
-│   │   │   ├── AdvancedSearch.tsx
-│   │   │   └── ConfigurationForm.tsx
 │   │   ├── auth/                 # Authentication
 │   │   │   ├── AuthGuard.tsx
 │   │   │   ├── LoginForm.tsx
-│   │   │   ├── RegisterForm.tsx
-│   │   │   └── ProviderButtons.tsx
+│   │   │   └── RegisterForm.tsx
+│   │   ├── chat/                 # Chat components
+│   │   │   └── A2AChatInterface.tsx
 │   │   └── ui/                   # shadcn/ui components
+│   │       ├── acme-logo.tsx
+│   │       ├── alert.tsx
+│   │       ├── badge.tsx
 │   │       ├── button.tsx
-│   │       ├── input.tsx
+│   │       ├── card.tsx
 │   │       ├── dialog.tsx
+│   │       ├── input.tsx
+│   │       ├── label.tsx
+│   │       ├── login-form.tsx
+│   │       ├── progress.tsx
+│   │       ├── scroll-area.tsx
+│   │       ├── search.tsx
+│   │       ├── select.tsx
+│   │       ├── separator.tsx
+│   │       ├── skeleton.tsx
+│   │       ├── skeletons.tsx
+│   │       ├── switch.tsx
 │   │       ├── table.tsx
-│   │       └── ...
+│   │       ├── tabs.tsx
+│   │       ├── textarea.tsx
+│   │       ├── tooltip.tsx
+│   │       ├── customers/
+│   │       │   └── table.tsx
+│   │       ├── dashboard/
+│   │       │   ├── cards.tsx
+│   │       │   ├── latest-invoices.tsx
+│   │       │   ├── nav-links.tsx
+│   │       │   ├── revenue-chart.tsx
+│   │       │   ├── sample-queries.tsx
+│   │       │   └── sidenav.tsx
+│   │       └── invoices/
+│   │           ├── breadcrumbs.tsx
+│   │           ├── buttons.tsx
+│   │           ├── create-form.tsx
+│   │           ├── edit-form.tsx
+│   │           ├── pagination.tsx
+│   │           ├── status.tsx
+│   │           └── table.tsx
 │   ├── hooks/                    # Custom React hooks
-│   │   ├── use-agents.ts
-│   │   ├── use-workflows.ts
-│   │   ├── use-tools.ts
-│   │   ├── use-rag.ts
-│   │   ├── use-auth.ts
-│   │   ├── use-websocket.ts
-│   │   └── use-a2a-protocol.ts
+│   │   ├── use-toast.ts
+│   │   ├── useA2AChat.ts
+│   │   ├── useA2AChatFastAPI.ts
+│   │   ├── useAgents.ts
+│   │   ├── useDashboardData.ts
+│   │   ├── useEmbeddingModels.ts
+│   │   ├── useLLMModels.ts
+│   │   ├── useMCP.ts
+│   │   ├── useMCP_new.ts
+│   │   ├── useRAG.ts
+│   │   ├── useSidebarStats.ts
+│   │   ├── useTools.ts
+│   │   └── useWorkflows.ts
 │   ├── lib/                      # Utility libraries
 │   │   ├── api.ts               # API client
 │   │   ├── auth/                # Authentication logic
-│   │   │   ├── providers.ts
 │   │   │   ├── authService.ts
-│   │   │   └── types.ts
-│   │   ├── utils.ts             # Utility functions
-│   │   ├── validations.ts       # Form validations
-│   │   ├── websocket.ts         # WebSocket client
-│   │   └── constants.ts         # Application constants
+│   │   │   └── providers.ts
+│   │   ├── data.ts              # Data utilities
+│   │   ├── dashboardApi.ts      # Dashboard API
+│   │   ├── definitions.ts       # Type definitions
+│   │   ├── placeholder-data.ts  # Mock data
+│   │   ├── projectApi.ts        # Project API
+│   │   ├── simpleDashboardApi.ts # Simple dashboard API
+│   │   └── utils.ts             # Utility functions
 │   ├── store/                   # State management
 │   │   ├── authContext.tsx      # Auth context
-│   │   ├── agent-store.ts       # Agent state
-│   │   ├── workflow-store.ts    # Workflow state
-│   │   ├── ui-store.ts          # UI state
-│   │   └── a2a-store.ts         # A2A protocol state
+│   │   └── projectContext.tsx   # Project context
+│   ├── services/                # Service utilities
+│   │   └── mockA2AService.ts    # Mock A2A service
 │   └── types/                   # TypeScript definitions
 │       ├── agent.ts
-│       ├── workflow.ts
-│       ├── tool.ts
-│       ├── rag.ts
 │       ├── auth.ts
-│       ├── a2a-protocol.ts
-│       └── api.ts
+│       ├── common.ts
+│       ├── index.ts
+│       ├── project.ts
+│       └── rag.ts
 ├── package.json                 # Dependencies
 ├── next.config.ts              # Next.js configuration
 ├── tailwind.config.ts          # Tailwind configuration
@@ -384,6 +407,27 @@ frontend/
   - Real-time A2A agent status indicators
   - Contextual quick actions and search
   - Responsive design with mobile drawer
+
+### **Additional Components Found in Review:**
+
+#### A2A Chat Interface (`app/chat/page.tsx`)
+- **Advanced Features**:
+  - Real-time Agent-to-Agent communication monitoring
+  - WebSocket integration for live message streaming
+  - Workflow-based chat sessions with multi-agent orchestration
+  - Voice recording and file upload capabilities
+  - A2A protocol trace visualization
+  - Agent targeting and communication flow tracking
+  - Export functionality for chat history
+  - Citation and tool call display
+  - Scratchpad visualization for agent reasoning
+
+#### Enhanced Component Architecture
+- **StandardPageLayout Integration**: Consistent layout pattern implementation
+- **Advanced State Management**: Zustand + React Query for complex data flows
+- **Real-time Features**: WebSocket-based live updates
+- **Voice Interface**: Speech-to-text integration
+- **File Handling**: Multi-file upload with progress tracking
 
 #### Header (`components/layout/Header.tsx`)
 - **Features**:

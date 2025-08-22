@@ -1,6 +1,17 @@
 import * as React from "react";
 import clsx from 'clsx';
 
+
+/**
+ * Card component (shadcn/ui pattern)
+ *
+ * @param {CardProps} props - Card props
+ * @returns {JSX.Element}
+ * @example
+ * <Card><CardHeader>Title</CardHeader><CardContent>...</CardContent></Card>
+ * @accessibility
+ * - Use semantic HTML and ARIA roles as needed for content.
+ */
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export interface CardProps extends React.HTMLAttributes<HTMLDivElement> {}
 

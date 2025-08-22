@@ -1,13 +1,30 @@
+
+/**
+ * Button component (shadcn/ui pattern)
+ *
+ * @param {ButtonProps} props - Button props
+ * @returns {JSX.Element}
+ * @example
+ * <Button variant="default" size="lg">Click me</Button>
+ */
 import * as React from "react";
 import { Slot } from "@radix-ui/react-slot"
 import clsx from 'clsx';
 
+/**
+ * Props for Button component
+ */
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+  /** Button content */
   children: React.ReactNode;
+  /** Visual style variant */
   variant?: "default" | "destructive" | "outline" | "secondary" | "ghost" | "link";
+  /** Size variant */
   size?: "default" | "sm" | "lg" | "icon";
+  /** Render as child (for Slot) */
   asChild?: boolean;
 }
+
 
 export function Button({ 
   children, 
@@ -18,7 +35,6 @@ export function Button({
   ...rest 
 }: ButtonProps) {
   const Comp = asChild ? Slot : "button"
-  
   return (
     <Comp
       {...rest}
@@ -42,6 +58,9 @@ export function Button({
         },
         className,
       )}
+      aria-pressed={rest['aria-pressed']}
+      aria-label={rest['aria-label']}
+      tabIndex={0}
     >
       {children}
     </Comp>
