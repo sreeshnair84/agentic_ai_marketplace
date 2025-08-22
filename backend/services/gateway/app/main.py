@@ -18,7 +18,10 @@ from .api.v1.auth import router as auth_router
 from .api.v1.proxy import router as proxy_router
 from .api.v1.health import router as health_router
 from .api.v1.projects import router as projects_router
+from .api.v1.notification import router as notification_router
 from .api.v1.stats import router as stats_router
+from .api.v1.metadata import router as metadata_router
+from .api.v1.memory import router as memory_router
 from .api.sample_queries import router as sample_queries_router
 from .api.agents import router as agents_router
 from .api.tools import router as tools_router
@@ -34,7 +37,6 @@ logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
 logger = logging.getLogger(__name__)
-
 
 
 @asynccontextmanager
@@ -86,7 +88,7 @@ def create_application() -> FastAPI:
         allow_headers=["*"],
     )
     
-    # API routers
+    # V1 API routers (preferred)
     app.include_router(
         auth_router, 
         prefix=f"{settings.API_V1_STR}/auth", 
@@ -98,9 +100,19 @@ def create_application() -> FastAPI:
         tags=["services"]
     )
     app.include_router(
+        health_router, 
+        prefix="", 
+        tags=["health"]
+    )
+    app.include_router(
         projects_router, 
         prefix=f"{settings.API_V1_STR}", 
         tags=["projects"]
+    )
+    app.include_router(
+        notification_router, 
+        prefix=f"{settings.API_V1_STR}", 
+        tags=["notifications"]
     )
     app.include_router(
         stats_router, 
@@ -108,14 +120,14 @@ def create_application() -> FastAPI:
         tags=["statistics"]
     )
     app.include_router(
-        health_router, 
-        prefix="", 
-        tags=["health"]
+        metadata_router, 
+        prefix=f"{settings.API_V1_STR}", 
+        tags=["metadata"]
     )
     app.include_router(
-        sample_queries_router, 
+        memory_router, 
         prefix=f"{settings.API_V1_STR}", 
-        tags=["sample-queries"]
+        tags=["memory"]
     )
     app.include_router(
         agents_router, 
@@ -127,33 +139,15 @@ def create_application() -> FastAPI:
         prefix=f"{settings.API_V1_STR}", 
         tags=["tools"]
     )
-    # Also mount tools router under /api/tools for frontend compatibility
-    app.include_router(
-        tools_router, 
-        prefix="/api", 
-        tags=["tools-legacy"]
-    )
     app.include_router(
         workflows_router, 
         prefix=f"{settings.API_V1_STR}", 
         tags=["workflows"]
     )
-    # Also mount workflows router under /api/workflows for frontend compatibility
-    app.include_router(
-        workflows_router, 
-        prefix="/api", 
-        tags=["workflows-legacy"]
-    )
     app.include_router(
         rag_router, 
         prefix=f"{settings.API_V1_STR}", 
         tags=["rag"]
-    )
-    # Also mount RAG router under /api/rag for frontend compatibility
-    app.include_router(
-        rag_router, 
-        prefix="/api", 
-        tags=["rag-legacy"]
     )
     app.include_router(
         mcp_registry_router, 
@@ -170,7 +164,43 @@ def create_application() -> FastAPI:
         prefix=f"{settings.API_V1_STR}", 
         tags=["chat-a2a"]
     )
-    # Also mount A2A chat router under /api/chat for frontend compatibility
+    
+    # Legacy API compatibility routers
+    app.include_router(
+        sample_queries_router, 
+        prefix="/api", 
+        tags=["sample-queries-legacy"]
+    )
+    app.include_router(
+        agents_router, 
+        prefix="/api", 
+        tags=["agents-legacy"]
+    )
+    app.include_router(
+        tools_router, 
+        prefix="/api", 
+        tags=["tools-legacy"]
+    )
+    app.include_router(
+        workflows_router, 
+        prefix="/api", 
+        tags=["workflows-legacy"]
+    )
+    app.include_router(
+        rag_router, 
+        prefix="/api", 
+        tags=["rag-legacy"]
+    )
+    app.include_router(
+        mcp_registry_router, 
+        prefix="/api", 
+        tags=["mcp-registry-legacy"]
+    )
+    app.include_router(
+        mcp_gateway_router, 
+        prefix="/api", 
+        tags=["mcp-gateway-legacy"]
+    )
     app.include_router(
         chat_a2a_router, 
         prefix="/api", 

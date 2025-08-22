@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { mockA2AService } from '@/services/mockA2AService';
+import { SelectedContext, WorkflowMetadata, AgentMetadata, ToolMetadata } from '@/components/chat/MetadataSelector';
 
 // A2A Message Types
 export interface A2AMessage {
@@ -33,7 +34,7 @@ export interface AgentCommunication {
   message_type: 'request' | 'response' | 'broadcast' | 'error';
 }
 
-// Chat Message with Agent Context
+// Chat Message with Enhanced Context
 export interface ChatMessage {
   id: string;
   type: 'user' | 'agent' | 'system' | 'inter_agent';
@@ -48,6 +49,7 @@ export interface ChatMessage {
   toolCalls?: ToolCall[];
   streaming?: boolean;
   isComplete?: boolean;
+  context?: SelectedContext; // Enhanced: track message context
 }
 
 // Agent Scratchpad for showing thinking process
@@ -113,7 +115,7 @@ export interface StreamingState {
   chunks: string[];
 }
 
-// Chat Session
+// Enhanced Chat Session with Context
 export interface ChatSession {
   id: string;
   name: string;
@@ -122,6 +124,20 @@ export interface ChatSession {
   createdAt: Date;
   updatedAt: Date;
   metadata?: Record<string, any>;
+  context?: SelectedContext; // Enhanced: session context
+}
+
+// Routing Information
+export interface RoutingInfo {
+  routing_url: string;
+  dns_name?: string;
+  base_url?: string;
+  health_url?: string;
+  capabilities?: any;
+  input_modes?: string[];
+  output_modes?: string[];
+  status: string;
+  available: boolean;
 }
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
@@ -129,9 +145,10 @@ const AGENTS_BASE = process.env.NEXT_PUBLIC_AGENTS_URL || 'http://localhost:8002
 const ORCHESTRATOR_BASE = process.env.NEXT_PUBLIC_ORCHESTRATOR_URL || 'http://localhost:8003';
 const USE_MOCK_SERVICE = process.env.NODE_ENV === 'development' || true; // Enable mock service for now
 
-export function useA2AChat() {
+export function useA2AChatEnhanced() {
   const [sessions, setSessions] = useState<ChatSession[]>([]);
   const [currentSession, setCurrentSession] = useState<ChatSession | null>(null);
+  const [selectedContext, setSelectedContext] = useState<SelectedContext>({ type: null });
   const [streamingState, setStreamingState] = useState<StreamingState>({
     isStreaming: false,
     currentMessage: '',
@@ -145,16 +162,17 @@ export function useA2AChat() {
   const wsRef = useRef<WebSocket | null>(null);
   const eventSourceRef = useRef<EventSource | null>(null);
 
-  // Create new chat session
-  const createSession = useCallback(async (name: string, workflowId?: string): Promise<ChatSession> => {
+  // Create new chat session with context
+  const createSession = useCallback(async (name: string, context?: SelectedContext): Promise<ChatSession> => {
     const newSession: ChatSession = {
       id: `session_${Date.now()}`,
       name,
-      workflowId,
+      workflowId: context?.workflow?.id,
       messages: [],
       createdAt: new Date(),
       updatedAt: new Date(),
-      metadata: { workflowId }
+      metadata: { context },
+      context
     };
     
     setSessions(prev => [...prev, newSession]);
@@ -162,26 +180,125 @@ export function useA2AChat() {
     return newSession;
   }, []);
 
-  // Send A2A message using the JSON-RPC protocol
+  // Update session context
+  const updateSessionContext = useCallback((context: SelectedContext) => {
+    setSelectedContext(context);
+    
+    if (currentSession) {
+      const updatedSession = {
+        ...currentSession,
+        context,
+        metadata: { ...currentSession.metadata, context },
+        updatedAt: new Date()
+      };
+      setCurrentSession(updatedSession);
+      setSessions(prev => prev.map(s => s.id === currentSession.id ? updatedSession : s));
+    }
+  }, [currentSession]);
+
+  // Get routing information based on context
+  const getRoutingInfo = useCallback(async (context: SelectedContext): Promise<RoutingInfo | null> => {
+    try {
+      if (context.type === 'workflow' && context.workflow) {
+        const response = await fetch(`${API_BASE}/api/v1/metadata/workflow/${context.workflow.name}/routing`);
+        if (response.ok) {
+          return await response.json();
+        }
+      } else if (context.type === 'agent' && context.agent) {
+        const response = await fetch(`${API_BASE}/api/v1/metadata/agent/${context.agent.name}/routing`);
+        if (response.ok) {
+          return await response.json();
+        }
+      }
+      return null;
+    } catch (error) {
+      console.error('Failed to get routing info:', error);
+      return null;
+    }
+  }, []);
+
+  // Get default workflow for when no context is selected
+  const getDefaultWorkflow = useCallback(async (): Promise<any> => {
+    try {
+      const response = await fetch(`${API_BASE}/api/v1/metadata/default-workflow`);
+      if (response.ok) {
+        return await response.json();
+      }
+      return null;
+    } catch (error) {
+      console.error('Failed to get default workflow:', error);
+      return null;
+    }
+  }, []);
+
+  // Determine the target URL for A2A communication
+  const getTargetUrl = useCallback(async (context: SelectedContext): Promise<string> => {
+    // Get routing info based on context
+    const routingInfo = await getRoutingInfo(context);
+    
+    if (routingInfo?.available && routingInfo.routing_url) {
+      return routingInfo.routing_url;
+    }
+    
+    // Fallback routing logic
+    if (context.type === 'workflow' && context.workflow) {
+      // Workflow-specific routing
+      if (context.workflow.dns_name) {
+        return `http://${context.workflow.dns_name}/a2a/message/stream`;
+      } else if (context.workflow.url) {
+        return `${context.workflow.url}/a2a/message/stream`;
+      }
+    } else if (context.type === 'agent' && context.agent) {
+      // Agent-specific routing
+      if (context.agent.a2a_address) {
+        return `${context.agent.a2a_address}/a2a/message/stream`;
+      } else if (context.agent.dns_name) {
+        return `https://${context.agent.dns_name}/a2a/message/stream`;
+      } else if (context.agent.url) {
+        return `${context.agent.url}/a2a/message/stream`;
+      }
+    } else if (context.type === 'tools' && context.tools) {
+      // Tools routing - use default workflow with tools context
+      const defaultWorkflow = await getDefaultWorkflow();
+      if (defaultWorkflow && defaultWorkflow.dns_name) {
+        return `http://${defaultWorkflow.dns_name}/a2a/message/stream`;
+      }
+      return `${AGENTS_BASE}/a2a/agents/general/stream`;
+    }
+    
+    // Default to the smart workflow service
+    const defaultWorkflow = await getDefaultWorkflow();
+    if (defaultWorkflow && defaultWorkflow.dns_name) {
+      return `http://${defaultWorkflow.dns_name}/a2a/message/stream`;
+    }
+    
+    // Final fallback to orchestrator
+    return `${ORCHESTRATOR_BASE}/a2a/message/stream`;
+  }, [getRoutingInfo, getDefaultWorkflow]);
+
+  // Enhanced send A2A message with context-aware routing
   const sendA2AMessage = useCallback(async (
     message: string,
     attachments: FileAttachment[] = [],
-    voiceRecording?: VoiceRecording
+    voiceRecording?: VoiceRecording,
+    contextOverride?: SelectedContext
   ): Promise<void> => {
     if (!currentSession) return;
     
+    const activeContext = contextOverride || selectedContext;
     setError(null);
     setLoading(true);
 
     try {
-      // Create user message
+      // Create user message with context
       const userMessage: ChatMessage = {
         id: `msg_${Date.now()}`,
         type: 'user',
         content: message,
         timestamp: new Date(),
         attachments,
-        isComplete: true
+        isComplete: true,
+        context: activeContext
       };
 
       // Add to current session
@@ -217,7 +334,7 @@ export function useA2AChat() {
         });
       }
 
-      // Prepare JSON-RPC request
+      // Enhanced JSON-RPC request with context
       const rpcRequest = {
         jsonrpc: '2.0',
         id: `task_${Date.now()}`,
@@ -229,12 +346,17 @@ export function useA2AChat() {
           message: {
             role: 'user',
             parts
-          }
+          },
+          context: activeContext, // Include context in request
+          tools: activeContext.type === 'tools' ? activeContext.tools?.map(t => t.name) : undefined
         }
       };
 
-      // Send streaming request to orchestrator
-      await handleStreamingResponse(rpcRequest);
+      // Get target URL based on context
+      const targetUrl = await getTargetUrl(activeContext);
+      
+      // Send streaming request to appropriate endpoint
+      await handleStreamingResponse(rpcRequest, targetUrl, activeContext);
 
     } catch (error) {
       console.error('Error sending A2A message:', error);
@@ -242,10 +364,14 @@ export function useA2AChat() {
     } finally {
       setLoading(false);
     }
-  }, [currentSession]);
+  }, [currentSession, selectedContext, getTargetUrl]);
 
-  // Handle streaming response from A2A endpoint
-  const handleStreamingResponse = useCallback(async (rpcRequest: any) => {
+  // Enhanced streaming response handler with context awareness
+  const handleStreamingResponse = useCallback(async (
+    rpcRequest: any, 
+    targetUrl: string, 
+    context: SelectedContext
+  ) => {
     if (!currentSession) return;
 
     try {
@@ -256,20 +382,25 @@ export function useA2AChat() {
       });
 
       if (USE_MOCK_SERVICE) {
-        // Use mock service for development
+        // Use mock service for development with context
         const messageText = rpcRequest.params.message.parts[0]?.text || '';
         
-        for await (const chunk of mockA2AService.generateMockA2AResponse(messageText, currentSession.id)) {
-          await processStreamChunk(chunk, null, '');
+        for await (const chunk of mockA2AService.generateMockA2AResponse(
+          messageText, 
+          currentSession.id,
+          context
+        )) {
+          await processStreamChunk(chunk, null, '', context);
         }
       } else {
-        // Use real A2A service
-        const url = `${ORCHESTRATOR_BASE}/a2a/message/stream`;
-        
-        const response = await fetch(url, {
+        // Use real A2A service with context-aware routing
+        const response = await fetch(targetUrl, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
+            // Add context headers for routing
+            'X-A2A-Context-Type': context.type || 'default',
+            'X-A2A-Context-ID': context.workflow?.id || context.agent?.id || 'default'
           },
           body: JSON.stringify(rpcRequest)
         });
@@ -304,7 +435,8 @@ export function useA2AChat() {
                 if (currentAgentMessage) {
                   const completedMessage: ChatMessage = {
                     ...(currentAgentMessage as ChatMessage),
-                    isComplete: true
+                    isComplete: true,
+                    context
                   };
                   updateCurrentMessage(completedMessage);
                 }
@@ -318,7 +450,7 @@ export function useA2AChat() {
 
               try {
                 const chunk = JSON.parse(data);
-                await processStreamChunk(chunk, currentAgentMessage, fullContent);
+                await processStreamChunk(chunk, currentAgentMessage, fullContent, context);
               } catch (parseError) {
                 console.warn('Failed to parse chunk:', data, parseError);
               }
@@ -337,11 +469,12 @@ export function useA2AChat() {
     }
   }, [currentSession]);
 
-  // Process individual stream chunks
+  // Enhanced stream chunk processing with context
   const processStreamChunk = useCallback(async (
     chunk: any,
     currentAgentMessage: ChatMessage | null,
-    fullContent: string
+    fullContent: string,
+    context: SelectedContext
   ) => {
     if (!currentSession) return;
 
@@ -358,22 +491,24 @@ export function useA2AChat() {
           chunks: [...prev.chunks, messageText]
         }));
 
-        // Create or update agent message
+        // Create or update agent message with context
         if (!currentAgentMessage) {
           const newAgentMessage: ChatMessage = {
             id: `msg_${Date.now()}`,
             type: 'agent',
             content: newFullContent,
-            agentName: status.result?.agent_name || 'AI Assistant',
+            agentName: getAgentNameFromContext(context, status),
             timestamp: new Date(),
             streaming: true,
-            isComplete: false
+            isComplete: false,
+            context
           };
           addMessageToSession(newAgentMessage);
         } else {
           const updatedMessage: ChatMessage = {
             ...(currentAgentMessage as ChatMessage),
-            content: newFullContent
+            content: newFullContent,
+            context
           };
           updateCurrentMessage(updatedMessage);
         }
@@ -387,14 +522,15 @@ export function useA2AChat() {
             toolCalls: status.result.tool_calls || [],
             scratchpad: status.result.scratchpad,
             streaming: false,
-            isComplete: true
+            isComplete: true,
+            context
           };
           updateCurrentMessage(completedMessage);
         }
       }
     }
 
-    // Handle agent-to-agent communications
+    // Handle agent-to-agent communications with context
     if (chunk.result?.type === 'agent_communication') {
       const communication: AgentCommunication = {
         id: `comm_${Date.now()}`,
@@ -409,19 +545,32 @@ export function useA2AChat() {
       
       setAgentCommunications(prev => [...prev, communication]);
       
-      // Add inter-agent message to chat
+      // Add inter-agent message to chat with context
       const interAgentMessage: ChatMessage = {
         id: `inter_${Date.now()}`,
         type: 'inter_agent',
         content: `${communication.sourceAgent} → ${communication.targetAgent}: ${communication.message}`,
         timestamp: new Date(),
         a2aTrace: [communication],
-        isComplete: true
+        isComplete: true,
+        context
       };
       
       addMessageToSession(interAgentMessage);
     }
   }, [currentSession]);
+
+  // Helper to get agent name from context
+  const getAgentNameFromContext = (context: SelectedContext, status: any): string => {
+    if (context.type === 'workflow' && context.workflow) {
+      return context.workflow.display_name;
+    } else if (context.type === 'agent' && context.agent) {
+      return context.agent.display_name;
+    } else if (context.type === 'tools' && context.tools) {
+      return `Generic Agent (${context.tools.length} tools)`;
+    }
+    return status.result?.agent_name || 'AI Assistant';
+  };
 
   // Add message to current session
   const addMessageToSession = useCallback((message: ChatMessage) => {
@@ -538,6 +687,9 @@ export function useA2AChat() {
       content = JSON.stringify(session, null, 2);
     } else if (format === 'md') {
       content = `# ${session.name}\n\n`;
+      if (session.context) {
+        content += `**Context:** ${session.context.type}\n\n`;
+      }
       session.messages.forEach(msg => {
         content += `## ${msg.type === 'user' ? 'User' : msg.agentName || 'Assistant'}\n`;
         content += `${msg.content}\n\n`;
@@ -586,10 +738,17 @@ export function useA2AChat() {
     setCurrentSession,
     createSession,
     
+    // Context management
+    selectedContext,
+    updateSessionContext,
+    
     // Messaging
     sendA2AMessage,
     uploadFile,
     startVoiceRecording,
+    
+    // Routing
+    getRoutingInfo,
     
     // State
     streamingState,

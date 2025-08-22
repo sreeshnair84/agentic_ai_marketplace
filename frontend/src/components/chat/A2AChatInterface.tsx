@@ -27,7 +27,8 @@ import {
   Clock,
   CheckCircle,
   AlertCircle,
-  Loader2
+  Loader2,
+  Workflow
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -39,7 +40,9 @@ import { Separator } from '@/components/ui/separator';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { useA2AChat, ChatMessage, FileAttachment, AgentScratchpad, Citation, ToolCall, AgentCommunication } from '@/hooks/useA2AChat';
+import { useA2AChatEnhanced, ChatMessage, FileAttachment, AgentScratchpad, Citation, ToolCall, AgentCommunication } from '@/hooks/useA2AChat';
+import { MetadataSelector, SelectedContext } from './MetadataSelector';
+import { MemoryViewer } from './MemoryViewer';
 
 interface AgentScratchpadViewProps {
   scratchpad: AgentScratchpad;
@@ -452,6 +455,8 @@ export const A2AChatInterface: React.FC = () => {
     currentSession,
     setCurrentSession,
     createSession,
+    selectedContext,
+    updateSessionContext,
     sendA2AMessage,
     uploadFile,
     startVoiceRecording,
@@ -462,7 +467,7 @@ export const A2AChatInterface: React.FC = () => {
     exportSession,
     deleteSession,
     clearError
-  } = useA2AChat();
+  } = useA2AChatEnhanced();
 
   const [inputValue, setInputValue] = useState('');
   const [files, setFiles] = useState<FileAttachment[]>([]);
@@ -470,7 +475,8 @@ export const A2AChatInterface: React.FC = () => {
   const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
   const [showA2ATrace, setShowA2ATrace] = useState(false);
   const [showScratchpad, setShowScratchpad] = useState(true);
-  const [selectedWorkflow, setSelectedWorkflow] = useState<string>('');
+  const [metadataSelectorCollapsed, setMetadataSelectorCollapsed] = useState(false);
+  const [showMemoryViewer, setShowMemoryViewer] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -549,13 +555,27 @@ export const A2AChatInterface: React.FC = () => {
   };
 
   const handleCreateNewSession = () => {
-    createSession(`Chat ${sessions.length + 1}`);
+    createSession(`Chat ${sessions.length + 1}`, selectedContext);
+  };
+
+  const handleContextChange = (context: SelectedContext) => {
+    updateSessionContext(context);
   };
 
   return (
     <div className="h-full flex">
       {/* Session Sidebar */}
       <div className="w-80 border-r border-gray-200 dark:border-gray-700 flex flex-col">
+        {/* Metadata Selector */}
+        <div className="border-b border-gray-200 dark:border-gray-700">
+          <MetadataSelector
+            selectedContext={selectedContext}
+            onSelectionChange={handleContextChange}
+            isCollapsed={metadataSelectorCollapsed}
+            onToggleCollapse={() => setMetadataSelectorCollapsed(!metadataSelectorCollapsed)}
+          />
+        </div>
+        
         <div className="p-4 border-b">
           <Button onClick={handleCreateNewSession} className="w-full">
             <MessageSquare className="h-4 w-4 mr-2" />
@@ -610,8 +630,30 @@ export const A2AChatInterface: React.FC = () => {
               <h1 className="text-xl font-semibold">
                 {currentSession?.name || 'Select a conversation'}
               </h1>
+              {selectedContext.type && (
+                <div className="flex items-center space-x-2 mt-1">
+                  {selectedContext.type === 'workflow' && selectedContext.workflow && (
+                    <Badge variant="outline" className="text-xs">
+                      <Workflow className="h-3 w-3 mr-1" />
+                      {selectedContext.workflow.display_name}
+                    </Badge>
+                  )}
+                  {selectedContext.type === 'agent' && selectedContext.agent && (
+                    <Badge variant="outline" className="text-xs">
+                      <Bot className="h-3 w-3 mr-1" />
+                      {selectedContext.agent.display_name}
+                    </Badge>
+                  )}
+                  {selectedContext.type === 'tools' && selectedContext.tools && (
+                    <Badge variant="outline" className="text-xs">
+                      <Wrench className="h-3 w-3 mr-1" />
+                      {selectedContext.tools.length} tools
+                    </Badge>
+                  )}
+                </div>
+              )}
               {streamingState.isStreaming && (
-                <p className="text-sm text-gray-500 flex items-center">
+                <p className="text-sm text-gray-500 flex items-center mt-1">
                   <Loader2 className="h-3 w-3 animate-spin mr-1" />
                   AI is thinking...
                 </p>
@@ -657,6 +699,21 @@ export const A2AChatInterface: React.FC = () => {
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>Export chat</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => setShowMemoryViewer(!showMemoryViewer)}
+                    >
+                      <Brain className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>View memory & execution history</TooltipContent>
                 </Tooltip>
               </TooltipProvider>
 
@@ -797,6 +854,13 @@ export const A2AChatInterface: React.FC = () => {
           </div>
         )}
       </div>
+      
+      {/* Memory Viewer */}
+      <MemoryViewer
+        sessionId={currentSession?.id || ''}
+        isOpen={showMemoryViewer}
+        onToggle={() => setShowMemoryViewer(!showMemoryViewer)}
+      />
     </div>
   );
 };

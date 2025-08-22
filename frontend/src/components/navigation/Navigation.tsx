@@ -42,6 +42,7 @@ import {
   TestTube
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import {  NotificationBell } from '@/components/ui/notification-bell';
 
 interface NavigationItem {
   id: string;
@@ -922,7 +923,6 @@ function TopBar({ onMenuClick, isCollapsed }: TopBarProps) {
   const pathname = usePathname();
   const { stats } = useSidebarStats();
   const user = useUser();
-  const [showNotifications, setShowNotifications] = useState(false);
   const [globalSearch, setGlobalSearch] = useState('');
   const [showSearch, setShowSearch] = useState(false);
   
@@ -963,32 +963,7 @@ function TopBar({ onMenuClick, isCollapsed }: TopBarProps) {
     return breadcrumbs;
   };
 
-  const notifications = [
-    {
-      id: '1',
-      type: 'success',
-      title: 'Agent Deployed',
-      message: 'Customer Support Agent is now live',
-      time: '2 min ago',
-      unread: true
-    },
-    {
-      id: '2',
-      type: 'warning',
-      title: 'High CPU Usage',
-      message: 'RAG Service using 85% CPU',
-      time: '5 min ago',
-      unread: true
-    },
-    {
-      id: '3',
-      type: 'info',
-      title: 'Workflow Completed',
-      message: 'Invoice processing workflow finished',
-      time: '10 min ago',
-      unread: false
-    }
-  ];
+  // notifications handled by NotificationBell
 
   const unreadCount = notifications.filter(n => n.unread).length;
 
@@ -1107,64 +1082,7 @@ function TopBar({ onMenuClick, isCollapsed }: TopBarProps) {
               )}
             </button>
 
-            {/* Notifications Dropdown */}
-            {showNotifications && (
-              <div className="absolute top-full right-0 mt-2 w-80 max-w-[calc(100vw-2rem)] bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl z-50">
-                <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
-                      Notifications
-                    </h3>
-                    <button className="text-xs text-blue-600 dark:text-blue-400 hover:underline transition-colors">
-                      Mark all as read
-                    </button>
-                  </div>
-                </div>
-                <div className="max-h-96 overflow-y-auto">
-                  {notifications.map((notification) => (
-                    <div
-                      key={notification.id}
-                      className={cn(
-                        'p-4 border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors',
-                        notification.unread && 'bg-blue-50 dark:bg-blue-900/20'
-                      )}
-                    >
-                      <div className="flex items-start gap-3">
-                        <div className={cn(
-                          'w-2 h-2 rounded-full mt-2 flex-shrink-0',
-                          notification.type === 'success' && 'bg-green-500',
-                          notification.type === 'warning' && 'bg-yellow-500',
-                          notification.type === 'info' && 'bg-blue-500'
-                        )} />
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
-                            {notification.title}
-                          </p>
-                          <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2">
-                            {notification.message}
-                          </p>
-                          <p className="text-xs text-gray-400 mt-1">
-                            {notification.time}
-                          </p>
-                        </div>
-                        {notification.unread && (
-                          <div className="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0" />
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                <div className="p-3 border-t border-gray-200 dark:border-gray-700">
-                  <Link
-                    href="/notifications"
-                    className="text-xs text-blue-600 dark:text-blue-400 hover:underline"
-                    onClick={() => setShowNotifications(false)}
-                  >
-                    View all notifications
-                  </Link>
-                </div>
-              </div>
-            )}
+            {user?.id && <NotificationBell userId={user.id} />}
           </div>
 
           {/* User Avatar */}
