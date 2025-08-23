@@ -18,5 +18,4 @@ class NotificationRead(NotificationBase):
     created_at: datetime
     read_at: Optional[datetime] = None
 
-    class Config:
-        orm_mode = True
+    model_config = {"from_attributes": True}

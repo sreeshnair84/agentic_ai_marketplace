@@ -398,7 +398,7 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({
 
           {/* Message Content */}
           <div className="text-sm">
-            <p>{message.content}</p>
+            <p>{message.content}{message.streaming && <span className="animate-pulse">|</span>}</p>
           </div>
 
           {/* File Attachments */}
@@ -832,8 +832,8 @@ export const A2AChatInterface: React.FC = () => {
                 />
               ))}
               
-              {/* Streaming Message */}
-              {streamingState.isStreaming && streamingState.currentMessage && (
+              {/* Only show streaming indicator if no message is being streamed yet */}
+              {streamingState.isStreaming && !streamingState.currentMessage && (
                 <div className="flex justify-start">
                   <div className="max-w-[80%] rounded-lg p-3 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600">
                     <div className="flex items-center space-x-2 mb-2">
@@ -842,8 +842,7 @@ export const A2AChatInterface: React.FC = () => {
                       <Loader2 className="h-3 w-3 animate-spin" />
                     </div>
                     <div className="text-sm">
-                      {streamingState.currentMessage}
-                      <span className="animate-pulse">|</span>
+                      <span className="animate-pulse">Thinking...</span>
                     </div>
                   </div>
                 </div>

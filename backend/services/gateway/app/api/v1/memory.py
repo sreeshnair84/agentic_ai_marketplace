@@ -265,18 +265,24 @@ async def get_execution_history(
             duration = None
             if row.started_at and row.completed_at:
                 duration = (row.completed_at - row.started_at).total_seconds()
-            
+
+            # Ensure memory_types is a list of strings
+            memory_types = row.memory_types or []
+            if not isinstance(memory_types, list):
+                memory_types = list(memory_types) if memory_types else []
+            memory_types = [str(mt) for mt in memory_types if mt is not None]
+
             executions.append({
                 "execution_id": row.execution_id,
                 "started_at": row.started_at.isoformat() if row.started_at else None,
                 "completed_at": row.completed_at.isoformat() if row.completed_at else None,
                 "duration_seconds": duration,
                 "memory_count": row.memory_count,
-                "memory_types": row.memory_types or [],
+                "memory_types": memory_types,
                 "has_plan": row.has_plan,
                 "has_results": row.has_results
             })
-        
+
         return {
             "session_id": session_id,
             "count": len(executions),

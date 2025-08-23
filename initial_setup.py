@@ -89,7 +89,8 @@ class SetupManager:
             # Execute consolidated migrations (only 2 files)
             migration_files = [
                 "0001_complete_schema.sql",
-                "0002_vector_and_data.sql"
+                "0002_vector_and_data.sql",
+                
             ]
             
             for migration_file in migration_files:

@@ -675,11 +675,11 @@ class EnhancedModelService:
 # Global enhanced model service instance
 _enhanced_model_service: Optional[EnhancedModelService] = None
 
-def get_enhanced_model_service(database_service: DatabaseService = None) -> EnhancedModelService:
+def get_enhanced_model_service() -> EnhancedModelService:
     """Get enhanced model service instance"""
     global _enhanced_model_service
     if _enhanced_model_service is None:
         from .database_service import get_database_service
-        db_service = database_service or get_database_service()
+        db_service = get_database_service()
         _enhanced_model_service = EnhancedModelService(db_service)
     return _enhanced_model_service

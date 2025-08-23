@@ -171,7 +171,7 @@ function Install-PostgreSQL {
         Write-Step "PostgreSQL already installed"
     } else {
         Write-Step "Installing PostgreSQL 16..."
-        choco install postgresql16 --params '/Password:lcnc_password' -y
+        choco install postgresql16 --params '/Password:agenticai_password' -y
         
         # Refresh environment
         $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
@@ -235,15 +235,15 @@ function Setup-Database {
     
     # Set PostgreSQL environment variables
     $env:PGUSER = "postgres"
-    $env:PGPASSWORD = "lcnc_password"
+    $env:PGPASSWORD = "agenticai_password"
     
     Write-Step "Creating database and user..."
     
     # Create database and user
     $createDbScript = @"
-CREATE USER lcnc_user WITH PASSWORD 'lcnc_password';
-CREATE DATABASE lcnc_platform OWNER lcnc_user;
-GRANT ALL PRIVILEGES ON DATABASE lcnc_platform TO lcnc_user;
+CREATE USER agenticai_user WITH PASSWORD 'agenticai_password';
+CREATE DATABASE agenticai_platform OWNER agenticai_user;
+GRANT ALL PRIVILEGES ON DATABASE agenticai_platform TO agenticai_user;
 \q
 "@
     
@@ -257,7 +257,7 @@ GRANT ALL PRIVILEGES ON DATABASE lcnc_platform TO lcnc_user;
         
         # Install pgvector extension
         Write-Step "Installing pgvector extension..."
-        psql -h localhost -U postgres -d lcnc_platform -c "CREATE EXTENSION IF NOT EXISTS vector;"
+        psql -h localhost -U postgres -d agenticai_platform -c "CREATE EXTENSION IF NOT EXISTS vector;"
         
         Write-Step "Database setup completed successfully"
     }
@@ -353,10 +353,10 @@ function Run-DatabaseMigrations {
     
     if (Test-Path $migrationPath) {
         Write-Step "Running database migrations..."
-        $env:PGPASSWORD = "lcnc_password"
+        $env:PGPASSWORD = "agenticai_password"
         
         try {
-            psql -h localhost -U lcnc_user -d lcnc_platform -f $migrationPath
+            psql -h localhost -U agenticai_user -d agenticai_platform -f $migrationPath
             Write-Step "Database migrations completed successfully"
         }
         catch {
@@ -373,7 +373,7 @@ function Create-EnvironmentFiles {
     # Backend environment file
     $backendEnv = @"
 # Database Configuration
-DATABASE_URL=postgresql+asyncpg://lcnc_user:lcnc_password@localhost:5432/lcnc_platform
+DATABASE_URL=postgresql+asyncpg://agenticai_user:agenticai_password@localhost:5432/agenticai_platform
 
 # Redis Configuration
 REDIS_URL=redis://localhost:6379/0
@@ -511,7 +511,7 @@ Write-Host "Backend API: http://localhost:8000" -ForegroundColor Cyan
 Write-Host "API Documentation: http://localhost:8000/docs" -ForegroundColor Cyan
 Write-Host ""
 Write-Host "Default Admin Credentials:" -ForegroundColor Yellow
-Write-Host "Email: admin@lcnc.local" -ForegroundColor White
+Write-Host "Email: admin@agenticai.local" -ForegroundColor White
 Write-Host "Password: admin123" -ForegroundColor White
 "@
     
@@ -568,8 +568,8 @@ function Test-Installation {
     
     # Test database connection
     try {
-        $env:PGPASSWORD = "lcnc_password"
-        $result = psql -h localhost -U lcnc_user -d lcnc_platform -c "SELECT 1;" 2>&1
+        $env:PGPASSWORD = "agenticai_password"
+        $result = psql -h localhost -U agenticai_user -d agenticai_platform -c "SELECT 1;" 2>&1
         if ($LASTEXITCODE -eq 0) {
             Write-Step "✓ Database: Connection successful"
         } else {
@@ -610,7 +610,7 @@ function Show-Summary {
     Write-Host "• Tools:         http://localhost:8005"
     Write-Host ""
     Write-ColorOutput "Default Admin Credentials:" $Yellow
-    Write-Host "Email: admin@lcnc.local"
+    Write-Host "Email: admin@agenticai.local"
     Write-Host "Password: admin123"
     Write-Host ""
     Write-ColorOutput "Support:" $Blue

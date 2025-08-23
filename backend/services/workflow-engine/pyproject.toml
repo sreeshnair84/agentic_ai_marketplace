@@ -1,0 +1,22 @@
+[project]
+name = "workflow-engine"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "alembic>=1.16.4",
+    "asyncpg>=0.30.0",
+    "croniter>=6.0.0",
+    "fastapi>=0.116.1",
+    "httpx>=0.28.1",
+    "pydantic>=2.11.7",
+    "pydantic-settings>=2.10.1",
+    "pytest>=8.4.1",
+    "pytest-asyncio>=1.1.0",
+    "python-dotenv>=1.1.1",
+    "python-multipart>=0.0.20",
+    "redis[hiredis]>=4.5.0",
+    "sqlalchemy[asyncio]>=2.0.43",
+    "uvicorn[standard]>=0.35.0",
+]

@@ -5,7 +5,8 @@ REST endpoints for managing LLM model configurations
 
 from fastapi import APIRouter, Depends, HTTPException, status, Query, Body
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, field_validator
+from pydantic import Field
 from typing import Dict, Any, List, Optional, Union
 from datetime import datetime
 from enum import Enum
@@ -21,7 +22,7 @@ from ...services.langgraph_model_service import (
     PerformanceMetrics
 )
 from ...core.dependencies import get_current_user
-from ...core.database import get_db_session
+from ...core.database import get_database
 
 router = APIRouter(prefix="/llm-models", tags=["LLM Models"])
 
@@ -36,17 +37,19 @@ class CreateLLMModelRequest(BaseModel):
     capabilities: Optional[ModelCapabilities] = Field(None, description="Model capabilities")
     pricing_info: Optional[PricingInfo] = Field(None, description="Pricing information")
     performance_metrics: Optional[PerformanceMetrics] = Field(None, description="Performance metrics")
-    model_config: Optional[LLMModelConfig] = Field(None, description="Model configuration")
+    config: Optional[LLMModelConfig] = Field(None, description="Model configuration")
     health_url: Optional[str] = Field(None, description="Health check URL")
     dns_name: Optional[str] = Field(None, description="DNS name for the model service")
 
-    @validator('name')
+    @field_validator('name')
+    @classmethod
     def validate_name(cls, v):
         if not v or len(v.strip()) == 0:
             raise ValueError('Name cannot be empty')
         return v.strip()
 
-    @validator('display_name')
+    @field_validator('display_name')
+    @classmethod
     def validate_display_name(cls, v):
         if not v or len(v.strip()) == 0:
             raise ValueError('Display name cannot be empty')
@@ -62,7 +65,7 @@ class UpdateLLMModelRequest(BaseModel):
     capabilities: Optional[Dict[str, Any]] = Field(None, description="Model capabilities")
     pricing_info: Optional[Dict[str, Any]] = Field(None, description="Pricing information")
     performance_metrics: Optional[Dict[str, Any]] = Field(None, description="Performance metrics")
-    model_config: Optional[Dict[str, Any]] = Field(None, description="Model configuration")
+    config: Optional[Dict[str, Any]] = Field(None, description="Model configuration")
     health_url: Optional[str] = Field(None, description="Health check URL")
     dns_name: Optional[str] = Field(None, description="DNS name")
 
@@ -78,7 +81,7 @@ class LLMModelResponse(BaseModel):
     capabilities: Dict[str, Any]
     pricing_info: Dict[str, Any]
     performance_metrics: Dict[str, Any]
-    model_config: Dict[str, Any]
+    config: Dict[str, Any]
     health_url: Optional[str]
     dns_name: Optional[str]
     created_at: datetime
@@ -91,7 +94,7 @@ class TestModelResponse(BaseModel):
     status: str
     error: Optional[str]
 
-async def get_model_service(db_session=Depends(get_db_session)) -> LangGraphModelService:
+async def get_model_service(db_session=Depends(get_database)) -> LangGraphModelService:
     """Dependency to get the model service"""
     return LangGraphModelService(db_session)
 
@@ -152,7 +155,11 @@ async def create_llm_model(
     """Create a new LLM model configuration"""
     try:
         # Convert Pydantic model to dict
-        model_dict = model_data.dict(exclude_unset=True)
+        model_dict = model_data.model_dump(exclude_unset=True)
+        
+        # Map config field to model_config for backend compatibility
+        if "config" in model_dict:
+            model_dict["model_config"] = model_dict.pop("config")
         
         # Set model type
         model_dict["model_type"] = ModelType.LLM.value
@@ -189,7 +196,11 @@ async def update_llm_model(
     """Update an existing LLM model configuration"""
     try:
         # Convert Pydantic model to dict, excluding None values
-        update_dict = model_data.dict(exclude_unset=True, exclude_none=True)
+        update_dict = model_data.model_dump(exclude_unset=True, exclude_none=True)
+        
+        # Map config field to model_config for backend compatibility
+        if "config" in update_dict:
+            update_dict["model_config"] = update_dict.pop("config")
         
         result = await model_service.update_model(model_id, update_dict)
         

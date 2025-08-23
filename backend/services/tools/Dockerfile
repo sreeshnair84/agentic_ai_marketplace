@@ -22,10 +22,12 @@ RUN apt-get update \
 RUN pip install uv
 
 # Copy dependency files
-COPY requirements.txt ./
+COPY pyproject.toml ./
+COPY uv.lock ./
 
-# Install Python dependencies using UV
-RUN uv pip install --system -r requirements.txt
+# Use official PyPI index and add retries/timeouts for network robustness
+ENV PIP_INDEX_URL=https://pypi.org/simple
+RUN uv pip install --system . || (sleep 10 && uv pip install --system .)
 
 # Copy application code
 COPY ./app /app/app

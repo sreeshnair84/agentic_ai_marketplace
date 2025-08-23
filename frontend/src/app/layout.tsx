@@ -1,4 +1,4 @@
-import './globals.css';
+import './globals-enhanced.css';
 import { Inter } from 'next/font/google';
 import ClientWrapper from '@/components/ClientWrapper';
 

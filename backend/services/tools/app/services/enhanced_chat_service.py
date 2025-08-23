@@ -390,11 +390,11 @@ Summary:"""
 # Global enhanced chat service instance
 _enhanced_chat_service: Optional[EnhancedChatService] = None
 
-def get_enhanced_chat_service(enhanced_model_service: EnhancedModelService = None) -> EnhancedChatService:
+def get_enhanced_chat_service() -> EnhancedChatService:
     """Get enhanced chat service instance"""
     global _enhanced_chat_service
     if _enhanced_chat_service is None:
         from .enhanced_model_service import get_enhanced_model_service
-        model_service = enhanced_model_service or get_enhanced_model_service()
+        model_service = get_enhanced_model_service()
         _enhanced_chat_service = EnhancedChatService(model_service)
     return _enhanced_chat_service

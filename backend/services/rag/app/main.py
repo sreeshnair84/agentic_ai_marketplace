@@ -25,8 +25,12 @@ from pathlib import Path
 import numpy as np
 
 # Document processing imports
+
 import pypdf
 from docx import Document as DocxDocument
+# Docling integration
+from docling import Document as DoclingDocument
+from docling.chunking import chunk_document
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -453,8 +457,18 @@ async def index_document_content(
 ) -> DocumentResponse:
     """Index document content in PGVector"""
     
-    # Split content into chunks
-    chunks = chunk_text(content, chunk_size=1000, overlap=200)
+
+    # Use Docling for chunking if possible
+    try:
+        docling_doc = DoclingDocument(content)
+        # You can adjust chunking strategy as needed
+        chunks = [chunk.text for chunk in chunk_document(docling_doc, chunk_size=1000, overlap=200)]
+        if not chunks:
+            # fallback to old chunking if docling fails
+            chunks = chunk_text(content, chunk_size=1000, overlap=200)
+    except Exception as e:
+        logger.warning(f"Docling chunking failed, falling back to legacy: {e}")
+        chunks = chunk_text(content, chunk_size=1000, overlap=200)
     
     # Process each chunk
     for i, chunk in enumerate(chunks):

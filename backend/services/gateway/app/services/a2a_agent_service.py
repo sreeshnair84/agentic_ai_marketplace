@@ -433,15 +433,14 @@ class A2AAgentService:
 # Global A2A agent service instance
 _a2a_agent_service: Optional[A2AAgentService] = None
 
-async def get_a2a_agent_service(model_service: LangGraphModelService = None) -> A2AAgentService:
+async def get_a2a_agent_service() -> A2AAgentService:
     """Get A2A agent service instance"""
     global _a2a_agent_service
     if _a2a_agent_service is None:
         from .langgraph_model_service import LangGraphModelService
-        if model_service is None:
-            # This would need to be injected properly
-            logger.warning("Model service not provided, creating new instance")
-            model_service = LangGraphModelService(None)  # This needs proper DB session
+        # This would need to be injected properly
+        logger.warning("Model service not provided, creating new instance")
+        model_service = LangGraphModelService(None)  # This needs proper DB session
         _a2a_agent_service = A2AAgentService(model_service)
         await _a2a_agent_service.initialize_default_agents()
     return _a2a_agent_service

@@ -14,7 +14,7 @@ import asyncio
 from ...services.default_chat_service import DefaultChatService
 from ...services.langgraph_model_service import LangGraphModelService
 from ...core.dependencies import get_current_user
-from ...core.database import get_db_session
+from ...core.database import get_database
 
 router = APIRouter(prefix="/default-chat", tags=["Default Chat"])
 
@@ -51,7 +51,7 @@ class ConversationSummaryRequest(BaseModel):
     conversation_history: List[ChatMessage] = Field(..., description="Conversation to summarize")
     max_length: int = Field(200, description="Maximum length of summary")
 
-async def get_chat_service(db_session=Depends(get_db_session)) -> DefaultChatService:
+async def get_chat_service(db_session=Depends(get_database)) -> DefaultChatService:
     """Dependency to get the chat service"""
     model_service = LangGraphModelService(db_session)
     return DefaultChatService(model_service)

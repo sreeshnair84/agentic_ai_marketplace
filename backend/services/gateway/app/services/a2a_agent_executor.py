@@ -324,12 +324,11 @@ class A2AAgentExecutor:
 # Global A2A agent executor instance
 _a2a_agent_executor: Optional[A2AAgentExecutor] = None
 
-async def get_a2a_agent_executor(agent_service: A2AAgentService = None) -> A2AAgentExecutor:
+async def get_a2a_agent_executor() -> A2AAgentExecutor:
     """Get A2A agent executor instance"""
     global _a2a_agent_executor
     if _a2a_agent_executor is None:
-        if agent_service is None:
-            from .a2a_agent_service import get_a2a_agent_service
-            agent_service = await get_a2a_agent_service()
+        from .a2a_agent_service import get_a2a_agent_service
+        agent_service = await get_a2a_agent_service()
         _a2a_agent_executor = A2AAgentExecutor(agent_service)
     return _a2a_agent_executor

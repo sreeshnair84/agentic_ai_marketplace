@@ -1,5 +1,5 @@
-# Use Python 3.11 slim image for optimal performance
-FROM python:3.11-slim
+# Use Python 3.12 slim image for optimal performance
+FROM python:3.12-slim
 
 # Set environment variables
 ENV PYTHONUNBUFFERED=1 \
@@ -18,11 +18,17 @@ RUN apt-get update \
         libpq-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy dependency files
-COPY requirements.txt ./
 
-# Install Python dependencies
-RUN pip install -r requirements.txt
+# Install UV for faster Python package management
+RUN pip install uv
+
+# Copy dependency files
+COPY pyproject.toml ./
+COPY uv.lock ./
+
+# Use official PyPI index and add retries/timeouts for network robustness
+ENV PIP_INDEX_URL=https://pypi.org/simple
+RUN uv pip install --system . || (sleep 10 && uv pip install --system .)
 
 # Copy application code
 COPY ./app /app/app

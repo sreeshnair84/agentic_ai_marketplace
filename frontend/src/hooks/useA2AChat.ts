@@ -412,6 +412,8 @@ export function useA2AChatEnhanced() {
   ) => {
     if (!currentSession) return;
 
+    let currentAgentMessage: ChatMessage | null = null;
+
     try {
       setStreamingState({
         isStreaming: true,
@@ -428,7 +430,7 @@ export function useA2AChatEnhanced() {
           currentSession.id,
           context
         )) {
-          await processStreamChunk(chunk, null, '', context);
+          currentAgentMessage = await processStreamChunk(chunk, currentAgentMessage, context);
         }
       } else {
         // Use real A2A service
@@ -447,9 +449,6 @@ export function useA2AChatEnhanced() {
         };
 
         // Stream responses from A2A backend
-        let currentAgentMessage: ChatMessage | null = null;
-        let fullContent = '';
-
         try {
           for await (const chunk of a2aService.streamChatMessage(chatRequest)) {
             // Map A2A response format to expected chunk format
@@ -459,25 +458,23 @@ export function useA2AChatEnhanced() {
                 status: {
                   type: chunk.final ? 'completed' : 'in_progress',
                   message: {
-                    parts: [{ text: chunk.message }]
+                    parts: [{ text: chunk.message || chunk.chunk || '' }]
                   },
                   result: chunk.final ? {
-                    content: chunk.message,
-                    citations: [],
-                    tool_calls: [],
-                    scratchpad: null
+                    content: chunk.message || currentAgentMessage?.content || '',
+                    citations: chunk.citations || [],
+                    tool_calls: chunk.tool_calls || [],
+                    scratchpad: chunk.scratchpad || null
                   } : null
                 }
               }
             };
 
-            await processStreamChunk(mappedChunk, currentAgentMessage, fullContent, context);
+            currentAgentMessage = await processStreamChunk(mappedChunk, currentAgentMessage, context);
             
             if (chunk.final) {
               break;
             }
-            
-            fullContent += chunk.message || '';
           }
         } catch (streamError) {
           console.error('A2A streaming error:', streamError);
@@ -488,10 +485,28 @@ export function useA2AChatEnhanced() {
             currentSession.id,
             context
           )) {
-            await processStreamChunk(chunk, null, '', context);
+            currentAgentMessage = await processStreamChunk(chunk, currentAgentMessage, context);
           }
         }
       }
+
+      // Final cleanup: ensure streaming is stopped
+      setStreamingState({
+        isStreaming: false,
+        currentMessage: '',
+        chunks: []
+      });
+
+      // Mark the current message as complete if it exists
+      if (currentAgentMessage) {
+        const completedMessage = {
+          ...currentAgentMessage,
+          streaming: false,
+          isComplete: true
+        };
+        updateCurrentMessage(completedMessage);
+      }
+
     } catch (error) {
       console.error('Streaming error:', error);
       setError(error instanceof Error ? error.message : 'Streaming failed');
@@ -500,37 +515,47 @@ export function useA2AChatEnhanced() {
         currentMessage: '',
         chunks: []
       });
+
+      // If there's an incomplete message, mark it as complete with error
+      if (currentAgentMessage && currentAgentMessage.streaming) {
+        const errorMessage = {
+          ...currentAgentMessage,
+          streaming: false,
+          isComplete: true,
+          content: currentAgentMessage.content + '\n\n⚠️ Message interrupted due to connection error.'
+        };
+        updateCurrentMessage(errorMessage);
+      }
     }
-  }, [currentSession]);
+  }, [currentSession, a2aBackendAvailable, selectedAgent]);
 
   // Enhanced stream chunk processing with context
   const processStreamChunk = useCallback(async (
     chunk: any,
     currentAgentMessage: ChatMessage | null,
-    fullContent: string,
     context: SelectedContext
-  ) => {
-    if (!currentSession) return;
+  ): Promise<ChatMessage | null> => {
+    if (!currentSession) return currentAgentMessage;
 
     if (chunk.result?.type === 'task_status_update') {
       const status = chunk.result.status;
       
       if (status.type === 'in_progress') {
         const messageText = status.message?.parts?.[0]?.text || '';
-        const newFullContent = fullContent + messageText;
         
+        // Update streaming state for display
         setStreamingState(prev => ({
           ...prev,
-          currentMessage: newFullContent,
+          currentMessage: prev.currentMessage + messageText,
           chunks: [...prev.chunks, messageText]
         }));
 
-        // Create or update agent message with context
+        // Create or update agent message
         if (!currentAgentMessage) {
           const newAgentMessage: ChatMessage = {
             id: `msg_${Date.now()}`,
             type: 'agent',
-            content: newFullContent,
+            content: messageText,
             agentName: getAgentNameFromContext(context, status),
             timestamp: new Date(),
             streaming: true,
@@ -538,20 +563,22 @@ export function useA2AChatEnhanced() {
             context
           };
           addMessageToSession(newAgentMessage);
+          return newAgentMessage;
         } else {
           const updatedMessage: ChatMessage = {
-            ...(currentAgentMessage as ChatMessage),
-            content: newFullContent,
+            ...currentAgentMessage,
+            content: currentAgentMessage.content + messageText,
             context
           };
           updateCurrentMessage(updatedMessage);
+          return updatedMessage;
         }
       } else if (status.type === 'completed' && status.result) {
         // Handle completion with citations, tool calls, etc.
         if (currentAgentMessage) {
           const completedMessage: ChatMessage = {
-            ...(currentAgentMessage as ChatMessage),
-            content: status.result.content || fullContent,
+            ...currentAgentMessage,
+            content: status.result.content || currentAgentMessage.content,
             citations: status.result.citations || [],
             toolCalls: status.result.tool_calls || [],
             scratchpad: status.result.scratchpad,
@@ -560,6 +587,15 @@ export function useA2AChatEnhanced() {
             context
           };
           updateCurrentMessage(completedMessage);
+          
+          // Clear streaming state since message is complete
+          setStreamingState({
+            isStreaming: false,
+            currentMessage: '',
+            chunks: []
+          });
+          
+          return completedMessage;
         }
       }
     }
@@ -592,6 +628,8 @@ export function useA2AChatEnhanced() {
       
       addMessageToSession(interAgentMessage);
     }
+
+    return currentAgentMessage;
   }, [currentSession]);
 
   // Helper to get agent name from context

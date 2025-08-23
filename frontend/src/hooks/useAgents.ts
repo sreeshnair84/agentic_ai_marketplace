@@ -38,31 +38,37 @@ export function useAgents() {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch(`${API_BASE}/api/v1/agents/`);
+      const response = await fetch(`/api/agents`);
       if (!response.ok) {
         throw new Error(`Failed to fetch agents: ${response.statusText}`);
       }
       const data = await response.json();
+      console.log('Raw agent data received:', data);
       
       // Transform backend response to frontend format
-      const transformedAgents = (data.agents || []).map((agent: any) => ({
-        id: agent.name,
-        name: agent.display_name || agent.name,
-        description: agent.description,
+      const transformedAgents = (data.agents || []).map((agent: any) => {
+        console.log('Transforming agent:', agent);
+        return {
+        id: agent.id || agent.name,
+        name: agent.name || agent.display_name,
+        description: agent.description || 'No description available',
         status: agent.status || 'inactive',
-        framework: agent.ai_provider === 'gemini' ? 'custom' : (agent.ai_provider === 'openai' ? 'langchain' : 'crewai'),
-        capabilities: [...(agent.tags || []), ...(agent.project_tags || [])], // Combine tags as capabilities
+        framework: agent.framework || (agent.ai_provider === 'gemini' ? 'custom' : (agent.ai_provider === 'openai' ? 'langchain' : 'crewai')),
+        capabilities: agent.skills || [...(agent.tags || []), ...(agent.project_tags || [])], // Use skills if available, otherwise combine tags
         performance: {
-          tasksCompleted: agent.execution_count || 0,
+          tasksCompleted: agent.executionCount || agent.execution_count || 0,
           successRate: agent.success_rate || 0,
-          avgResponseTime: 0, // Backend doesn't provide this in the list endpoint
+          avgResponseTime: agent.responseTime || 0,
         },
-        lastActivity: new Date(agent.updated_at || Date.now()),
+        lastActivity: new Date(agent.lastExecutedAt || agent.updated_at || Date.now()),
         owner: agent.author || 'system',
-        tags: [...(agent.tags || []), ...(agent.project_tags || [])],
-        created_at: agent.created_at || new Date().toISOString(),
-        updated_at: agent.updated_at || new Date().toISOString(),
-      }));
+        tags: agent.tags || [...(agent.tags || []), ...(agent.project_tags || [])],
+        created_at: agent.createdAt || agent.created_at || new Date().toISOString(),
+        updated_at: agent.updatedAt || agent.updated_at || new Date().toISOString(),
+        };
+      });
+      
+      console.log('Transformed agents:', transformedAgents);
       
       setAgents(transformedAgents);
     } catch (err) {

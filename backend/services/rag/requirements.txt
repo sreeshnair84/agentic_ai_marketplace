@@ -10,15 +10,7 @@ pgvector
 psycopg2-binary
 asyncpg
 sqlalchemy[asyncio]
-sentence-transformers
-numpy
 
-# OpenAI for embeddings
-openai
-
-# Google AI integration
-google-generativeai
-google-ai-generativelanguage
 
 # Document processing
 pypdf

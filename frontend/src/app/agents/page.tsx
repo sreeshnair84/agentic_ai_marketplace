@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useProject } from '@/store/projectContext';
 import { AuthGuard } from '@/components/auth/AuthGuard';
 import { StandardPageLayout, StandardSection, StandardGrid, StandardCard } from '@/components/layout/StandardPageLayout';
@@ -11,12 +11,31 @@ import { AgentCard } from './components/AgentCard';
 import { AgentFilters } from './components/AgentFilters';
 import { CreateAgentDialog } from './components/CreateAgentDialog';
 import { useAgents, useAgentAnalytics, type Agent } from '@/hooks/useAgents';
+import { cn } from '@/lib/utils';
 import { 
   PlusIcon, 
   MagnifyingGlassIcon, 
   FunnelIcon,
-  ArrowPathIcon
+  ArrowPathIcon,
+  ChartBarIcon,
+  CpuChipIcon,
+  ClockIcon,
+  CheckCircleIcon,
+  ExclamationTriangleIcon,
+  PlayIcon,
+  PauseIcon,
+  Cog6ToothIcon,
+  ViewColumnsIcon,
+  ListBulletIcon,
+  Squares2X2Icon,
+  XMarkIcon
 } from '@heroicons/react/24/outline';
+import { 
+  ChartBarIcon as ChartBarIconSolid,
+  CpuChipIcon as CpuChipIconSolid,
+  ClockIcon as ClockIconSolid,
+  CheckCircleIcon as CheckCircleIconSolid
+} from '@heroicons/react/24/solid';
 
 export default function AgentsPage() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -79,11 +98,19 @@ export default function AgentsPage() {
       const matchesStatus = selectedStatus === 'all' || agent.status === selectedStatus;
       
       // Project filtering: if a project is selected, only show agents that have tags matching the project tags
-      const matchesProject = !projectState.selectedProject || 
-                             projectState.selectedProject.tags.some(projectTag => 
-                               agent.tags.includes(projectTag)
-                             );
-      
+      console.log('Project State:', projectState.selectedProject);
+      console.log('Agent Tags:', agent.tags);
+      let matchesProject = true;
+      if (
+        projectState.selectedProject !== null &&
+        projectState.selectedProject.name !== 'Default Project'
+      ) {
+        matchesProject =
+          projectState.selectedProject.tags.some((projectTag) =>
+            agent.tags.includes(projectTag)
+          );
+      }
+
       return matchesSearch && matchesFramework && matchesStatus && matchesProject;
     });
   }, [agents, searchTerm, selectedFramework, selectedStatus, projectState.selectedProject]);
@@ -235,6 +262,7 @@ export default function AgentsPage() {
             </StandardCard>
           ) : (
             <StandardGrid cols={{ default: 1, md: 2, lg: 3 }} gap="md">
+              
               {filteredAgents.map((agent) => (
                 <AgentCard 
                   key={agent.id} 

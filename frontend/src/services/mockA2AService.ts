@@ -287,7 +287,7 @@ export class MockA2AService {
             response_type: 'text',
             content: response,
             agent_name: targetAgent.name,
-            ai_provider: 'gemini',
+            ai_provider: 'mock',
             citations: mockCitations,
             tool_calls: mockToolCalls,
             scratchpad: {

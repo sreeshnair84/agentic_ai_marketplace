@@ -671,9 +671,7 @@ function Sidebar({ isOpen, onClose, isCollapsed, onToggleCollapse }: SidebarProp
         {!isCollapsed && (
           <div className="flex border-b border-gray-200 dark:border-gray-700">
             {[
-              { id: 'nav', label: 'Navigation', icon: Menu },
-              { id: 'recent', label: 'Recent', icon: Clock },
-              { id: 'bookmarks', label: 'Bookmarks', icon: Bookmark }
+              { id: 'nav', label: 'Navigation', icon: Menu }
             ].map((tab) => (
               <button
                 key={tab.id}

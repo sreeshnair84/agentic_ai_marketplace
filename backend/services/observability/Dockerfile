@@ -1,5 +1,5 @@
-# Use Python 3.11 slim image for optimal performance
-FROM python:3.11-slim
+# Use Python 3.12 slim image for optimal performance
+FROM python:3.12-slim
 
 # Set environment variables
 ENV PYTHONUNBUFFERED=1 \
@@ -22,10 +22,11 @@ RUN apt-get update \
 RUN pip install uv
 
 # Copy dependency files
-COPY requirements.txt ./
+COPY pyproject.toml ./
+COPY uv.lock ./
 
 # Install Python dependencies using UV
-RUN uv pip install --system -r requirements.txt
+RUN uv pip install --system .
 
 # Copy application code
 COPY ./app /app/app

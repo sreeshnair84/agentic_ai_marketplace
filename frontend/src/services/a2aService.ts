@@ -190,7 +190,37 @@ export class A2AService {
             if (data) {
               try {
                 const parsedData = JSON.parse(data);
-                yield parsedData;
+                
+                // Handle different response formats from backend
+                if (parsedData.success === false) {
+                  yield { error: parsedData.error || parsedData.detail, final: true };
+                  return;
+                }
+                
+                // Handle streaming chunk with message content
+                if (parsedData.chunk) {
+                  yield { 
+                    message: parsedData.chunk, 
+                    final: parsedData.final || false,
+                    streaming: parsedData.streaming || true
+                  };
+                } else if (parsedData.message) {
+                  yield { 
+                    message: parsedData.message, 
+                    final: parsedData.final || false,
+                    task_id: parsedData.task_id,
+                    agent_id: parsedData.agent_id,
+                    timestamp: parsedData.timestamp
+                  };
+                } else {
+                  // Generic handling for any other response format
+                  yield parsedData;
+                }
+                
+                // Exit on final chunk
+                if (parsedData.final === true) {
+                  return;
+                }
               } catch (parseError) {
                 console.warn('Failed to parse streaming data:', data, parseError);
               }
