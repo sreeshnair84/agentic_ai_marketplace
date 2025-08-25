@@ -24,6 +24,7 @@ import {
 import ToolTemplateForm from './components/ToolTemplateForm';
 import ToolInstanceForm from './components/ToolInstanceForm';
 import PhysicalToolTester from './components/PhysicalToolTester';
+import RAGInstanceManager from './components/RAGInstanceManager';
 import { useTools, useToolAnalytics, ToolTemplate, ToolInstance, ToolTemplateField } from '@/hooks/useTools';
 
 export default function ToolsManagement() {
@@ -35,6 +36,7 @@ export default function ToolsManagement() {
   const [editingTemplate, setEditingTemplate] = useState<any>(null);
   const [editingInstance, setEditingInstance] = useState<any>(null);
   const [selectedTemplate, setSelectedTemplate] = useState<any>(null);
+  const [managingRAGInstance, setManagingRAGInstance] = useState<any>(null);
 
   const { state: projectState } = useProject();
 
@@ -162,6 +164,20 @@ export default function ToolsManagement() {
     }
   };
 
+  const isRAGInstance = (instance: ToolInstance) => {
+    // Check if the instance is a RAG type based on various indicators
+    return (
+      instance.category === 'rag' ||
+      instance.name?.toLowerCase().includes('rag') ||
+      instance.display_name?.toLowerCase().includes('rag') ||
+      instance.configuration?.database_url ||
+      instance.configuration?.embedding_model ||
+      instance.configuration?.vector_database ||
+      instance.configuration?.rag_service_enabled ||
+      instance.tags?.some(tag => tag.toLowerCase().includes('rag'))
+    );
+  };
+
   const filteredItems = useMemo(() => {
     console.log('=== DEBUGGING FILTER ===');
     console.log('selectedTab:', selectedTab);
@@ -221,7 +237,7 @@ export default function ToolsManagement() {
       description="Manage tool templates and instances with dynamic configuration"
       actions={
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4">
-          {projectState.selectedProject && projectState.selectedProject.tags && projectState.selectedProject.tags.length > 0 && (
+          {projectState.selectedProject && (projectState.selectedProject.name === 'Default Project' || (projectState.selectedProject.tags && projectState.selectedProject.tags.length > 0)) && (
             <div className="flex items-center gap-2">
               <FunnelIcon className="w-4 h-4 text-blue-500" />
               <Badge variant="outline" className="border-blue-200 text-blue-700 bg-blue-50">
@@ -425,6 +441,16 @@ export default function ToolsManagement() {
               </div>
               
               <div className="flex items-center space-x-2 ml-6">
+                {selectedTab === 'instances' && isRAGInstance(item as ToolInstance) && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setManagingRAGInstance(item as ToolInstance)}
+                    title="Manage RAG Documents & Search"
+                  >
+                    <CloudIcon className="h-4 w-4" />
+                  </Button>
+                )}
                 {selectedTab === 'instances' && (
                   <Button
                     variant="ghost"
@@ -562,6 +588,17 @@ export default function ToolsManagement() {
           onCancel={() => {
             setShowCreateForm(false);
             setEditingInstance(null);
+          }}
+        />
+      )}
+
+      {managingRAGInstance && (
+        <RAGInstanceManager
+          instance={managingRAGInstance}
+          onClose={() => setManagingRAGInstance(null)}
+          onSave={(updatedInstance) => {
+            // Optionally handle saving updated instance
+            setManagingRAGInstance(null);
           }}
         />
       )}

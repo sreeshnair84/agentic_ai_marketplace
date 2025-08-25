@@ -56,38 +56,48 @@ const AgentScratchpadView: React.FC<AgentScratchpadViewProps> = ({
   isExpanded, 
   onToggle 
 }) => (
-  <div className="mt-2 border border-blue-200 dark:border-blue-800 rounded-lg">
+  <div className="mt-3 border border-blue-200/30 dark:border-blue-700/30 rounded-xl bg-gradient-to-r from-blue-50/50 to-purple-50/50 dark:from-blue-900/10 dark:to-purple-900/10 backdrop-blur-sm">
     <Button
       variant="ghost"
       size="sm"
       onClick={onToggle}
-      className="w-full justify-between p-2 h-auto"
+      className="w-full justify-between p-3 h-auto rounded-t-xl hover:bg-blue-50/50 dark:hover:bg-blue-900/20"
     >
-      <div className="flex items-center space-x-2">
-        <Brain className="h-4 w-4 text-blue-500" />
-        <span className="text-sm font-medium">Agent Thinking Process</span>
-        <Badge variant="outline" className="text-xs">
+      <div className="flex items-center space-x-3">
+        <div className="p-1.5 rounded-lg bg-gradient-to-br from-blue-400 to-purple-500 text-white">
+          <Brain className="h-4 w-4" />
+        </div>
+        <span className="text-sm font-semibold text-gray-800 dark:text-gray-200">Agent Thinking Process</span>
+        <Badge className="text-xs font-medium px-2.5 py-1 bg-gradient-to-r from-blue-100 to-purple-100 text-blue-800 dark:from-blue-900/30 dark:to-purple-900/30 dark:text-blue-300 border-0">
           {(scratchpad.confidence_score * 100).toFixed(0)}% confidence
         </Badge>
       </div>
-      {isExpanded ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+      <div className={`p-1 rounded-lg transition-colors ${isExpanded ? 'bg-blue-100 dark:bg-blue-800' : ''}`}>
+        {isExpanded ? <Minimize2 className="h-4 w-4 text-blue-600" /> : <Maximize2 className="h-4 w-4 text-gray-500" />}
+      </div>
     </Button>
     
     {isExpanded && (
-      <div className="p-3 border-t space-y-3">
-        <div>
-          <h4 className="text-sm font-medium mb-2">Reasoning</h4>
-          <p className="text-sm text-gray-600 dark:text-gray-300">{scratchpad.reasoning}</p>
+      <div className="p-4 border-t border-blue-200/20 dark:border-blue-700/20 space-y-4">
+        <div className="p-3 rounded-lg bg-white/50 dark:bg-gray-800/50 border border-gray-200/50 dark:border-gray-600/50">
+          <h4 className="text-sm font-semibold mb-2 flex items-center gap-2 text-gray-700 dark:text-gray-300">
+            <div className="w-1.5 h-1.5 rounded-full bg-blue-500"></div>
+            Reasoning
+          </h4>
+          <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed">{scratchpad.reasoning}</p>
         </div>
         
         {scratchpad.thinking.length > 0 && (
-          <div>
-            <h4 className="text-sm font-medium mb-2">Thought Process</h4>
-            <ul className="space-y-1">
+          <div className="p-3 rounded-lg bg-white/50 dark:bg-gray-800/50 border border-gray-200/50 dark:border-gray-600/50">
+            <h4 className="text-sm font-semibold mb-3 flex items-center gap-2 text-gray-700 dark:text-gray-300">
+              <div className="w-1.5 h-1.5 rounded-full bg-purple-500"></div>
+              Thought Process
+            </h4>
+            <ul className="space-y-2">
               {scratchpad.thinking.map((thought, index) => (
-                <li key={index} className="text-sm text-gray-600 dark:text-gray-300 flex items-start space-x-2">
-                  <span className="text-blue-500 mt-1">•</span>
-                  <span>{thought}</span>
+                <li key={index} className="text-sm text-gray-600 dark:text-gray-300 flex items-start space-x-3">
+                  <div className="w-1.5 h-1.5 rounded-full bg-gradient-to-r from-blue-400 to-purple-400 mt-2 flex-shrink-0"></div>
+                  <span className="leading-relaxed">{thought}</span>
                 </li>
               ))}
             </ul>
@@ -95,11 +105,14 @@ const AgentScratchpadView: React.FC<AgentScratchpadViewProps> = ({
         )}
         
         {scratchpad.alternative_approaches && scratchpad.alternative_approaches.length > 0 && (
-          <div>
-            <h4 className="text-sm font-medium mb-2">Alternative Approaches</h4>
-            <ul className="space-y-1">
+          <div className="p-3 rounded-lg bg-white/50 dark:bg-gray-800/50 border border-gray-200/50 dark:border-gray-600/50">
+            <h4 className="text-sm font-semibold mb-3 flex items-center gap-2 text-gray-700 dark:text-gray-300">
+              <div className="w-1.5 h-1.5 rounded-full bg-amber-500"></div>
+              Alternative Approaches
+            </h4>
+            <ul className="space-y-2">
               {scratchpad.alternative_approaches.map((approach, index) => (
-                <li key={index} className="text-sm text-gray-500 dark:text-gray-400">
+                <li key={index} className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed pl-3 border-l-2 border-amber-200/50 dark:border-amber-700/50">
                   {approach}
                 </li>
               ))}
@@ -116,32 +129,45 @@ interface CitationsViewProps {
 }
 
 const CitationsView: React.FC<CitationsViewProps> = ({ citations }) => (
-  <div className="mt-2 space-y-2">
-    <h4 className="text-sm font-medium flex items-center space-x-2">
-      <FileText className="h-4 w-4" />
+  <div className="mt-3 space-y-3">
+    <h4 className="text-sm font-semibold flex items-center space-x-3 text-gray-700 dark:text-gray-300">
+      <div className="p-1.5 rounded-lg bg-gradient-to-br from-emerald-400 to-blue-500 text-white">
+        <FileText className="h-4 w-4" />
+      </div>
       <span>Sources ({citations.length})</span>
     </h4>
-    <div className="space-y-2">
+    <div className="space-y-3">
       {citations.map((citation) => (
         <div 
           key={citation.id} 
-          className="p-2 bg-gray-50 dark:bg-gray-800 rounded border-l-2 border-blue-300"
+          className="group p-4 bg-gradient-to-r from-emerald-50/50 to-blue-50/50 dark:from-emerald-900/10 dark:to-blue-900/10 rounded-xl border border-emerald-200/30 dark:border-emerald-700/30 backdrop-blur-sm hover:shadow-lg hover:shadow-emerald-500/10 transition-all duration-200"
         >
-          <div className="flex items-center justify-between mb-1">
-            <h5 className="text-sm font-medium">{citation.title}</h5>
-            <div className="flex items-center space-x-2">
-              <Badge variant="outline" className="text-xs">
+          <div className="flex items-start justify-between mb-3">
+            <h5 className="text-sm font-semibold text-gray-800 dark:text-gray-200 leading-tight flex-1 mr-3">
+              {citation.title}
+            </h5>
+            <div className="flex items-center space-x-2 flex-shrink-0">
+              <Badge className="text-xs font-medium px-2.5 py-1 bg-gradient-to-r from-emerald-100 to-blue-100 text-emerald-800 dark:from-emerald-900/30 dark:to-blue-900/30 dark:text-emerald-300 border-0">
                 {(citation.confidence * 100).toFixed(0)}%
               </Badge>
               {citation.url && (
-                <Button variant="ghost" size="sm" className="p-1">
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="p-2 h-8 w-8 rounded-lg hover:bg-emerald-100 hover:text-emerald-600 dark:hover:bg-emerald-900/20 opacity-0 group-hover:opacity-100 transition-opacity"
+                >
                   <ExternalLink className="h-3 w-3" />
                 </Button>
               )}
             </div>
           </div>
-          <p className="text-xs text-gray-600 dark:text-gray-300">{citation.excerpt}</p>
-          <p className="text-xs text-gray-500 mt-1">{citation.source}</p>
+          <p className="text-sm text-gray-600 dark:text-gray-300 mb-2 leading-relaxed bg-white/50 dark:bg-gray-800/50 p-2 rounded-lg border border-gray-200/50 dark:border-gray-600/50">
+            "{citation.excerpt}"
+          </p>
+          <div className="flex items-center gap-2 text-xs text-gray-500">
+            <div className="w-1.5 h-1.5 rounded-full bg-emerald-400"></div>
+            <span>{citation.source}</span>
+          </div>
         </div>
       ))}
     </div>
@@ -153,53 +179,77 @@ interface ToolCallsViewProps {
 }
 
 const ToolCallsView: React.FC<ToolCallsViewProps> = ({ toolCalls }) => (
-  <div className="mt-2 space-y-2">
-    <h4 className="text-sm font-medium flex items-center space-x-2">
-      <Wrench className="h-4 w-4" />
+  <div className="mt-3 space-y-3">
+    <h4 className="text-sm font-semibold flex items-center space-x-3 text-gray-700 dark:text-gray-300">
+      <div className="p-1.5 rounded-lg bg-gradient-to-br from-purple-400 to-pink-500 text-white">
+        <Wrench className="h-4 w-4" />
+      </div>
       <span>Tool Usage ({toolCalls.length})</span>
     </h4>
-    <div className="space-y-2">
+    <div className="space-y-3">
       {toolCalls.map((toolCall) => (
         <div 
           key={toolCall.id} 
-          className="p-2 bg-purple-50 dark:bg-purple-900/20 rounded border-l-2 border-purple-300"
+          className="group p-4 bg-gradient-to-r from-purple-50/50 to-pink-50/50 dark:from-purple-900/10 dark:to-pink-900/10 rounded-xl border border-purple-200/30 dark:border-purple-700/30 backdrop-blur-sm hover:shadow-lg hover:shadow-purple-500/10 transition-all duration-200"
         >
-          <div className="flex items-center justify-between mb-1">
-            <div className="flex items-center space-x-2">
-              <span className="text-sm font-medium">{toolCall.toolName}</span>
-              <Badge variant="outline" className="text-xs">{toolCall.toolType}</Badge>
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center space-x-3">
+              <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-white shadow-lg ${
+                toolCall.status === 'completed' ? 'bg-gradient-to-br from-emerald-400 to-emerald-600' :
+                toolCall.status === 'error' ? 'bg-gradient-to-br from-red-400 to-red-600' :
+                'bg-gradient-to-br from-amber-400 to-amber-600'
+              }`}>
+                {toolCall.status === 'pending' && <Loader2 className="h-4 w-4 animate-spin" />}
+                {toolCall.status === 'completed' && <CheckCircle className="h-4 w-4" />}
+                {toolCall.status === 'error' && <AlertCircle className="h-4 w-4" />}
+              </div>
+              <div>
+                <span className="text-sm font-semibold text-gray-800 dark:text-gray-200">{toolCall.toolName}</span>
+                <Badge className="ml-2 text-xs font-medium px-2.5 py-1 bg-gradient-to-r from-purple-100 to-pink-100 text-purple-800 dark:from-purple-900/30 dark:to-pink-900/30 dark:text-purple-300 border-0">
+                  {toolCall.toolType}
+                </Badge>
+              </div>
             </div>
             <div className="flex items-center space-x-2">
-              {toolCall.status === 'pending' && <Loader2 className="h-3 w-3 animate-spin" />}
-              {toolCall.status === 'completed' && <CheckCircle className="h-3 w-3 text-green-500" />}
-              {toolCall.status === 'error' && <AlertCircle className="h-3 w-3 text-red-500" />}
               {toolCall.duration_ms && (
-                <span className="text-xs text-gray-500">{toolCall.duration_ms}ms</span>
+                <Badge variant="outline" className="text-xs font-medium border-gray-300 dark:border-gray-600">
+                  <Clock className="h-3 w-3 mr-1" />
+                  {toolCall.duration_ms}ms
+                </Badge>
               )}
             </div>
           </div>
           
-          <div className="text-xs space-y-1">
-            <div>
-              <span className="font-medium">Input:</span>
-              <pre className="text-gray-600 dark:text-gray-300 mt-1 p-1 bg-gray-100 dark:bg-gray-800 rounded">
+          <div className="text-sm space-y-3">
+            <div className="p-3 rounded-lg bg-white/50 dark:bg-gray-800/50 border border-gray-200/50 dark:border-gray-600/50">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="w-1.5 h-1.5 rounded-full bg-blue-500"></div>
+                <span className="font-semibold text-gray-700 dark:text-gray-300">Input</span>
+              </div>
+              <pre className="text-xs text-gray-600 dark:text-gray-300 bg-gray-50/50 dark:bg-gray-900/50 p-2 rounded border overflow-x-auto">
                 {JSON.stringify(toolCall.input, null, 2)}
               </pre>
             </div>
             
             {toolCall.output && (
-              <div>
-                <span className="font-medium">Output:</span>
-                <pre className="text-gray-600 dark:text-gray-300 mt-1 p-1 bg-gray-100 dark:bg-gray-800 rounded">
+              <div className="p-3 rounded-lg bg-white/50 dark:bg-gray-800/50 border border-gray-200/50 dark:border-gray-600/50">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>
+                  <span className="font-semibold text-gray-700 dark:text-gray-300">Output</span>
+                </div>
+                <pre className="text-xs text-gray-600 dark:text-gray-300 bg-gray-50/50 dark:bg-gray-900/50 p-2 rounded border overflow-x-auto">
                   {JSON.stringify(toolCall.output, null, 2)}
                 </pre>
               </div>
             )}
             
             {toolCall.error_message && (
-              <div>
-                <span className="font-medium text-red-600">Error:</span>
-                <p className="text-red-600 mt-1">{toolCall.error_message}</p>
+              <div className="p-3 rounded-lg bg-red-50/50 dark:bg-red-900/20 border border-red-200/50 dark:border-red-700/50">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="w-1.5 h-1.5 rounded-full bg-red-500"></div>
+                  <span className="font-semibold text-red-700 dark:text-red-300">Error</span>
+                </div>
+                <p className="text-sm text-red-600 dark:text-red-400 leading-relaxed">{toolCall.error_message}</p>
               </div>
             )}
           </div>
@@ -218,33 +268,65 @@ const A2ATraceView: React.FC<A2ATraceViewProps> = ({ communications, isExpanded 
   if (!isExpanded || communications.length === 0) return null;
 
   return (
-    <div className="mt-2 p-3 bg-purple-50 dark:bg-purple-900/20 rounded border-l-2 border-purple-300">
-      <h4 className="text-sm font-medium flex items-center space-x-2 mb-2">
-        <Network className="h-4 w-4 text-purple-500" />
+    <div className="mt-3 p-4 bg-gradient-to-r from-purple-50/50 to-indigo-50/50 dark:from-purple-900/10 dark:to-indigo-900/10 rounded-xl border border-purple-200/30 dark:border-purple-700/30 backdrop-blur-sm">
+      <h4 className="text-sm font-semibold flex items-center space-x-3 mb-4 text-gray-700 dark:text-gray-300">
+        <div className="p-1.5 rounded-lg bg-gradient-to-br from-purple-400 to-indigo-500 text-white">
+          <Network className="h-4 w-4" />
+        </div>
         <span>Agent Communications ({communications.length})</span>
       </h4>
       
-      <div className="space-y-2">
-        {communications.map((comm) => (
-          <div key={comm.id} className="text-xs">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-2">
-                <span className="font-medium">{comm.sourceAgent}</span>
-                <span className="text-purple-500">→</span>
-                <span className="font-medium">{comm.targetAgent}</span>
-                <Badge variant="outline" className="text-xs">
-                  {comm.message_type}
-                </Badge>
+      <div className="space-y-3">
+        {communications.map((comm, index) => (
+          <div key={comm.id} className="relative">
+            {/* Connection Line */}
+            {index < communications.length - 1 && (
+              <div className="absolute left-4 top-12 w-px h-6 bg-gradient-to-b from-purple-300 to-transparent dark:from-purple-600"></div>
+            )}
+            
+            <div className="flex items-start space-x-3">
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white shadow-lg flex-shrink-0 ${
+                comm.status === 'processed' ? 'bg-gradient-to-br from-emerald-400 to-emerald-600' :
+                comm.status === 'error' ? 'bg-gradient-to-br from-red-400 to-red-600' :
+                'bg-gradient-to-br from-purple-400 to-indigo-500'
+              }`}>
+                {comm.status === 'processed' && <CheckCircle className="h-4 w-4" />}
+                {comm.status === 'error' && <AlertCircle className="h-4 w-4" />}
+                {comm.status !== 'processed' && comm.status !== 'error' && <Network className="h-4 w-4" />}
               </div>
-              <div className="flex items-center space-x-2">
-                {comm.latency_ms && (
-                  <span className="text-gray-500">{comm.latency_ms}ms</span>
-                )}
-                {comm.status === 'processed' && <CheckCircle className="h-3 w-3 text-green-500" />}
-                {comm.status === 'error' && <AlertCircle className="h-3 w-3 text-red-500" />}
+              
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center space-x-2 min-w-0">
+                    <span className="text-sm font-semibold text-gray-800 dark:text-gray-200 truncate">
+                      {comm.sourceAgent}
+                    </span>
+                    <div className="flex items-center space-x-1 text-purple-500">
+                      <div className="w-1 h-1 rounded-full bg-purple-400"></div>
+                      <div className="w-1 h-1 rounded-full bg-purple-400"></div>
+                      <div className="w-1 h-1 rounded-full bg-purple-400"></div>
+                    </div>
+                    <span className="text-sm font-semibold text-gray-800 dark:text-gray-200 truncate">
+                      {comm.targetAgent}
+                    </span>
+                    <Badge className="text-xs font-medium px-2 py-1 bg-gradient-to-r from-purple-100 to-indigo-100 text-purple-800 dark:from-purple-900/30 dark:to-indigo-900/30 dark:text-purple-300 border-0">
+                      {comm.message_type}
+                    </Badge>
+                  </div>
+                  <div className="flex items-center space-x-2 flex-shrink-0">
+                    {comm.latency_ms && (
+                      <Badge variant="outline" className="text-xs font-medium border-gray-300 dark:border-gray-600">
+                        <Clock className="h-3 w-3 mr-1" />
+                        {comm.latency_ms}ms
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+                <div className="p-3 bg-white/50 dark:bg-gray-800/50 rounded-lg border border-gray-200/50 dark:border-gray-600/50">
+                  <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed">{comm.message}</p>
+                </div>
               </div>
             </div>
-            <p className="text-gray-600 dark:text-gray-300 mt-1">{comm.message}</p>
           </div>
         ))}
       </div>
@@ -344,40 +426,61 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({
   const [scratchpadExpanded, setScratchpadExpanded] = useState(false);
   
   return (
-    <div className="space-y-2">
+    <div className="group space-y-3">
       <div className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}>
-        <div className={`max-w-[80%] rounded-lg p-3 ${
+        <div className={`max-w-[85%] ${
           message.type === 'user'
-            ? 'bg-blue-500 text-white'
+            ? 'bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-lg shadow-blue-500/25'
             : message.type === 'system'
-            ? 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300'
+            ? 'bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900 text-gray-700 dark:text-gray-300 border border-gray-200/50 dark:border-gray-700/50'
             : message.type === 'inter_agent'
-            ? 'bg-purple-100 dark:bg-purple-900/20 text-purple-700 dark:text-purple-300'
-            : 'bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600'
+            ? 'bg-gradient-to-br from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20 text-purple-700 dark:text-purple-300 border border-purple-200/30 dark:border-purple-700/30'
+            : 'bg-white/80 dark:bg-gray-800/80 border border-gray-200/50 dark:border-gray-700/50 backdrop-blur-xl shadow-lg shadow-gray-500/10'
+        } rounded-2xl p-4 transition-all duration-200 hover:shadow-xl ${
+          message.type === 'user' ? 'hover:shadow-blue-500/30' : 'hover:shadow-gray-500/20'
         }`}>
           {/* Message Header */}
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center space-x-2">
-              {message.type === 'user' && <User className="h-4 w-4" />}
-              {message.type === 'agent' && <Bot className="h-4 w-4 text-blue-500" />}
-              {message.type === 'inter_agent' && <Network className="h-4 w-4 text-purple-500" />}
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center space-x-3">
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center shadow-lg ${
+                message.type === 'user' 
+                  ? 'bg-white/20 text-white' 
+                  : message.type === 'system'
+                  ? 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300'
+                  : message.type === 'inter_agent'
+                  ? 'bg-gradient-to-br from-purple-400 to-indigo-500 text-white'
+                  : 'bg-gradient-to-br from-blue-400 to-blue-600 text-white'
+              }`}>
+                {message.type === 'user' && <User className="h-4 w-4" />}
+                {message.type === 'agent' && <Bot className="h-4 w-4" />}
+                {message.type === 'inter_agent' && <Network className="h-4 w-4" />}
+                {message.type === 'system' && <Settings className="h-4 w-4" />}
+              </div>
               
-              <span className="text-sm font-medium">
-                {message.type === 'user' ? 'You' : 
-                 message.type === 'inter_agent' ? 'Agent Communication' :
-                 message.agentName || 'Assistant'}
-              </span>
-              
-              <span className="text-xs opacity-75">
-                {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-              </span>
-              
-              {message.streaming && (
-                <Loader2 className="h-3 w-3 animate-spin" />
-              )}
+              <div className="flex-1">
+                <div className="flex items-center space-x-2">
+                  <span className="text-sm font-semibold">
+                    {message.type === 'user' ? 'You' : 
+                     message.type === 'inter_agent' ? 'Agent Communication' :
+                     message.type === 'system' ? 'System' :
+                     message.agentName || 'Assistant'}
+                  </span>
+                  
+                  {message.streaming && (
+                    <div className="flex items-center space-x-1">
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                      <span className="text-xs opacity-75">typing...</span>
+                    </div>
+                  )}
+                </div>
+                
+                <span className="text-xs opacity-60">
+                  {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                </span>
+              </div>
             </div>
             
-            <div className="flex items-center space-x-1">
+            <div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -385,7 +488,11 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({
                       variant="ghost"
                       size="sm"
                       onClick={() => onCopy(message.content)}
-                      className="p-1"
+                      className={`p-2 h-8 w-8 rounded-lg ${
+                        message.type === 'user' 
+                          ? 'hover:bg-white/20 text-white/80 hover:text-white' 
+                          : 'hover:bg-gray-100 dark:hover:bg-gray-700'
+                      }`}
                     >
                       <Copy className="h-3 w-3" />
                     </Button>
@@ -397,17 +504,22 @@ const ChatMessageComponent: React.FC<ChatMessageProps> = ({
           </div>
 
           {/* Message Content */}
-          <div className="text-sm">
-            <p>{message.content}{message.streaming && <span className="animate-pulse">|</span>}</p>
+          <div className="text-sm leading-relaxed">
+            <p className="whitespace-pre-wrap">
+              {message.content}
+              {message.streaming && <span className="animate-pulse ml-1 text-blue-400">●</span>}
+            </p>
           </div>
 
           {/* File Attachments */}
           {message.attachments && message.attachments.length > 0 && (
-            <div className="mt-2 space-y-1">
+            <div className="mt-3 space-y-2">
               {message.attachments.map((attachment) => (
-                <div key={attachment.id} className="flex items-center space-x-2 text-xs">
-                  <Paperclip className="h-3 w-3" />
-                  <span>{attachment.name}</span>
+                <div key={attachment.id} className="flex items-center space-x-2 text-xs p-2 rounded-lg bg-black/10 dark:bg-white/10">
+                  <div className="p-1 rounded bg-gray-200 dark:bg-gray-700">
+                    <Paperclip className="h-3 w-3" />
+                  </div>
+                  <span className="font-medium">{attachment.name}</span>
                 </div>
               ))}
             </div>
@@ -712,6 +824,12 @@ export const A2AChatInterface: React.FC = () => {
                       <Badge variant="outline" className="text-xs">
                         <Wrench className="h-3 w-3 mr-1" />
                         {selectedContext.tools.length} tools
+                      </Badge>
+                    )}
+                    {selectedContext.type === 'llm' && selectedContext.llm_model && (
+                      <Badge variant="outline" className="text-xs">
+                        <Zap className="h-3 w-3 mr-1" />
+                        {selectedContext.llm_model.display_name}
                       </Badge>
                     )}
                   </>

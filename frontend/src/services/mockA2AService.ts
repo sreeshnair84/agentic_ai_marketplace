@@ -129,20 +129,26 @@ export class MockA2AService {
     sessionId: string,
     context?: any
   ): AsyncGenerator<any, void, unknown> {
+    // Enhanced context-aware response generation with comprehensive events
     // Step 1: Determine context-aware routing
     let contextMessage = 'Analyzing your request...';
     let targetAgent = this.determineTargetAgent(userMessage);
     
+    // Enhanced context-aware routing and messaging
     if (context?.type === 'workflow') {
-      contextMessage = `Routing to ${context.workflow?.display_name || 'selected workflow'}...`;
-      targetAgent = this.agents.find(a => a.id === 'workflow-agent') || targetAgent;
+      contextMessage = `🔄 Routing to workflow: ${context.workflow?.display_name || 'selected workflow'}...`;
+      targetAgent = this.agents.find(a => a.id === 'research-agent') || targetAgent; // Use research agent for workflows
     } else if (context?.type === 'agent') {
-      contextMessage = `Connecting to ${context.agent?.display_name || 'selected agent'}...`;
-      targetAgent = this.agents.find(a => a.id === 'custom-agent') || targetAgent;
+      contextMessage = `🤖 Connecting to agent: ${context.agent?.display_name || 'selected agent'}...`;
+      targetAgent = this.agents.find(a => a.id === 'technical-agent') || targetAgent; // Use technical agent for agents
     } else if (context?.type === 'tools') {
       const toolCount = context.tools?.length || 0;
-      contextMessage = `Using ${toolCount} specialized tools for your request...`;
-      targetAgent = this.agents.find(a => a.id === 'tool-agent') || targetAgent;
+      contextMessage = `🔧 Initializing ${toolCount} specialized tools for your request...`;
+      targetAgent = this.agents.find(a => a.id === 'technical-agent') || targetAgent; // Use technical agent for tools
+    } else if (context?.type === 'llm') {
+      const modelName = context.llm_model?.display_name || 'selected LLM';
+      contextMessage = `⚡ Connecting directly to ${modelName} model...`;
+      targetAgent = this.agents.find(a => a.id === 'research-agent') || targetAgent; // Use research agent for direct LLM
     }
     
     const routingAgent = this.agents.find(a => a.id === 'classifier-agent')!;
@@ -169,8 +175,27 @@ export class MockA2AService {
     // Log agent communication
     this.logCommunication('system', targetAgent.id, `Routing to ${targetAgent.name} based on context: ${context?.type || 'auto'}`);
 
-    // Step 2: Continue with context-aware processing
-    
+    // Step 2: Session initialization event
+    yield {
+      jsonrpc: '2.0',
+      id: `task_${Date.now()}`,
+      result: {
+        type: 'session_start',
+        session_id: sessionId,
+        context_type: context?.type || 'default',
+        target_agent: targetAgent.name,
+        timestamp: new Date().toISOString(),
+        routing_info: {
+          type: context?.type || 'auto',
+          target: targetAgent.name,
+          dns_name: context?.workflow?.dns_name || context?.agent?.a2a_address,
+          selected_tools: context?.tools?.map((t: any) => t.name) || [],
+          llm_model: context?.llm_model?.name
+        }
+      }
+    };
+
+    // Step 3: Agent communication event
     yield {
       jsonrpc: '2.0',
       id: `task_${Date.now()}`,
@@ -185,7 +210,56 @@ export class MockA2AService {
       }
     };
 
-    // Step 3: Target agent processes the request
+    // Step 4: Model loading event (for LLM context)
+    if (context?.type === 'llm') {
+      yield {
+        jsonrpc: '2.0',
+        id: `task_${Date.now()}`,
+        result: {
+          type: 'model_loading',
+          model_id: context.llm_model?.id,
+          model_name: context.llm_model?.name,
+          provider: context.llm_model?.provider,
+          status: 'loading',
+          estimated_load_time_ms: 2000
+        }
+      };
+
+      await this.delay(1000);
+
+      yield {
+        jsonrpc: '2.0',
+        id: `task_${Date.now()}`,
+        result: {
+          type: 'model_loading',
+          model_id: context.llm_model?.id,
+          model_name: context.llm_model?.name,
+          provider: context.llm_model?.provider,
+          status: 'ready',
+          load_time_ms: 1000
+        }
+      };
+    }
+
+    // Step 5: Security validation event
+    yield {
+      jsonrpc: '2.0',
+      id: `task_${Date.now()}`,
+      result: {
+        type: 'security_check',
+        session_id: sessionId,
+        checks: {
+          message_safety: 'passed',
+          user_authorization: 'passed',
+          content_filtering: 'passed',
+          rate_limiting: 'within_limits'
+        },
+        risk_score: 0.1,
+        timestamp: new Date().toISOString()
+      }
+    };
+
+    // Step 6: Target agent processes the request
     yield {
       jsonrpc: '2.0',
       id: `task_${Date.now()}`,
@@ -217,7 +291,43 @@ export class MockA2AService {
       };
     }
 
-    // Step 4: Tool usage simulation
+    // Step 7: Resource monitoring event
+    yield {
+      jsonrpc: '2.0',
+      id: `task_${Date.now()}`,
+      result: {
+        type: 'resource_monitoring',
+        metrics: {
+          cpu_usage: Math.random() * 30 + 20, // 20-50%
+          memory_usage: Math.random() * 40 + 30, // 30-70%
+          network_latency_ms: Math.random() * 50 + 10, // 10-60ms
+          active_connections: Math.floor(Math.random() * 10) + 1,
+          queue_size: Math.floor(Math.random() * 5)
+        },
+        timestamp: new Date().toISOString(),
+        agent_id: targetAgent.id
+      }
+    };
+
+    // Step 8: Performance metrics event
+    yield {
+      jsonrpc: '2.0',
+      id: `task_${Date.now()}`,
+      result: {
+        type: 'performance_metrics',
+        metrics: {
+          request_processing_time_ms: Math.random() * 1000 + 500,
+          token_generation_rate: Math.random() * 50 + 25, // tokens/sec
+          throughput_requests_per_minute: Math.random() * 100 + 50,
+          error_rate_percent: Math.random() * 2, // 0-2%
+          cache_hit_rate: Math.random() * 30 + 70 // 70-100%
+        },
+        context_type: context?.type || 'default',
+        timestamp: new Date().toISOString()
+      }
+    };
+
+    // Step 9: Tool usage simulation
     if (targetAgent.preferredTools.length > 0) {
       const tool = targetAgent.preferredTools[0];
       
@@ -270,7 +380,26 @@ export class MockA2AService {
       };
     }
 
-    // Step 6: Final completion with metadata
+    // Step 10: Quality assurance event
+    yield {
+      jsonrpc: '2.0',
+      id: `task_${Date.now()}`,
+      result: {
+        type: 'quality_assurance',
+        checks: {
+          response_completeness: 'passed',
+          factual_accuracy: 'verified',
+          context_relevance: 'high',
+          tone_appropriateness: 'passed',
+          safety_compliance: 'passed'
+        },
+        quality_score: 0.92,
+        confidence_level: 'high',
+        timestamp: new Date().toISOString()
+      }
+    };
+
+    // Step 11: Final completion with metadata
     yield {
       jsonrpc: '2.0',
       id: `task_${Date.now()}`,
@@ -294,7 +423,7 @@ export class MockA2AService {
               id: `scratch_${Date.now()}`,
               agentId: targetAgent.id,
               thinking: targetAgent.thinkingSteps,
-              reasoning: `Applied ${targetAgent.capabilities.join(', ')} to analyze and respond to the user's ${this.classifyIntent(userMessage)} query.`,
+              reasoning: `Applied ${targetAgent.capabilities.join(', ')} to analyze and respond to the user's ${this.classifyIntent(userMessage)} query using ${context?.type || 'default'} context.`,
               confidence_score: 0.87,
               alternative_approaches: [
                 'Could have consulted additional data sources',
@@ -305,11 +434,28 @@ export class MockA2AService {
                 'Query complexity and scope',
                 'Available agent capabilities',
                 'Response time requirements',
-                'User context and preferences'
+                'User context and preferences',
+                'Selected context type: ' + (context?.type || 'auto-detected')
               ]
             }
           }
         }
+      }
+    };
+
+    // Step 12: Session completion event
+    yield {
+      jsonrpc: '2.0',
+      id: `task_${Date.now()}`,
+      result: {
+        type: 'session_end',
+        session_id: sessionId,
+        context_type: context?.type || 'default',
+        total_duration_ms: Date.now() % 5000 + 2000, // 2-7 seconds
+        events_generated: 12,
+        success: true,
+        final_agent: targetAgent.name,
+        timestamp: new Date().toISOString()
       }
     };
   }

@@ -10,7 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { AgentCard } from './components/AgentCard';
 import { AgentFilters } from './components/AgentFilters';
 import { CreateAgentDialog } from './components/CreateAgentDialog';
-import { useAgents, useAgentAnalytics, type Agent } from '@/hooks/useAgents';
+import { useAgents, useAgentAnalytics, type Agent, type CreateAgentData } from '@/hooks/useAgents';
 import { cn } from '@/lib/utils';
 import { 
   PlusIcon, 
@@ -42,6 +42,7 @@ export default function AgentsPage() {
   const [selectedFramework, setSelectedFramework] = useState<string>('all');
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [editingAgent, setEditingAgent] = useState<Agent | null>(null);
   
   const { state: projectState } = useProject();
   
@@ -51,6 +52,7 @@ export default function AgentsPage() {
     loading,
     error,
     createAgent,
+    updateAgent,
     deleteAgent,
     runAgent,
   } = useAgents();
@@ -59,16 +61,31 @@ export default function AgentsPage() {
 
   // Handler functions
   const handleEditAgent = async (agent: Agent) => {
-    // TODO: Open edit modal
-    console.log('Edit agent:', agent);
+    setEditingAgent(agent);
+    setIsCreateDialogOpen(true);
   };
 
   const handleCloneAgent = async (agent: Agent) => {
-    const clonedData = {
+    // Map old framework names to new ones if needed
+    const mapFramework = (framework: string): 'langgraph' | 'crewai' | 'autogen' | 'semantic_kernel' | 'custom' => {
+      switch (framework) {
+        case 'langchain':
+          return 'langgraph';
+        case 'crewai':
+        case 'autogen':
+        case 'semantic_kernel':
+        case 'custom':
+          return framework;
+        default:
+          return 'custom'; // fallback for unknown frameworks
+      }
+    };
+
+    const clonedData: CreateAgentData = {
       name: `${agent.name} (Copy)`,
       description: agent.description,
-      framework: agent.framework, // Use the framework as-is since both interfaces match
-      capabilities: agent.capabilities, // Use capabilities directly
+      framework: mapFramework(agent.framework),
+      capabilities: agent.capabilities,
       tags: agent.tags,
     };
     
@@ -277,10 +294,62 @@ export default function AgentsPage() {
           )}
         </StandardSection>
 
-        {/* Create Agent Dialog */}
+        {/* Create/Edit Agent Dialog */}
         <CreateAgentDialog
           open={isCreateDialogOpen}
-          onClose={() => setIsCreateDialogOpen(false)}
+          onClose={() => {
+            setIsCreateDialogOpen(false);
+            setEditingAgent(null);
+          }}
+          editingAgent={editingAgent}
+          onSave={async (agentData) => {
+            // Transform agentData to match CreateAgentData interface
+            const createAgentData: CreateAgentData = {
+              name: agentData.name,
+              display_name: agentData.display_name,
+              description: agentData.description,
+              framework: agentData.framework,
+              capabilities: agentData.capabilities || [],
+              tags: agentData.tags,
+              project_tags: agentData.project_tags,
+              llm_model_id: agentData.llm_model_id,
+              systemPrompt: agentData.systemPrompt,
+              system_prompt: agentData.system_prompt,
+              temperature: agentData.temperature,
+              maxTokens: agentData.maxTokens,
+              max_tokens: agentData.max_tokens,
+              category: agentData.category,
+              agent_type: agentData.agent_type,
+              version: agentData.version,
+              a2a_enabled: agentData.a2a_enabled,
+              a2a_address: agentData.a2a_address,
+              // Deployment fields
+              url: agentData.url,
+              dns_name: agentData.dns_name,
+              health_url: agentData.health_url,
+              environment: agentData.environment,
+              author: agentData.author,
+              organization: agentData.organization,
+              // Signature fields (temporarily stored in model_config_data)
+              // input_signature: agentData.input_signature,
+              // output_signature: agentData.output_signature,
+              default_input_modes: agentData.default_input_modes,
+              default_output_modes: agentData.default_output_modes,
+              // Model configuration (including signatures for now)
+              model_config_data: {
+                ...agentData.model_config_data,
+                input_signature: agentData.input_signature,
+                output_signature: agentData.output_signature,
+              },
+            };
+
+            if (editingAgent) {
+              await updateAgent(editingAgent.id, createAgentData);
+            } else {
+              await createAgent(createAgentData);
+            }
+            setEditingAgent(null);
+          }}
         />
       </StandardPageLayout>
     </AuthGuard>

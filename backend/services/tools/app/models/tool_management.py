@@ -48,6 +48,8 @@ class ToolInstance(Base):
     last_health_check = Column(DateTime(timezone=True))
     health_status = Column(String(50), default="unknown")
     metrics = Column(JSONB, default={})
+    llm_model_id = Column(String(36), ForeignKey("llm_models.id"), nullable=True)
+    embedding_model_id = Column(String(36), ForeignKey("embedding_models.id"), nullable=True)
     error_log = Column(Text)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())

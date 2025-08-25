@@ -32,6 +32,7 @@ export interface WorkflowData {
     cron?: string;
     triggers?: string[];
   };
+  llm_model_id?: string;
   created_at: string;
   updated_at: string;
 }
@@ -45,6 +46,11 @@ export interface CreateWorkflowData {
   tools?: WorkflowData['tools'];
   tags?: string[];
   schedule?: WorkflowData['schedule'];
+  llm_model_id?: string;
+  version?: string;
+  timeout_seconds?: number;
+  is_public?: boolean;
+  url?: string;
 }
 
 export interface WorkflowExecution {

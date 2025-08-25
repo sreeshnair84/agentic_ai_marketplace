@@ -10,7 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { AgentCard } from './components/AgentCard';
 import { AgentFilters } from './components/AgentFilters';
 import { CreateAgentDialog } from './components/CreateAgentDialog';
-import { useAgents, useAgentAnalytics, type Agent } from '@/hooks/useAgents';
+import { useAgents, useAgentAnalytics, type Agent, type CreateAgentData } from '@/hooks/useAgents';
 import { cn } from '@/lib/utils';
 import { 
   PlusIcon, 
@@ -68,10 +68,25 @@ export default function AgentsPage() {
   };
 
   const handleCloneAgent = async (agent: Agent) => {
-    const clonedData = {
+    // Map old framework names to new ones if needed
+    const mapFramework = (framework: string): 'langgraph' | 'crewai' | 'autogen' | 'semantic_kernel' | 'custom' => {
+      switch (framework) {
+        case 'langchain':
+          return 'langgraph';
+        case 'crewai':
+        case 'autogen':
+        case 'semantic_kernel':
+        case 'custom':
+          return framework;
+        default:
+          return 'custom'; // fallback for unknown frameworks
+      }
+    };
+
+    const clonedData: CreateAgentData = {
       name: `${agent.name} (Copy)`,
       description: agent.description,
-      framework: agent.framework,
+      framework: mapFramework(agent.framework),
       capabilities: agent.capabilities,
       tags: agent.tags,
     };

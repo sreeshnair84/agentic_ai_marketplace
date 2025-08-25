@@ -62,7 +62,7 @@ async def list_agents(
         try:
             base_query = """
                 SELECT id, name, description, agent_type, status, ai_provider, 
-                       model_name, created_at, updated_at, is_active, framework, version
+                       model_name, created_at, updated_at, is_active, framework, version, llm_model_id
                 FROM agents 
                 WHERE 1=1
             """
@@ -89,6 +89,7 @@ async def list_agents(
                     "status": row['status'],
                     "ai_provider": row['ai_provider'],
                     "model_name": row['model_name'],
+                    "llm_model_id": str(row['llm_model_id']) if row['llm_model_id'] else None,
                     "created_at": row['created_at'].isoformat() if row['created_at'] else None,
                     "updated_at": row['updated_at'].isoformat() if row['updated_at'] else None,
                     "is_active": row['is_active'],
@@ -117,7 +118,7 @@ async def get_agent(agent_id: UUID):
             row = await conn.fetchrow("""
                 SELECT id, name, description, agent_type, status, ai_provider, 
                        model_name, created_at, updated_at, is_active, framework, 
-                       version, capabilities, system_prompt
+                       version, capabilities, system_prompt, llm_model_id
                 FROM agents 
                 WHERE id = $1
             """, str(agent_id))
@@ -134,6 +135,7 @@ async def get_agent(agent_id: UUID):
                 "status": row['status'],
                 "ai_provider": row['ai_provider'],
                 "model_name": row['model_name'],
+                "llm_model_id": str(row['llm_model_id']) if row['llm_model_id'] else None,
                 "capabilities": row['capabilities'] or [],
                 "system_prompt": row['system_prompt'],
                 "created_at": row['created_at'].isoformat() if row['created_at'] else None,
@@ -152,6 +154,296 @@ async def get_agent(agent_id: UUID):
             status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to get agent: {str(e)}"
         )
+
+# Pydantic models for CRUD operations
+from pydantic import BaseModel
+from uuid import uuid4
+from datetime import datetime
+import json
+
+class AgentCreate(BaseModel):
+    name: str
+    display_name: Optional[str] = None
+    description: str
+    framework: str = "custom"
+    capabilities: List[str] = []
+    tags: List[str] = []
+    project_tags: Optional[List[str]] = []
+    llm_model_id: Optional[str] = None
+    systemPrompt: Optional[str] = None
+    system_prompt: Optional[str] = None
+    temperature: Optional[float] = None
+    maxTokens: Optional[int] = None
+    max_tokens: Optional[int] = None
+    category: Optional[str] = None
+    agent_type: str = "generic"
+    version: str = "1.0"
+    a2a_enabled: bool = True
+    a2a_address: Optional[str] = None
+    # Deployment fields
+    url: Optional[str] = None
+    dns_name: Optional[str] = None
+    health_url: Optional[str] = None
+    environment: Optional[str] = "development"
+    author: Optional[str] = None
+    organization: Optional[str] = None
+    # Signature fields (stored in model_config_data for now)
+    # input_signature: Optional[Dict[str, Any]] = None
+    # output_signature: Optional[Dict[str, Any]] = None
+    default_input_modes: Optional[List[str]] = []
+    default_output_modes: Optional[List[str]] = []
+    # Model configuration
+    model_config_data: Optional[Dict[str, Any]] = None
+
+class AgentUpdate(BaseModel):
+    name: Optional[str] = None
+    description: Optional[str] = None
+    framework: Optional[str] = None
+    capabilities: Optional[List[str]] = None
+    tags: Optional[List[str]] = None
+    llm_model_id: Optional[str] = None
+    systemPrompt: Optional[str] = None
+    temperature: Optional[float] = None
+    maxTokens: Optional[int] = None
+    category: Optional[str] = None
+    agent_type: Optional[str] = None
+    version: Optional[str] = None
+    a2a_enabled: Optional[bool] = None
+
+
+@router.post("/", status_code=201)
+async def create_agent(agent_data: AgentCreate):
+    """Create a new agent"""
+    try:
+        conn = await acquire_db_conn()
+        try:
+            agent_id = str(uuid4())
+            now = datetime.utcnow()
+            
+            # Insert new agent
+            await conn.execute("""
+                INSERT INTO agents (
+                    id, name, display_name, description, agent_type, status, framework, version,
+                    capabilities, system_prompt, llm_model_id, tags, project_tags,
+                    temperature, max_tokens, category, a2a_enabled, a2a_address,
+                    url, dns_name, health_url, environment, author, organization,
+                    default_input_modes, default_output_modes, model_config_data,
+                    created_at, updated_at, is_active
+                ) VALUES (
+                    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13,
+                    $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24,
+                    $25, $26, $27, $28, $29, $30
+                )
+            """, 
+                agent_id, agent_data.name, agent_data.display_name, agent_data.description, 
+                agent_data.agent_type, "active", agent_data.framework, agent_data.version,
+                agent_data.capabilities, agent_data.systemPrompt or agent_data.system_prompt, 
+                agent_data.llm_model_id, agent_data.tags, agent_data.project_tags,
+                agent_data.temperature, agent_data.maxTokens or agent_data.max_tokens, 
+                agent_data.category, agent_data.a2a_enabled, 
+                agent_data.a2a_address or (f"http://agents:8002/agents/{agent_id}" if agent_data.a2a_enabled else None),
+                agent_data.url or (f"http://agents:8002/agents/{agent_id}" if agent_data.a2a_enabled else None), 
+                agent_data.dns_name, agent_data.health_url, 
+                agent_data.environment, agent_data.author, agent_data.organization,
+                agent_data.default_input_modes, agent_data.default_output_modes, 
+                agent_data.model_config_data, now, now, True
+            )
+            
+            # Return the created agent
+            return {
+                "id": agent_id,
+                "name": agent_data.name,
+                "description": agent_data.description,
+                "agent_type": agent_data.agent_type,
+                "status": "active",
+                "framework": agent_data.framework,
+                "version": agent_data.version,
+                "capabilities": agent_data.capabilities,
+                "system_prompt": agent_data.systemPrompt,
+                "llm_model_id": agent_data.llm_model_id,
+                "created_at": now.isoformat(),
+                "updated_at": now.isoformat(),
+                "is_active": True
+            }
+        finally:
+            await release_db_conn(conn)
+    except Exception as e:
+        logger.error(f"Error creating agent: {e}")
+        raise HTTPException(
+            status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to create agent: {str(e)}"
+        )
+
+
+@router.put("/{agent_id}")
+async def update_agent(agent_id: UUID, agent_data: AgentUpdate):
+    """Update an existing agent"""
+    try:
+        conn = await acquire_db_conn()
+        try:
+            # Check if agent exists
+            existing = await conn.fetchrow("SELECT id FROM agents WHERE id = $1", str(agent_id))
+            if not existing:
+                raise HTTPException(
+                    status_code=http_status.HTTP_404_NOT_FOUND,
+                    detail=f"Agent {agent_id} not found"
+                )
+            
+            # Build update query dynamically based on provided fields
+            update_fields = []
+            update_values = []
+            param_count = 1
+            
+            for field, value in agent_data.dict(exclude_unset=True).items():
+                if value is not None:
+                    # Map field names to database columns
+                    db_field = field
+                    if field == "systemPrompt":
+                        db_field = "system_prompt"
+                    
+                    update_fields.append(f"{db_field} = ${param_count}")
+                    update_values.append(value)
+                    param_count += 1
+            
+            if not update_fields:
+                raise HTTPException(
+                    status_code=http_status.HTTP_400_BAD_REQUEST,
+                    detail="No fields to update"
+                )
+            
+            # Add updated_at
+            update_fields.append(f"updated_at = ${param_count}")
+            update_values.append(datetime.utcnow())
+            param_count += 1
+            
+            # Add agent_id for WHERE clause
+            update_values.append(str(agent_id))
+            
+            query = f"""
+                UPDATE agents 
+                SET {', '.join(update_fields)}
+                WHERE id = ${param_count}
+            """
+            
+            await conn.execute(query, *update_values)
+            
+            # Fetch and return the updated agent
+            row = await conn.fetchrow("""
+                SELECT id, name, description, agent_type, status, framework, 
+                       version, capabilities, system_prompt, llm_model_id,
+                       created_at, updated_at, is_active
+                FROM agents 
+                WHERE id = $1
+            """, str(agent_id))
+            
+            return {
+                "id": str(row['id']),
+                "name": row['name'],
+                "description": row['description'],
+                "agent_type": row['agent_type'],
+                "status": row['status'],
+                "framework": row['framework'],
+                "version": row['version'],
+                "capabilities": row['capabilities'] or [],
+                "system_prompt": row['system_prompt'],
+                "llm_model_id": str(row['llm_model_id']) if row['llm_model_id'] else None,
+                "created_at": row['created_at'].isoformat() if row['created_at'] else None,
+                "updated_at": row['updated_at'].isoformat() if row['updated_at'] else None,
+                "is_active": row['is_active']
+            }
+            
+        finally:
+            await release_db_conn(conn)
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error updating agent: {e}")
+        raise HTTPException(
+            status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to update agent: {str(e)}"
+        )
+
+
+@router.delete("/{agent_id}", status_code=204)
+async def delete_agent(agent_id: UUID):
+    """Delete an agent"""
+    try:
+        conn = await acquire_db_conn()
+        try:
+            # Check if agent exists
+            existing = await conn.fetchrow("SELECT id FROM agents WHERE id = $1", str(agent_id))
+            if not existing:
+                raise HTTPException(
+                    status_code=http_status.HTTP_404_NOT_FOUND,
+                    detail=f"Agent {agent_id} not found"
+                )
+            
+            # Delete the agent
+            await conn.execute("DELETE FROM agents WHERE id = $1", str(agent_id))
+            
+            # Return 204 No Content (handled by status_code parameter)
+            return None
+            
+        finally:
+            await release_db_conn(conn)
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error deleting agent: {e}")
+        raise HTTPException(
+            status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to delete agent: {str(e)}"
+        )
+
+
+@router.post("/{agent_id}/run")
+async def run_agent(agent_id: UUID, task_data: dict = None):
+    """Run an agent with given task data"""
+    try:
+        conn = await acquire_db_conn()
+        try:
+            # Check if agent exists and is active
+            agent = await conn.fetchrow("""
+                SELECT id, name, status, is_active FROM agents 
+                WHERE id = $1
+            """, str(agent_id))
+            
+            if not agent:
+                raise HTTPException(
+                    status_code=http_status.HTTP_404_NOT_FOUND,
+                    detail=f"Agent {agent_id} not found"
+                )
+            
+            if not agent['is_active'] or agent['status'] != 'active':
+                raise HTTPException(
+                    status_code=http_status.HTTP_400_BAD_REQUEST,
+                    detail=f"Agent {agent_id} is not active"
+                )
+            
+            # For now, return a mock execution response
+            # In a real implementation, this would execute the agent
+            task_id = str(uuid4())
+            
+            return {
+                "taskId": task_id,
+                "agentId": str(agent_id),
+                "agentName": agent['name'],
+                "status": "running",
+                "message": "Agent execution started",
+                "timestamp": datetime.utcnow().isoformat()
+            }
+            
+        finally:
+            await release_db_conn(conn)
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error running agent: {e}")
+        raise HTTPException(
+            status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to run agent: {str(e)}"
+        )
+
 
 # Health check endpoint for DB connection
 @router.get("/health", tags=["health"])

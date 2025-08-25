@@ -19,6 +19,7 @@ dependencies = [
     "isort>=6.0.1",
     "langchain>=0.3.27",
     "langchain-community>=0.3.27",
+    "fastapi[all]>=0.116.1",
     "langchain-core>=0.3.74",
     "langgraph>=0.6.6",
     "mcp-client>=0.0.0",

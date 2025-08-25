@@ -1,22 +1,42 @@
-# RAG Service Dependencies
+# Enhanced RAG System Requirements
+# Core RAG and document processing dependencies
 
-fastapi
-uvicorn[standard]
-pydantic
-pydantic-settings
+docling>=1.0.0
+docling-core>=1.0.0
 
-# PGVector and vector processing
-pgvector
-psycopg2-binary
-asyncpg
-sqlalchemy[asyncio]
+# LangChain ecosystem for RAG
+langchain>=0.1.0
+langchain-openai>=0.0.5
+langchain-community>=0.0.15
+langchain-experimental>=0.0.50
 
+# LangGraph for agent workflows
+langgraph>=0.0.30
+langgraph-checkpoint-sqlite>=0.0.5
+google-generativeai>=0.8.5
+fastapi[all]
+
+# Vector databases
+faiss-cpu>=1.7.4
+chromadb>=0.4.0
+pgvector>=0.2.0
+
+# Embedding models
+sentence-transformers>=2.2.0
+openai>=1.0.0
+tiktoken>=0.5.0
 
 # Document processing
-pypdf
-python-docx
-python-multipart
+pypdf>=3.0.0
+python-docx>=0.8.11
+python-multipart>=0.0.6
+chardet>=5.0.0
+pdfplumber>=0.9.0
 
-# Additional dependencies
-httpx
-aiofiles
+# Text processing and chunking
+nltk>=3.8.1
+spacy>=3.7.0
+transformers>=4.30.0
+
+# Data handling
+pandas>=2.0.0

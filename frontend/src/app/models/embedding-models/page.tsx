@@ -133,7 +133,7 @@ export default function EmbeddingModelsManagement() {
     }
   };
 
-  const filteredModels = models.filter(model => {
+  const filteredModels = (models || []).filter(model => {
     const matchesSearch = model.display_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          model.name.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesProvider = selectedProvider === 'all' || model.provider === selectedProvider;

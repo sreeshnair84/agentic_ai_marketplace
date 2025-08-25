@@ -372,3 +372,55 @@ Summary:"""
             "system_prompt_length": len(self.system_prompt),
             "timestamp": datetime.utcnow().isoformat()
         }
+
+    async def chat_with_model(
+        self,
+        model_id: str,
+        message: str,
+        session_id: Optional[str] = None,
+        conversation_history: List[Dict[str, Any]] = None
+    ) -> AsyncGenerator[Dict[str, Any], None]:
+        """Chat with a specific model"""
+        try:
+            # Get the specific model
+            model_instance = await self.model_service.get_model_instance(model_id)
+            if not model_instance:
+                yield {
+                    "success": False,
+                    "error": f"Model {model_id} not found",
+                    "message": f"The requested model '{model_id}' is not available.",
+                    "timestamp": datetime.utcnow().isoformat(),
+                    "final": True
+                }
+                return
+            
+            # Prepare messages
+            messages = await self._prepare_messages(message, conversation_history)
+            
+            # Stream response
+            async for response in self._stream_response(model_instance, messages, None, session_id):
+                yield response
+                
+        except Exception as e:
+            logger.error(f"Error in chat_with_model: {str(e)}")
+            yield {
+                "success": False,
+                "error": str(e),
+                "message": "I apologize, but I encountered an error while processing your request.",
+                "timestamp": datetime.utcnow().isoformat(),
+                "final": True
+            }
+
+# Global service instance
+_default_chat_service: Optional[DefaultChatService] = None
+
+def get_default_chat_service() -> DefaultChatService:
+    """Get default chat service instance"""
+    global _default_chat_service
+    if _default_chat_service is None:
+        from .langgraph_model_service import LangGraphModelService
+        # This would need to be injected properly
+        logger.warning("Model service not provided, creating new instance")
+        model_service = LangGraphModelService(None)  # This needs proper DB session
+        _default_chat_service = DefaultChatService(model_service)
+    return _default_chat_service

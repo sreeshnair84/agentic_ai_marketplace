@@ -1,3 +1,13 @@
+from ..models.workflows import (
+    WorkflowDefinitionCreate, WorkflowDefinitionUpdate, WorkflowDefinitionResponse,
+    WorkflowExecutionResponse, WorkflowTemplateResponse, WorkflowScheduleResponse,
+    WorkflowSummary, ExecutionSummary
+)
+from ..models.database import (
+    WorkflowDefinition, WorkflowExecution, WorkflowTemplate, WorkflowSchedule, Base
+)
+from uuid import UUID
+from sqlalchemy.exc import SQLAlchemyError
 """
 Database service for Workflow Engine
 """
@@ -8,16 +18,61 @@ from typing import List, Optional, Dict, Any
 import logging
 import os
 
-from .models.database import Base, WorkflowDefinition, WorkflowExecution, WorkflowTemplate, WorkflowSchedule
-from .models.workflows import (
-    WorkflowDefinitionResponse, WorkflowExecutionResponse, 
-    WorkflowTemplateResponse, WorkflowScheduleResponse,
-    WorkflowSummary, ExecutionSummary
-)
 
 logger = logging.getLogger(__name__)
 
 class DatabaseService:
+
+    async def create_workflow(self, workflow_in: WorkflowDefinitionCreate) -> WorkflowDefinitionResponse:
+        async with self.SessionLocal() as session:
+            try:
+                workflow = WorkflowDefinition(
+                    name=workflow_in.name,
+                    display_name=workflow_in.display_name,
+                    description=workflow_in.description,
+                    version=workflow_in.version,
+                    status=workflow_in.status,
+                    category=workflow_in.category,
+                    execution_url=workflow_in.execution_url,
+                    dns_name=workflow_in.dns_name,
+                    status_url=workflow_in.status_url,
+                    input_signature=workflow_in.input_signature.dict() if workflow_in.input_signature else None,
+                    output_signature=workflow_in.output_signature.dict() if workflow_in.output_signature else None,
+                    steps=[step.dict() for step in workflow_in.steps],
+                    variables=workflow_in.variables,
+                    triggers=[trigger.dict() for trigger in workflow_in.triggers],
+                    dependencies=workflow_in.dependencies.dict() if workflow_in.dependencies else None,
+                    timeout_seconds=workflow_in.timeout_seconds,
+                    retry_config=workflow_in.retry_config,
+                    notification_config=workflow_in.notification_config,
+                    tags=workflow_in.tags,
+                    project_tags=workflow_in.project_tags,
+                    is_template=workflow_in.is_template,
+                    is_public=workflow_in.is_public,
+                    author=workflow_in.author,
+                    organization=workflow_in.organization,
+                    environment=workflow_in.environment,
+                    llm_model_id=workflow_in.llm_model_id,
+                )
+                session.add(workflow)
+                await session.commit()
+                await session.refresh(workflow)
+                return WorkflowDefinitionResponse.model_validate(workflow)
+            except SQLAlchemyError as e:
+                await session.rollback()
+                raise e
+
+    async def update_workflow(self, workflow_id: UUID, workflow_in: WorkflowDefinitionUpdate) -> WorkflowDefinitionResponse:
+        async with self.SessionLocal() as session:
+            workflow = await session.get(WorkflowDefinition, workflow_id)
+            if not workflow:
+                return None
+            for field, value in workflow_in.dict(exclude_unset=True).items():
+                if hasattr(workflow, field):
+                    setattr(workflow, field, value)
+            await session.commit()
+            await session.refresh(workflow)
+            return WorkflowDefinitionResponse.model_validate(workflow)
     """Database service for workflow management"""
     
     def __init__(self):

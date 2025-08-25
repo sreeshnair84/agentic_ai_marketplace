@@ -1,0 +1,17 @@
+[project]
+name = "experiments"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "a2a-sdk>=0.3.2",
+    "click>=8.2.1",
+    "dotenv>=0.9.9",
+    "langchain>=0.3.27",
+    "langchain-community>=0.3.27",
+    "langchain-google-genai>=2.1.9",
+    "langgraph>=0.6.6",
+    "notebook>=7.4.5",
+    "uvicorn>=0.35.0",
+]

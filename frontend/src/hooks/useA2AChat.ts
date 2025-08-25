@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { mockA2AService } from '@/services/mockA2AService';
 import { a2aService, A2AAgent } from '@/services/a2aService';
 import { SelectedContext, WorkflowMetadata, AgentMetadata, ToolMetadata } from '@/components/chat/MetadataSelector';
@@ -168,7 +168,7 @@ export function useA2AChatEnhanced() {
   const wsRef = useRef<WebSocket | null>(null);
   const eventSourceRef = useRef<EventSource | null>(null);
 
-  // Initialize A2A backend connection and fetch agents
+  // Initialize A2A backend connection and fetch agents (memoized to prevent unnecessary calls)
   const initializeA2A = useCallback(async () => {
     try {
       // Check if A2A backend is available
@@ -179,9 +179,16 @@ export function useA2AChatEnhanced() {
         // Fetch available agents
         const agentsResponse = await a2aService.listAgents();
         if (agentsResponse.success) {
-          setAvailableAgents(agentsResponse.agents);
+          setAvailableAgents(prevAgents => {
+            // Only update if agents actually changed to prevent unnecessary re-renders
+            const agentsChanged = JSON.stringify(prevAgents) !== JSON.stringify(agentsResponse.agents);
+            if (agentsChanged) {
+              return agentsResponse.agents;
+            }
+            return prevAgents;
+          });
           
-          // Set default agent if available
+          // Set default agent if available (only if no agent is currently selected)
           if (agentsResponse.agents.length > 0 && !selectedAgent) {
             const defaultAgent = agentsResponse.agents.find(a => a.id === 'general_assistant') 
               || agentsResponse.agents[0];
@@ -193,7 +200,7 @@ export function useA2AChatEnhanced() {
       console.warn('A2A initialization failed:', error);
       setA2aBackendAvailable(false);
     }
-  }, [selectedAgent]);
+  }, []); // Remove selectedAgent dependency to prevent recursive calls
 
   // Use effect to initialize A2A on mount
   useEffect(() => {
@@ -218,9 +225,16 @@ export function useA2AChatEnhanced() {
     return newSession;
   }, []);
 
-  // Update session context
+  // Update session context (memoized to prevent unnecessary updates)
   const updateSessionContext = useCallback((context: SelectedContext) => {
-    setSelectedContext(context);
+    // Only update if context actually changed
+    setSelectedContext(prevContext => {
+      const contextChanged = JSON.stringify(prevContext) !== JSON.stringify(context);
+      if (contextChanged) {
+        return context;
+      }
+      return prevContext;
+    });
     
     if (currentSession) {
       const updatedSession = {
@@ -321,6 +335,7 @@ export function useA2AChatEnhanced() {
     voiceRecording?: VoiceRecording,
     contextOverride?: SelectedContext
   ): Promise<void> => {
+    console.log('DEBUG: sendA2AMessage called with:', { message, attachments, currentSession });
     if (!currentSession) return;
     
     const activeContext = contextOverride || selectedContext;
@@ -340,11 +355,14 @@ export function useA2AChatEnhanced() {
       };
 
       // Add to current session
+      console.log('DEBUG: Current session before update:', currentSession);
+      console.log('DEBUG: Current session messages:', currentSession?.messages);
       const updatedSession = {
         ...currentSession,
-        messages: [...currentSession.messages, userMessage],
+        messages: [...(currentSession.messages || []), userMessage],
         updatedAt: new Date()
       };
+      console.log('DEBUG: Updated session after adding message:', updatedSession);
       setCurrentSession(updatedSession);
       setSessions(prev => prev.map(s => s.id === currentSession.id ? updatedSession : s));
 
@@ -438,14 +456,20 @@ export function useA2AChatEnhanced() {
           message: rpcRequest.params.message.parts[0]?.text || '',
           agent_id: selectedAgent?.id,
           session_id: currentSession.id,
-          conversation_history: currentSession.messages
-            .filter(m => m.type !== 'system' && m.type !== 'inter_agent')
-            .slice(-10) // Keep last 10 messages for context
-            .map(m => ({
-              role: m.type === 'user' ? 'user' : 'assistant',
-              content: m.content,
-              timestamp: m.timestamp.toISOString()
-            }))
+          conversation_history: (() => {
+            console.log('DEBUG: Building conversation history from messages:', currentSession.messages);
+            const messages = currentSession.messages || [];
+            console.log('DEBUG: Messages after null check:', messages);
+            const filtered = messages.filter(m => m.type !== 'system' && m.type !== 'inter_agent');
+            console.log('DEBUG: Messages after filter:', filtered);
+            return filtered
+              .slice(-10) // Keep last 10 messages for context
+              .map(m => ({
+                role: m.type === 'user' ? 'user' : 'assistant',
+                content: m.content,
+                timestamp: m.timestamp.toISOString()
+              }));
+          })()
         };
 
         // Stream responses from A2A backend
@@ -543,12 +567,18 @@ export function useA2AChatEnhanced() {
       if (status.type === 'in_progress') {
         const messageText = status.message?.parts?.[0]?.text || '';
         
-        // Update streaming state for display
-        setStreamingState(prev => ({
-          ...prev,
-          currentMessage: prev.currentMessage + messageText,
-          chunks: [...prev.chunks, messageText]
-        }));
+        // Update streaming state for display (optimized to prevent excessive re-renders)
+        setStreamingState(prev => {
+          // Only update if there's actually new content
+          if (messageText && messageText.trim()) {
+            return {
+              ...prev,
+              currentMessage: prev.currentMessage + messageText,
+              chunks: [...prev.chunks, messageText]
+            };
+          }
+          return prev;
+        });
 
         // Create or update agent message
         if (!currentAgentMessage) {
@@ -644,31 +674,46 @@ export function useA2AChatEnhanced() {
     return status.result?.agent_name || 'AI Assistant';
   };
 
-  // Add message to current session
+  // Add message to current session (optimized to prevent unnecessary re-renders)
   const addMessageToSession = useCallback((message: ChatMessage) => {
     if (!currentSession) return;
     
-    const updatedSession = {
-      ...currentSession,
-      messages: [...currentSession.messages, message],
-      updatedAt: new Date()
-    };
-    setCurrentSession(updatedSession);
-    setSessions(prev => prev.map(s => s.id === currentSession.id ? updatedSession : s));
-  }, [currentSession]);
+    // Use functional update to prevent stale closure issues
+    setCurrentSession(prevSession => {
+      if (!prevSession) return prevSession;
+      return {
+        ...prevSession,
+        messages: [...prevSession.messages, message],
+        updatedAt: new Date()
+      };
+    });
+    
+    setSessions(prev => prev.map(s => 
+      s.id === currentSession.id 
+        ? { ...s, messages: [...s.messages, message], updatedAt: new Date() }
+        : s
+    ));
+  }, [currentSession?.id]); // Only depend on session ID to reduce re-renders
 
-  // Update existing message in session
+  // Update existing message in session (optimized)
   const updateCurrentMessage = useCallback((message: ChatMessage) => {
     if (!currentSession) return;
     
-    const updatedSession = {
-      ...currentSession,
-      messages: currentSession.messages.map(m => m.id === message.id ? message : m),
-      updatedAt: new Date()
-    };
-    setCurrentSession(updatedSession);
-    setSessions(prev => prev.map(s => s.id === currentSession.id ? updatedSession : s));
-  }, [currentSession]);
+    setCurrentSession(prevSession => {
+      if (!prevSession) return prevSession;
+      return {
+        ...prevSession,
+        messages: prevSession.messages.map(m => m.id === message.id ? message : m),
+        updatedAt: new Date()
+      };
+    });
+    
+    setSessions(prev => prev.map(s => 
+      s.id === currentSession.id 
+        ? { ...s, messages: s.messages.map(m => m.id === message.id ? message : m), updatedAt: new Date() }
+        : s
+    ));
+  }, [currentSession?.id]); // Only depend on session ID
 
   // Upload file to backend
   const uploadFile = useCallback(async (file: File): Promise<FileAttachment> => {
@@ -803,7 +848,8 @@ export function useA2AChatEnhanced() {
     });
   };
 
-  return {
+  // Memoize the return object to prevent unnecessary re-renders
+  const returnValue = useMemo(() => ({
     // Session management
     sessions,
     currentSession,
@@ -847,5 +893,27 @@ export function useA2AChatEnhanced() {
     },
     
     clearError: () => setError(null)
-  };
+  }), [
+    sessions,
+    currentSession,
+    selectedContext,
+    availableAgents,
+    selectedAgent,
+    a2aBackendAvailable,
+    streamingState,
+    loading,
+    error,
+    agentCommunications,
+    // Functions are already memoized with useCallback
+    createSession,
+    updateSessionContext,
+    sendA2AMessage,
+    uploadFile,
+    startVoiceRecording,
+    getRoutingInfo,
+    initializeA2A,
+    exportSession
+  ]);
+
+  return returnValue;
 }

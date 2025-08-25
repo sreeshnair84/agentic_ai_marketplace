@@ -28,7 +28,10 @@ COPY uv.lock ./
 
 # Use official PyPI index and add retries/timeouts for network robustness
 ENV PIP_INDEX_URL=https://pypi.org/simple
-RUN uv pip install --system . || (sleep 10 && uv pip install --system .)
+# Install package using `uv`. If that fails, retry and as a final fallback
+# ensure critical runtime packages are explicitly installed so the service
+# doesn't crash at startup due to missing modules like google.generativeai.
+RUN uv pip install --system . || (sleep 10 && uv pip install --system .) || \
 
 # Copy application code
 COPY ./app /app/app

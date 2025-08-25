@@ -28,7 +28,12 @@ COPY uv.lock ./
 
 # Use official PyPI index and add retries/timeouts for network robustness
 ENV PIP_INDEX_URL=https://pypi.org/simple
-RUN uv pip install --system . || (sleep 10 && uv pip install --system .)
+# Install package using `uv` (if available). If that fails, retry once and as a last
+# resort ensure the critical runtime packages are installed explicitly so the
+# image contains FastAPI and Uvicorn. This protects against silent failures of
+# the `uv pip install --system .` step.
+RUN uv pip install --system . || (sleep 10 && uv pip install --system .) || \
+    pip install --no-cache-dir "fastapi[all]" "uvicorn[standard]"
 
 # Copy application code
 COPY ./app /app/app

@@ -3,9 +3,10 @@ import { useState, useEffect, useCallback } from 'react';
 export interface Agent {
   id: string;
   name: string;
+  display_name?: string;
   description: string;
   status: 'active' | 'inactive' | 'draft' | 'error';
-  framework: 'crewai' | 'autogen' | 'langchain' | 'custom';
+  framework: 'langgraph' | 'crewai' | 'autogen' | 'semantic_kernel' | 'custom';
   capabilities: string[];
   performance: {
     tasksCompleted: number;
@@ -15,16 +16,72 @@ export interface Agent {
   lastActivity: Date;
   owner: string;
   tags: string[];
+  project_tags?: string[];
   created_at: string;
   updated_at: string;
+  llm_model_id?: string;
+  // Enhanced schema fields
+  systemPrompt?: string;
+  system_prompt?: string;
+  temperature?: number;
+  maxTokens?: number;
+  max_tokens?: number;
+  category?: string;
+  agent_type?: string;
+  version?: string;
+  ai_provider?: string;
+  model_name?: string;
+  a2a_enabled?: boolean;
+  a2a_address?: string;
+  // Deployment fields
+  url?: string;
+  dns_name?: string;
+  health_url?: string;
+  environment?: string;
+  author?: string;
+  organization?: string;
+  // Signature fields
+  input_signature?: Record<string, any>;
+  output_signature?: Record<string, any>;
+  default_input_modes?: string[];
+  default_output_modes?: string[];
+  // Model configuration
+  model_config_data?: Record<string, any>;
 }
 
 export interface CreateAgentData {
   name: string;
+  display_name?: string;
   description: string;
-  framework: 'crewai' | 'autogen' | 'langchain' | 'custom';
+  framework: 'langgraph' | 'crewai' | 'autogen' | 'semantic_kernel' | 'custom';
   capabilities: string[];
   tags?: string[];
+  project_tags?: string[];
+  llm_model_id?: string;
+  systemPrompt?: string;
+  system_prompt?: string;
+  temperature?: number;
+  maxTokens?: number;
+  max_tokens?: number;
+  category?: string;
+  agent_type?: string;
+  version?: string;
+  a2a_enabled?: boolean;
+  a2a_address?: string;
+  // Deployment fields
+  url?: string;
+  dns_name?: string;
+  health_url?: string;
+  environment?: string;
+  author?: string;
+  organization?: string;
+  // Signature fields
+  input_signature?: Record<string, any>;
+  output_signature?: Record<string, any>;
+  default_input_modes?: string[];
+  default_output_modes?: string[];
+  // Model configuration
+  model_config_data?: Record<string, any>;
 }
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
@@ -81,7 +138,9 @@ export function useAgents() {
 
   const createAgent = useCallback(async (agentData: CreateAgentData): Promise<{ success: boolean; error?: string; id?: string }> => {
     try {
-      const response = await fetch(`${API_BASE}/api/v1/agents/`, {
+      // Use the agents service directly for CRUD operations
+      const AGENTS_SERVICE_URL = process.env.NEXT_PUBLIC_AGENTS_URL || `${API_BASE.replace(':8000', ':8002')}`;
+      const response = await fetch(`${AGENTS_SERVICE_URL}/agents/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -105,7 +164,8 @@ export function useAgents() {
 
   const updateAgent = useCallback(async (agentId: string, agentData: Partial<CreateAgentData>): Promise<{ success: boolean; error?: string }> => {
     try {
-      const response = await fetch(`${API_BASE}/api/v1/agents/${agentId}`, {
+      const AGENTS_SERVICE_URL = process.env.NEXT_PUBLIC_AGENTS_URL || `${API_BASE.replace(':8000', ':8002')}`;
+      const response = await fetch(`${AGENTS_SERVICE_URL}/agents/${agentId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -128,7 +188,8 @@ export function useAgents() {
 
   const deleteAgent = useCallback(async (agentId: string): Promise<{ success: boolean; error?: string }> => {
     try {
-      const response = await fetch(`${API_BASE}/api/v1/agents/${agentId}`, {
+      const AGENTS_SERVICE_URL = process.env.NEXT_PUBLIC_AGENTS_URL || `${API_BASE.replace(':8000', ':8002')}`;
+      const response = await fetch(`${AGENTS_SERVICE_URL}/agents/${agentId}`, {
         method: 'DELETE',
       });
 
@@ -147,7 +208,8 @@ export function useAgents() {
 
   const runAgent = useCallback(async (agentId: string, taskData?: any): Promise<{ success: boolean; error?: string; taskId?: string }> => {
     try {
-      const response = await fetch(`${API_BASE}/api/v1/agents/${agentId}/run`, {
+      const AGENTS_SERVICE_URL = process.env.NEXT_PUBLIC_AGENTS_URL || `${API_BASE.replace(':8000', ':8002')}`;
+      const response = await fetch(`${AGENTS_SERVICE_URL}/agents/${agentId}/run`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -174,7 +236,8 @@ export function useAgents() {
 
   const getAgent = useCallback(async (agentId: string): Promise<Agent | null> => {
     try {
-      const response = await fetch(`${API_BASE}/api/v1/agents/${agentId}`);
+      const AGENTS_SERVICE_URL = process.env.NEXT_PUBLIC_AGENTS_URL || `${API_BASE.replace(':8000', ':8002')}`;
+      const response = await fetch(`${AGENTS_SERVICE_URL}/agents/${agentId}`);
       if (!response.ok) {
         throw new Error(`Failed to fetch agent: ${response.statusText}`);
       }
@@ -216,7 +279,8 @@ export function useAgentAnalytics() {
     frameworkBreakdown: {
       crewai: agents.filter(a => a.framework === 'crewai').length,
       autogen: agents.filter(a => a.framework === 'autogen').length,
-      langchain: agents.filter(a => a.framework === 'langchain').length,
+      langgraph: agents.filter(a => a.framework === 'langgraph').length,
+      semantic_kernel: agents.filter(a => a.framework === 'semantic_kernel').length,
       custom: agents.filter(a => a.framework === 'custom').length,
     },
     avgSuccessRate: agents.length > 0 

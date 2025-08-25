@@ -65,6 +65,9 @@ class WorkflowDefinition(Base):
     created_by = Column(String(255), nullable=True)
     updated_by = Column(String(255), nullable=True)
 
+    # LLM Model linkage
+    llm_model_id = Column(UUID(as_uuid=True), ForeignKey("llm_models.id"), nullable=True)
+
     # Relationships
     executions = relationship("WorkflowExecution", back_populates="workflow")
 

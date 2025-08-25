@@ -470,43 +470,49 @@ function Sidebar({ isOpen, onClose, isCollapsed, onToggleCollapse }: SidebarProp
       {/* Sidebar */}
       <div
         className={cn(
-          'fixed top-0 left-0 z-50 h-full bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 transform transition-all duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0 flex flex-col',
-          isCollapsed ? 'w-16' : 'w-64',
+          'fixed top-0 left-0 z-50 h-full bg-white/95 backdrop-blur-xl dark:bg-gray-900/95 border-r border-gray-200/50 dark:border-gray-700/50 transform transition-all duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0 flex flex-col shadow-2xl lg:shadow-none',
+          isCollapsed ? 'w-20' : 'w-72',
           isOpen ? 'translate-x-0' : '-translate-x-full'
         )}
       >
         {/* Header */}
         <div className={cn(
-          'flex items-center border-b border-gray-200 dark:border-gray-700 p-4 min-h-[4rem]',
+          'flex items-center border-b border-gray-200/50 dark:border-gray-700/50 p-4 min-h-[4.5rem] bg-gradient-to-r from-blue-50 to-purple-50 dark:from-gray-800 dark:to-gray-800',
           isCollapsed ? 'justify-center px-2' : 'justify-between'
         )}>
           {!isCollapsed && (
             <div className="flex items-center gap-3 min-w-0 flex-1">
-              <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg flex items-center justify-center shadow-lg flex-shrink-0">
-                <Bot className="h-5 w-5 text-white" />
+              <div className="relative">
+                <div className="w-10 h-10 bg-gradient-to-br from-blue-600 via-purple-600 to-blue-700 rounded-xl flex items-center justify-center shadow-2xl flex-shrink-0 ring-2 ring-white/20">
+                  <Sparkles className="h-6 w-6 text-white" />
+                </div>
+                <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-400 rounded-full border-2 border-white dark:border-gray-900 animate-pulse"></div>
               </div>
               <div className="min-w-0 flex-1">
-                <h2 className="font-bold text-lg text-gray-900 dark:text-white truncate">
+                <h2 className="font-bold text-xl bg-gradient-to-r from-gray-900 to-gray-700 dark:from-white dark:to-gray-300 bg-clip-text text-transparent truncate">
                   Agentic AI
                 </h2>
-                <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                  Multi-Agent Platform
+                <p className="text-xs font-medium text-blue-600 dark:text-blue-400 truncate">
+                  Enterprise Platform
                 </p>
               </div>
             </div>
           )}
           {isCollapsed && (
-            <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg flex items-center justify-center shadow-lg">
-              <Bot className="h-5 w-5 text-white" />
+            <div className="relative">
+              <div className="w-10 h-10 bg-gradient-to-br from-blue-600 via-purple-600 to-blue-700 rounded-xl flex items-center justify-center shadow-2xl ring-2 ring-white/20">
+                <Sparkles className="h-6 w-6 text-white" />
+              </div>
+              <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-400 rounded-full border-2 border-white dark:border-gray-900 animate-pulse"></div>
             </div>
           )}
           <div className="flex items-center gap-1 flex-shrink-0">
             <button
               onClick={onToggleCollapse}
-              className="hidden lg:flex p-1.5 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+              className="hidden lg:flex p-2 rounded-lg hover:bg-white/20 dark:hover:bg-gray-700/50 transition-all duration-200 backdrop-blur-sm group"
               title={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
             >
-              {isCollapsed ? <Maximize2 className="h-4 w-4" /> : <Minimize2 className="h-4 w-4" />}
+              {isCollapsed ? <PanelLeftOpen className="h-5 w-5 group-hover:scale-110 transition-transform" /> : <PanelLeftClose className="h-5 w-5 group-hover:scale-110 transition-transform" />}
             </button>
             <button
               onClick={onClose}
@@ -519,16 +525,16 @@ function Sidebar({ isOpen, onClose, isCollapsed, onToggleCollapse }: SidebarProp
 
         {/* Search & Quick Actions */}
         {!isCollapsed && (
-          <div className="p-4 border-b border-gray-200 dark:border-gray-700 space-y-3">
+          <div className="p-4 border-b border-gray-200/50 dark:border-gray-700/50 space-y-4 bg-gradient-to-b from-gray-50/50 to-transparent dark:from-gray-800/30">
             {/* Search */}
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 flex-shrink-0" />
+              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 flex-shrink-0" />
               <input
                 type="text"
-                placeholder="Search..."
+                placeholder="Search agents, workflows..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-10 py-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                className="w-full pl-12 pr-12 py-3 bg-white/80 dark:bg-gray-800/80 border border-gray-200/50 dark:border-gray-600/50 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 focus:bg-white dark:focus:bg-gray-800 backdrop-blur-sm transition-all duration-200 shadow-sm"
               />
               {searchQuery && (
                 <button
@@ -541,21 +547,21 @@ function Sidebar({ isOpen, onClose, isCollapsed, onToggleCollapse }: SidebarProp
             </div>
 
             {/* Quick Actions */}
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-3 gap-3">
               {quickActions.map((action) => (
                 <Link
                   key={action.id}
                   href={action.href}
-                  className="flex flex-col items-center p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors group"
+                  className="flex flex-col items-center p-3 rounded-xl hover:bg-white/60 dark:hover:bg-gray-800/60 transition-all duration-200 group backdrop-blur-sm border border-gray-200/30 dark:border-gray-600/30 hover:shadow-lg hover:scale-105"
                   title={action.label}
                 >
                   <div className={cn(
-                    "w-8 h-8 rounded-lg flex items-center justify-center mb-1 group-hover:scale-110 transition-transform",
+                    "w-10 h-10 rounded-xl flex items-center justify-center mb-2 group-hover:scale-110 transition-all duration-200 shadow-lg ring-2 ring-white/20",
                     action.color
                   )}>
-                    <action.icon className="h-4 w-4 text-white" />
+                    <action.icon className="h-5 w-5 text-white" />
                   </div>
-                  <span className="text-xs text-gray-600 dark:text-gray-400 text-center leading-tight">
+                  <span className="text-xs font-medium text-gray-700 dark:text-gray-300 text-center leading-tight">
                     {action.label.split(' ')[1] || action.label}
                   </span>
                 </Link>
@@ -566,38 +572,43 @@ function Sidebar({ isOpen, onClose, isCollapsed, onToggleCollapse }: SidebarProp
 
         {/* Project Selector */}
         {!isCollapsed && (
-          <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+          <div className="p-4 border-b border-gray-200/50 dark:border-gray-700/50">
             <div className="relative">
               <button
                 onClick={() => setShowProjectDropdown(!showProjectDropdown)}
-                className="w-full flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors min-h-[3.5rem]"
+                className="w-full flex items-center justify-between p-4 bg-gradient-to-r from-white/80 to-gray-50/80 dark:from-gray-800/80 dark:to-gray-700/80 rounded-xl hover:from-white hover:to-gray-50 dark:hover:from-gray-700 dark:hover:to-gray-600 transition-all duration-200 min-h-[4rem] backdrop-blur-sm border border-gray-200/30 dark:border-gray-600/30 shadow-sm hover:shadow-md"
               >
                 <div className="flex items-center gap-3 min-w-0 flex-1">
                   {state.selectedProject ? (
                     <>
-                      <div 
-                        className="w-3 h-3 rounded-full flex-shrink-0"
-                        style={{ backgroundColor: state.selectedProject.color }}
-                      />
+                      <div className="relative">
+                        <div 
+                          className="w-4 h-4 rounded-full flex-shrink-0 ring-2 ring-white/50 shadow-sm"
+                          style={{ backgroundColor: state.selectedProject.color }}
+                        />
+                        <div className="absolute -top-1 -right-1 w-2 h-2 bg-green-400 rounded-full border border-white dark:border-gray-800 animate-pulse"></div>
+                      </div>
                       <div className="text-left min-w-0 flex-1">
-                        <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                        <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">
                           {state.selectedProject.name}
                         </p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                          {state.selectedProject.tags.slice(0, 2).join(', ')}
-                          {state.selectedProject.tags.length > 2 && '...'}
+                        <p className="text-xs font-medium text-gray-600 dark:text-gray-400 truncate">
+                          {state.selectedProject.tags.slice(0, 2).join(' • ')}
+                          {state.selectedProject.tags.length > 2 && ' • ...'}
                         </p>
                       </div>
                     </>
                   ) : (
                     <>
-                      <FolderOpen className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                      <div className="w-4 h-4 rounded-full bg-gray-200 dark:bg-gray-600 flex items-center justify-center flex-shrink-0">
+                        <FolderOpen className="w-3 h-3 text-gray-500 dark:text-gray-400" />
+                      </div>
                       <div className="text-left min-w-0 flex-1">
-                        <p className="text-sm font-medium text-gray-900 dark:text-white">
+                        <p className="text-sm font-semibold text-gray-900 dark:text-white">
                           Select Project
                         </p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">
-                          No project selected
+                        <p className="text-xs font-medium text-gray-600 dark:text-gray-400">
+                          Choose your workspace
                         </p>
                       </div>
                     </>
@@ -611,14 +622,14 @@ function Sidebar({ isOpen, onClose, isCollapsed, onToggleCollapse }: SidebarProp
 
               {/* Project Dropdown */}
               {showProjectDropdown && (
-                <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-10 max-h-64 overflow-y-auto">
+                <div className="absolute top-full left-0 right-0 mt-2 bg-white/95 dark:bg-gray-800/95 backdrop-blur-xl border border-gray-200/50 dark:border-gray-600/50 rounded-xl shadow-2xl z-10 max-h-64 overflow-y-auto">
                   <div className="p-2">
                     <div 
                       onClick={() => {
                         selectProject(null);
                         setShowProjectDropdown(false);
                       }}
-                      className="flex items-center justify-between p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer"
+                      className="flex items-center justify-between p-3 rounded-lg hover:bg-gray-100/80 dark:hover:bg-gray-700/80 cursor-pointer transition-all duration-150"
                     >
                       <div className="flex items-center space-x-3">
                         <FolderOpen className="w-4 h-4 text-gray-400" />
@@ -638,7 +649,7 @@ function Sidebar({ isOpen, onClose, isCollapsed, onToggleCollapse }: SidebarProp
                           selectProject(project);
                           setShowProjectDropdown(false);
                         }}
-                        className="flex items-center justify-between p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer"
+                        className="flex items-center justify-between p-3 rounded-lg hover:bg-gray-100/80 dark:hover:bg-gray-700/80 cursor-pointer transition-all duration-150"
                       >
                         <div className="flex items-center space-x-3">
                           <div 
@@ -775,18 +786,25 @@ function Sidebar({ isOpen, onClose, isCollapsed, onToggleCollapse }: SidebarProp
                               href={item.href}
                               onClick={onClose}
                               className={cn(
-                                'flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium transition-all group relative',
+                                'flex items-center justify-between px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 group relative overflow-hidden',
                                 isActive(item.href)
-                                  ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg transform scale-105'
-                                  : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-100'
+                                  ? 'bg-gradient-to-r from-blue-500 via-blue-600 to-purple-600 text-white shadow-xl transform scale-[1.02] ring-2 ring-blue-500/20'
+                                  : 'text-gray-700 dark:text-gray-300 hover:bg-gradient-to-r hover:from-gray-100 hover:to-gray-50 dark:hover:from-gray-800 dark:hover:to-gray-700 hover:text-gray-900 dark:hover:text-gray-100 hover:shadow-md'
                               )}
                               title={isCollapsed ? item.label : undefined}
                             >
                               <div className={cn(
                                 'flex items-center',
-                                isCollapsed ? 'justify-center w-full' : 'space-x-3'
+                                isCollapsed ? 'justify-center w-full' : 'space-x-4'
                               )}>
-                                <item.icon className="h-4 w-4 group-hover:scale-110 transition-transform" />
+                                <div className={cn(
+                                  'flex items-center justify-center w-8 h-8 rounded-lg transition-all duration-200 group-hover:scale-110',
+                                  isActive(item.href)
+                                    ? 'bg-white/20'
+                                    : 'bg-gray-100/50 dark:bg-gray-700/50 group-hover:bg-blue-500/10 dark:group-hover:bg-blue-400/10'
+                                )}>
+                                  <item.icon className="h-4 w-4" />
+                                </div>
                                 {!isCollapsed && (
                                   <>
                                     <span>{item.label}</span>
@@ -800,16 +818,19 @@ function Sidebar({ isOpen, onClose, isCollapsed, onToggleCollapse }: SidebarProp
                               </div>
                                {!isCollapsed && 'badge' in item && item.badge && (
                                 <span className={cn(
-                                  "px-2 py-0.5 text-xs rounded-full",
+                                  "px-2.5 py-1 text-xs font-semibold rounded-full shadow-sm ring-1",
                                   isActive(item.href)
-                                    ? "bg-white/20 text-white"
-                                    : "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300"
+                                    ? "bg-white/20 text-white ring-white/20"
+                                    : "bg-gradient-to-r from-blue-500 to-blue-600 text-white ring-blue-400/20 animate-pulse"
                                 )}>
                                   {item.badge}
                                 </span>
                               )}
                               {isCollapsed && isActive(item.href) && (
-                                <div className="absolute left-0 top-1/2 transform -translate-y-1/2 w-1 h-6 bg-white rounded-r-full" />
+                                <>
+                                  <div className="absolute left-0 top-1/2 transform -translate-y-1/2 w-1.5 h-8 bg-gradient-to-b from-blue-500 to-purple-600 rounded-r-full shadow-lg" />
+                                  <div className="absolute inset-0 bg-gradient-to-r from-blue-500/20 to-purple-600/20 rounded-xl" />
+                                </>
                               )}
                             </Link>
                           )}
@@ -854,35 +875,42 @@ function Sidebar({ isOpen, onClose, isCollapsed, onToggleCollapse }: SidebarProp
         </div>
 
         {/* User Section */}
-        <div className="p-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50">
+        <div className="p-4 border-t border-gray-200/50 dark:border-gray-700/50 bg-gradient-to-br from-gray-50/80 to-blue-50/20 dark:from-gray-800/80 dark:to-gray-700/40 backdrop-blur-sm">
           <div className="relative">
             <button
               onClick={() => setShowUserMenu(!showUserMenu)}
               className={cn(
-                'w-full flex items-center p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors',
-                isCollapsed ? 'justify-center' : 'space-x-3'
+                'w-full flex items-center p-3 rounded-xl hover:bg-white/60 dark:hover:bg-gray-700/60 transition-all duration-200 backdrop-blur-sm border border-gray-200/30 dark:border-gray-600/30 shadow-sm hover:shadow-md',
+                isCollapsed ? 'justify-center' : 'space-x-4'
               )}
               title={isCollapsed ? getUserDisplayName(user) : undefined}
             >
-              <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-purple-600 rounded-full flex items-center justify-center ring-2 ring-white dark:ring-gray-800 shadow-lg">
-                <span className="text-sm font-medium text-white">
-                  {getUserInitials(user)}
-                </span>
+              <div className="relative">
+                <div className="w-10 h-10 bg-gradient-to-br from-blue-600 via-purple-600 to-blue-700 rounded-full flex items-center justify-center ring-2 ring-white/50 dark:ring-gray-600/50 shadow-xl">
+                  <span className="text-sm font-bold text-white">
+                    {getUserInitials(user)}
+                  </span>
+                </div>
+                <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-400 rounded-full border-2 border-white dark:border-gray-800 shadow-sm animate-pulse"></div>
               </div>
               {!isCollapsed && (
                 <>
                   <div className="flex-1 text-left min-w-0">
-                    <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                    <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">
                       {getUserDisplayName(user)}
                     </p>
                     <div className="flex items-center space-x-2">
-                      <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                      <p className="text-xs font-medium text-gray-600 dark:text-gray-400 truncate">
                         {user?.email || 'No email'}
                       </p>
                       {user?.role && (
                         <span className={cn(
-                          "text-xs px-1.5 py-0.5 rounded font-medium",
-                          getRoleColor(user.role)
+                          "text-xs px-2 py-0.5 rounded-full font-semibold ring-1",
+                          user.role === 'admin'
+                            ? "bg-gradient-to-r from-red-500 to-red-600 text-white ring-red-400/20"
+                            : user.role === 'user'
+                            ? "bg-gradient-to-r from-blue-500 to-blue-600 text-white ring-blue-400/20"
+                            : "bg-gradient-to-r from-gray-500 to-gray-600 text-white ring-gray-400/20"
                         )}>
                           {user.role}
                         </span>
@@ -1003,59 +1031,67 @@ function TopBar({ onMenuClick, isCollapsed }: TopBarProps) {
   };
 
   return (
-    <header className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 shadow-sm relative z-40">
-      <div className="flex items-center justify-between px-4 py-3 min-h-[4rem]">
-        <div className="flex items-center gap-4 flex-1 min-w-0">
+    <header className="bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl border-b border-gray-200/50 dark:border-gray-700/50 shadow-xl relative z-40">
+      <div className="flex items-center justify-between px-6 py-4 min-h-[4.5rem]">
+        <div className="flex items-center gap-6 flex-1 min-w-0">
           <button
             onClick={onMenuClick}
-            className="lg:hidden p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors flex-shrink-0"
+            className="lg:hidden p-3 rounded-xl hover:bg-gray-100/80 dark:hover:bg-gray-800/80 transition-all duration-200 flex-shrink-0 backdrop-blur-sm border border-gray-200/30 dark:border-gray-600/30 shadow-sm hover:shadow-md group"
           >
-            <Menu className="h-5 w-5" />
+            <Menu className="h-5 w-5 group-hover:scale-110 transition-transform" />
           </button>
           
-          {/* Breadcrumbs */}
-          <div className="hidden md:flex items-center gap-2 text-sm min-w-0 flex-1">
-            {getBreadcrumbs().map((crumb, index) => (
-              <div key={`breadcrumb-${index}-${crumb.href}`} className="flex items-center gap-2 min-w-0">
-                {index > 0 && <ChevronRight className="h-4 w-4 text-gray-400 flex-shrink-0" />}
-                <Link
-                  href={crumb.href}
-                  className={cn(
-                    'hover:text-blue-600 dark:hover:text-blue-400 transition-colors truncate',
-                    index === getBreadcrumbs().length - 1
-                      ? 'text-gray-900 dark:text-white font-medium'
-                      : 'text-gray-500 dark:text-gray-400'
-                  )}
-                >
-                  {crumb.label}
-                </Link>
-              </div>
-            ))}
+          {/* Enhanced Breadcrumbs */}
+          <div className="hidden md:flex items-center gap-3 text-sm min-w-0 flex-1">
+            <div className="flex items-center gap-2 px-3 py-2 bg-gradient-to-r from-gray-50 to-blue-50/30 dark:from-gray-800/50 dark:to-gray-700/50 rounded-xl backdrop-blur-sm border border-gray-200/30 dark:border-gray-600/30 shadow-sm">
+              <Home className="h-4 w-4 text-blue-600 dark:text-blue-400 flex-shrink-0" />
+              {getBreadcrumbs().map((crumb, index) => (
+                <div key={`breadcrumb-${index}-${crumb.href}`} className="flex items-center gap-2 min-w-0">
+                  {index > 0 && <ChevronRight className="h-3 w-3 text-gray-400 flex-shrink-0" />}
+                  <Link
+                    href={crumb.href}
+                    className={cn(
+                      'hover:text-blue-600 dark:hover:text-blue-400 transition-all duration-150 truncate px-2 py-1 rounded-lg hover:bg-white/50 dark:hover:bg-gray-700/50',
+                      index === getBreadcrumbs().length - 1
+                        ? 'text-gray-900 dark:text-white font-semibold bg-white/60 dark:bg-gray-700/60 shadow-sm'
+                        : 'text-gray-600 dark:text-gray-400 font-medium'
+                    )}
+                  >
+                    {crumb.label}
+                  </Link>
+                </div>
+              ))}
+            </div>
           </div>
 
-          {/* Mobile title */}
+          {/* Enhanced Mobile title */}
           <div className="md:hidden min-w-0 flex-1">
-            <h1 className="text-lg font-semibold text-gray-900 dark:text-white truncate">
-              {getBreadcrumbs()[getBreadcrumbs().length - 1]?.label || 'Platform'}
-            </h1>
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 bg-gradient-to-br from-blue-600 via-purple-600 to-blue-700 rounded-lg flex items-center justify-center shadow-lg ring-2 ring-white/20">
+                <Sparkles className="h-4 w-4 text-white" />
+              </div>
+              <h1 className="text-lg font-bold bg-gradient-to-r from-gray-900 to-gray-700 dark:from-white dark:to-gray-300 bg-clip-text text-transparent truncate">
+                {getBreadcrumbs()[getBreadcrumbs().length - 1]?.label || 'Agentic AI'}
+              </h1>
+            </div>
           </div>
         </div>
 
-        {/* Center - Global Search */}
-        <div className="hidden lg:flex flex-1 max-w-lg mx-8">
-          <div className="relative w-full">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <Search className="h-4 w-4 text-gray-400" />
+        {/* Enhanced Center - Global Search */}
+        <div className="hidden lg:flex flex-1 max-w-2xl mx-8">
+          <div className="relative w-full group">
+            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+              <Search className="h-5 w-5 text-gray-400 group-focus-within:text-blue-500 transition-colors" />
             </div>
             <input
               type="text"
-              placeholder="Search agents, workflows, tools..."
+              placeholder="Search agents, workflows, tools, and more..."
               value={globalSearch}
               onChange={(e) => setGlobalSearch(e.target.value)}
-              className="block w-full pl-10 pr-12 py-2 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+              className="block w-full pl-12 pr-16 py-3 border border-gray-200/50 dark:border-gray-600/50 rounded-xl bg-white/80 dark:bg-gray-800/80 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 focus:bg-white dark:focus:bg-gray-800 backdrop-blur-sm transition-all duration-200 shadow-sm focus:shadow-lg placeholder:text-gray-500"
             />
-            <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
-              <div className="flex items-center gap-1 text-xs text-gray-400">
+            <div className="absolute inset-y-0 right-0 pr-4 flex items-center">
+              <div className="flex items-center gap-1 px-2 py-1 bg-gray-100/80 dark:bg-gray-700/80 rounded-lg text-xs text-gray-500 dark:text-gray-400 font-medium backdrop-blur-sm">
                 <Command className="h-3 w-3" />
                 <span>K</span>
               </div>
@@ -1063,31 +1099,45 @@ function TopBar({ onMenuClick, isCollapsed }: TopBarProps) {
           </div>
         </div>
 
-        <div className="flex items-center gap-3 flex-shrink-0">
-          {/* Mobile Search Toggle */}
+        <div className="flex items-center gap-4 flex-shrink-0">
+          {/* Enhanced Mobile Search Toggle */}
           <button
             onClick={() => setShowSearch(!showSearch)}
-            className="lg:hidden p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+            className="lg:hidden p-3 rounded-xl hover:bg-gray-100/80 dark:hover:bg-gray-800/80 transition-all duration-200 backdrop-blur-sm border border-gray-200/30 dark:border-gray-600/30 shadow-sm hover:shadow-md group"
           >
-            <Search className="h-5 w-5" />
+            <Search className="h-5 w-5 group-hover:scale-110 transition-transform" />
           </button>
 
-          {/* Quick Actions */}
-          <div className="hidden md:flex items-center gap-1">
+          {/* Enhanced Quick Actions */}
+          <div className="hidden md:flex items-center gap-2">
             <button
-              className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-              title="Help"
+              className="p-3 rounded-xl hover:bg-gray-100/80 dark:hover:bg-gray-800/80 transition-all duration-200 backdrop-blur-sm border border-gray-200/30 dark:border-gray-600/30 shadow-sm hover:shadow-md group"
+              title="Help & Documentation"
             >
-              <HelpCircle className="h-5 w-5 text-gray-500 dark:text-gray-400" />
+              <HelpCircle className="h-5 w-5 text-gray-500 dark:text-gray-400 group-hover:text-blue-500 dark:group-hover:text-blue-400 group-hover:scale-110 transition-all" />
+            </button>
+            <button
+              className="p-3 rounded-xl hover:bg-gray-100/80 dark:hover:bg-gray-800/80 transition-all duration-200 backdrop-blur-sm border border-gray-200/30 dark:border-gray-600/30 shadow-sm hover:shadow-md group"
+              title="Bookmarks"
+            >
+              <Bookmark className="h-5 w-5 text-gray-500 dark:text-gray-400 group-hover:text-yellow-500 dark:group-hover:text-yellow-400 group-hover:scale-110 transition-all" />
             </button>
           </div>
 
-          {/* Status Indicator */}
-          <div className="hidden sm:flex items-center gap-2 px-3 py-1 bg-gray-50 dark:bg-gray-800 rounded-lg">
-            <div className={cn("w-2 h-2 rounded-full animate-pulse", getStatusColor(stats.systemHealth))}></div>
-            <span className="text-xs font-medium text-gray-600 dark:text-gray-400 whitespace-nowrap">
-              {stats.systemHealth === 'healthy' ? 'Operational' : getStatusText(stats.systemHealth)}
-            </span>
+          {/* Enhanced Status Indicator */}
+          <div className="hidden sm:flex items-center gap-3 px-4 py-2 bg-gradient-to-r from-gray-50/80 to-blue-50/30 dark:from-gray-800/80 dark:to-gray-700/50 rounded-xl backdrop-blur-sm border border-gray-200/30 dark:border-gray-600/30 shadow-sm">
+            <div className="relative">
+              <div className={cn("w-3 h-3 rounded-full animate-pulse shadow-sm", getStatusColor(stats.systemHealth))}></div>
+              <div className={cn("absolute inset-0 rounded-full animate-ping", getStatusColor(stats.systemHealth), "opacity-20")}></div>
+            </div>
+            <div className="flex flex-col">
+              <span className="text-xs font-semibold text-gray-800 dark:text-gray-200 whitespace-nowrap">
+                {stats.systemHealth === 'healthy' ? 'All Systems Operational' : getStatusText(stats.systemHealth)}
+              </span>
+              <span className="text-xs text-gray-500 dark:text-gray-400">
+                System Status
+              </span>
+            </div>
           </div>
 
           {/* Notifications */}
@@ -1095,23 +1145,26 @@ function TopBar({ onMenuClick, isCollapsed }: TopBarProps) {
             {user?.id && <NotificationBell userId={user.id} />}
           </div>
 
-          {/* User Avatar */}
-          <div className="flex items-center gap-2 flex-shrink-0">
-            <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-purple-600 rounded-full flex items-center justify-center ring-2 ring-white dark:ring-gray-900 shadow-lg">
-              <span className="text-sm font-medium text-white">
-                {getUserInitials(user)}
-              </span>
+          {/* Enhanced User Avatar */}
+          <div className="flex items-center gap-3 p-2 rounded-xl hover:bg-gray-100/60 dark:hover:bg-gray-800/60 transition-all duration-200 backdrop-blur-sm flex-shrink-0 cursor-pointer group">
+            <div className="relative">
+              <div className="w-10 h-10 bg-gradient-to-br from-blue-600 via-purple-600 to-blue-700 rounded-full flex items-center justify-center ring-2 ring-white/50 dark:ring-gray-600/50 shadow-xl group-hover:scale-105 transition-transform">
+                <span className="text-sm font-bold text-white">
+                  {getUserInitials(user)}
+                </span>
+              </div>
+              <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-400 rounded-full border-2 border-white dark:border-gray-900 shadow-sm animate-pulse"></div>
             </div>
             {user && (
               <div className="hidden xl:block min-w-0">
-                <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">
                   {user.firstName && user.lastName 
                     ? `${user.firstName} ${user.lastName}`
                     : user.username || user.email?.split('@')[0] || 'User'
                   }
                 </p>
-                <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                  {user.role || 'User'}
+                <p className="text-xs font-medium text-gray-600 dark:text-gray-400 truncate">
+                  {user.role || 'User'} • Online
                 </p>
               </div>
             )}

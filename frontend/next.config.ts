@@ -13,6 +13,12 @@ const nextConfig: NextConfig = {
     // Allow builds to continue even with TypeScript errors
     ignoreBuildErrors: false,
   },
+  // Enable verbose logging for debugging
+  logging: {
+    fetches: {
+      fullUrl: true,
+    },
+  },
   // API configuration
   async rewrites() {
     return [

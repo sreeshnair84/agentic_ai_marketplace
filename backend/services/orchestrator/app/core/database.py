@@ -38,6 +38,7 @@ class Workflow(Base):
     is_public: Mapped[bool] = mapped_column(Boolean, default=False)
     retry_config: Mapped[Optional[Dict[str, Any]]] = mapped_column(JSON)
     notification_config: Mapped[Optional[Dict[str, Any]]] = mapped_column(JSON)
+    llm_model_id: Mapped[Optional[str]] = mapped_column(String(36), ForeignKey("llm_models.id"), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     created_by: Mapped[Optional[str]] = mapped_column(String(255))

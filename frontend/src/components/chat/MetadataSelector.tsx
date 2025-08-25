@@ -95,27 +95,46 @@ export interface ToolMetadata {
   type: 'tool';
 }
 
+export interface LLMModelMetadata {
+  id: string;
+  name: string;
+  display_name: string;
+  description: string;
+  provider: string;
+  status: string;
+  capabilities: any;
+  model_config: any;
+  pricing_info?: any;
+  is_default: boolean;
+  type: 'llm';
+}
+
 export interface MetadataOptions {
   workflows: WorkflowMetadata[];
   agents: AgentMetadata[];
   tools: ToolMetadata[];
+  llm_models: LLMModelMetadata[];
   summary: {
     total_workflows: number;
     total_agents: number;
     total_tools: number;
+    total_llm_models: number;
     categories: {
       workflows: string[];
       agents: string[];
       tools: string[];
+      llm_models: string[];
     };
+    default_llm_model: LLMModelMetadata | null;
   };
 }
 
 export interface SelectedContext {
-  type: 'workflow' | 'agent' | 'tools' | null;
+  type: 'workflow' | 'agent' | 'tools' | 'llm' | null;
   workflow?: WorkflowMetadata;
   agent?: AgentMetadata;
   tools?: ToolMetadata[];
+  llm_model?: LLMModelMetadata;
 }
 
 interface MetadataSelectorProps {
@@ -126,7 +145,7 @@ interface MetadataSelectorProps {
 }
 
 interface MetadataItemProps {
-  item: WorkflowMetadata | AgentMetadata | ToolMetadata;
+  item: WorkflowMetadata | AgentMetadata | ToolMetadata | LLMModelMetadata;
   isSelected: boolean;
   onSelect: () => void;
   isMultiSelect?: boolean;
@@ -143,6 +162,7 @@ const MetadataItem: React.FC<MetadataItemProps> = ({
       case 'workflow': return <Workflow className="h-4 w-4" />;
       case 'agent': return <Bot className="h-4 w-4" />;
       case 'tool': return <Wrench className="h-4 w-4" />;
+      case 'llm': return <Zap className="h-4 w-4" />;
       default: return <Globe className="h-4 w-4" />;
     }
   };
@@ -190,37 +210,51 @@ const MetadataItem: React.FC<MetadataItemProps> = ({
             </p>
             
             <div className="flex items-center space-x-4 mt-2 text-xs text-gray-500">
-              {item.category && (
+              {(item.type !== 'llm' && (item as any).category) && (
                 <span className="flex items-center space-x-1">
                   <Filter className="h-3 w-3" />
-                  <span>{item.category}</span>
+                  <span>{(item as any).category}</span>
                 </span>
               )}
               
-              {item.execution_count > 0 && (
+              {item.type === 'llm' && (item as LLMModelMetadata).provider && (
+                <span className="flex items-center space-x-1">
+                  <Filter className="h-3 w-3" />
+                  <span>{(item as LLMModelMetadata).provider}</span>
+                </span>
+              )}
+              
+              {item.type !== 'llm' && (item as any).execution_count > 0 && (
                 <span className="flex items-center space-x-1">
                   <Activity className="h-3 w-3" />
-                  <span>{item.execution_count}</span>
+                  <span>{(item as any).execution_count}</span>
                 </span>
               )}
               
-              {item.success_rate !== undefined && (
+              {item.type !== 'llm' && (item as any).success_rate !== undefined && (
                 <span className="flex items-center space-x-1">
                   <CheckCircle2 className="h-3 w-3" />
-                  <span>{(item.success_rate * 100).toFixed(0)}%</span>
+                  <span>{((item as any).success_rate * 100).toFixed(0)}%</span>
+                </span>
+              )}
+              
+              {item.type === 'llm' && (item as LLMModelMetadata).is_default && (
+                <span className="flex items-center space-x-1">
+                  <CheckCircle2 className="h-3 w-3" />
+                  <span>Default</span>
                 </span>
               )}
             </div>
             
-            {Array.isArray(item.tags) && item.tags.length > 0 && (
+            {item.type !== 'llm' && Array.isArray((item as any).tags) && (item as any).tags.length > 0 && (
               <div className="flex flex-wrap gap-1 mt-2">
-                {item.tags.slice(0, 3).map((tag, index) => (
+                {(item as any).tags.slice(0, 3).map((tag: string, index: number) => (
                   <Badge key={index} variant="secondary" className="text-xs">
                     {tag}
                   </Badge>
                 ))}
-                {item.tags.length > 3 && (
-                  <span className="text-xs text-gray-500">+{item.tags.length - 3}</span>
+                {(item as any).tags.length > 3 && (
+                  <span className="text-xs text-gray-500">+{(item as any).tags.length - 3}</span>
                 )}
               </div>
             )}
@@ -233,9 +267,9 @@ const MetadataItem: React.FC<MetadataItemProps> = ({
               ? 'bg-green-500' 
               : 'bg-gray-400'
           }`} />
-          {(item as WorkflowMetadata).version && (
+          {(item.type === 'workflow' || item.type === 'tool') && (item as any).version && (
             <span className="text-xs text-gray-400">
-              v{(item as WorkflowMetadata).version}
+              v{(item as any).version}
             </span>
           )}
         </div>
@@ -276,14 +310,15 @@ export const MetadataSelector: React.FC<MetadataSelectorProps> = ({
   }, []);
 
   // Filter items based on search and category
-  const filterItems = (items: (WorkflowMetadata | AgentMetadata | ToolMetadata)[]) => {
+  const filterItems = (items: (WorkflowMetadata | AgentMetadata | ToolMetadata | LLMModelMetadata)[]) => {
     return items.filter(item => {
       const matchesSearch = !searchTerm || 
         item.display_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         item.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        item.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()));
+        (item.type !== 'llm' && (item as any).tags && (item as any).tags.some((tag: string) => tag.toLowerCase().includes(searchTerm.toLowerCase())));
       
-      const matchesCategory = selectedCategory === 'all' || item.category === selectedCategory;
+      const matchesCategory = selectedCategory === 'all' || 
+        (item.type === 'llm' ? (item as LLMModelMetadata).provider === selectedCategory : (item as any).category === selectedCategory);
       
       return matchesSearch && matchesCategory;
     });
@@ -295,7 +330,8 @@ export const MetadataSelector: React.FC<MetadataSelectorProps> = ({
       type: 'workflow',
       workflow,
       agent: undefined,
-      tools: undefined
+      tools: undefined,
+      llm_model: undefined
     });
   };
 
@@ -305,7 +341,8 @@ export const MetadataSelector: React.FC<MetadataSelectorProps> = ({
       type: 'agent',
       workflow: undefined,
       agent,
-      tools: undefined
+      tools: undefined,
+      llm_model: undefined
     });
   };
 
@@ -325,7 +362,19 @@ export const MetadataSelector: React.FC<MetadataSelectorProps> = ({
       type: newTools.length > 0 ? 'tools' : null,
       workflow: undefined,
       agent: undefined,
-      tools: newTools.length > 0 ? newTools : undefined
+      tools: newTools.length > 0 ? newTools : undefined,
+      llm_model: undefined
+    });
+  };
+
+  // Handle LLM model selection
+  const handleLLMSelect = (llm_model: LLMModelMetadata) => {
+    onSelectionChange({
+      type: 'llm',
+      workflow: undefined,
+      agent: undefined,
+      tools: undefined,
+      llm_model
     });
   };
 
@@ -335,7 +384,8 @@ export const MetadataSelector: React.FC<MetadataSelectorProps> = ({
       type: null,
       workflow: undefined,
       agent: undefined,
-      tools: undefined
+      tools: undefined,
+      llm_model: undefined
     });
   };
 
@@ -381,9 +431,10 @@ export const MetadataSelector: React.FC<MetadataSelectorProps> = ({
 
   // Get all categories
   const allCategories = Array.from(new Set([
-    ...metadata.summary.categories.workflows,
-    ...metadata.summary.categories.agents,
-    ...metadata.summary.categories.tools
+    ...(metadata.summary?.categories?.workflows || []),
+    ...(metadata.summary?.categories?.agents || []),
+    ...(metadata.summary?.categories?.tools || []),
+    ...(metadata.summary?.categories?.llm_models || [])
   ]));
 
   return (
@@ -421,6 +472,9 @@ export const MetadataSelector: React.FC<MetadataSelectorProps> = ({
             {selectedContext.type === 'tools' && selectedContext.tools && (
               <span>Tools: {selectedContext.tools.length} selected</span>
             )}
+            {selectedContext.type === 'llm' && selectedContext.llm_model && (
+              <span>LLM: {selectedContext.llm_model.display_name}</span>
+            )}
           </div>
         )}
       </CardHeader>
@@ -456,18 +510,22 @@ export const MetadataSelector: React.FC<MetadataSelectorProps> = ({
 
           {/* Selection Tabs */}
           <Tabs defaultValue="workflows" className="w-full">
-            <TabsList className="grid w-full grid-cols-3">
+            <TabsList className="grid w-full grid-cols-4">
               <TabsTrigger value="workflows" className="text-xs">
                 <Workflow className="h-3 w-3 mr-1" />
-                Workflows ({metadata.summary.total_workflows})
+                Workflows ({metadata.summary?.total_workflows || 0})
               </TabsTrigger>
               <TabsTrigger value="agents" className="text-xs">
                 <Bot className="h-3 w-3 mr-1" />
-                Agents ({metadata.summary.total_agents})
+                Agents ({metadata.summary?.total_agents || 0})
               </TabsTrigger>
               <TabsTrigger value="tools" className="text-xs">
                 <Wrench className="h-3 w-3 mr-1" />
-                Tools ({metadata.summary.total_tools})
+                Tools ({metadata.summary?.total_tools || 0})
+              </TabsTrigger>
+              <TabsTrigger value="llm" className="text-xs">
+                <Zap className="h-3 w-3 mr-1" />
+                LLMs ({metadata.summary?.total_llm_models || 0})
               </TabsTrigger>
             </TabsList>
 
@@ -475,7 +533,7 @@ export const MetadataSelector: React.FC<MetadataSelectorProps> = ({
             <TabsContent value="workflows" className="mt-4">
               <ScrollArea className="h-64">
                 <div className="space-y-2">
-                  {filterItems(metadata.workflows).map(workflow => (
+                  {filterItems(metadata.workflows || []).map(workflow => (
                     <MetadataItem
                       key={workflow.id}
                       item={workflow}
@@ -483,7 +541,7 @@ export const MetadataSelector: React.FC<MetadataSelectorProps> = ({
                       onSelect={() => handleWorkflowSelect(workflow as WorkflowMetadata)}
                     />
                   ))}
-                  {filterItems(metadata.workflows).length === 0 && (
+                  {filterItems(metadata.workflows || []).length === 0 && (
                     <div className="text-center py-8 text-gray-500">
                       <Workflow className="h-8 w-8 mx-auto mb-2 opacity-50" />
                       <p className="text-sm">No workflows found</p>
@@ -497,7 +555,7 @@ export const MetadataSelector: React.FC<MetadataSelectorProps> = ({
             <TabsContent value="agents" className="mt-4">
               <ScrollArea className="h-64">
                 <div className="space-y-2">
-                  {filterItems(metadata.agents).map(agent => (
+                  {filterItems(metadata.agents || []).map(agent => (
                     <MetadataItem
                       key={agent.id}
                       item={agent}
@@ -505,7 +563,7 @@ export const MetadataSelector: React.FC<MetadataSelectorProps> = ({
                       onSelect={() => handleAgentSelect(agent as AgentMetadata)}
                     />
                   ))}
-                  {filterItems(metadata.agents).length === 0 && (
+                  {filterItems(metadata.agents || []).length === 0 && (
                     <div className="text-center py-8 text-gray-500">
                       <Bot className="h-8 w-8 mx-auto mb-2 opacity-50" />
                       <p className="text-sm">No agents found</p>
@@ -519,7 +577,7 @@ export const MetadataSelector: React.FC<MetadataSelectorProps> = ({
             <TabsContent value="tools" className="mt-4">
               <ScrollArea className="h-64">
                 <div className="space-y-2">
-                  {filterItems(metadata.tools).map(tool => (
+                  {filterItems(metadata.tools || []).map(tool => (
                     <MetadataItem
                       key={tool.id}
                       item={tool}
@@ -528,10 +586,32 @@ export const MetadataSelector: React.FC<MetadataSelectorProps> = ({
                       isMultiSelect={true}
                     />
                   ))}
-                  {filterItems(metadata.tools).length === 0 && (
+                  {filterItems(metadata.tools || []).length === 0 && (
                     <div className="text-center py-8 text-gray-500">
                       <Wrench className="h-8 w-8 mx-auto mb-2 opacity-50" />
                       <p className="text-sm">No tools found</p>
+                    </div>
+                  )}
+                </div>
+              </ScrollArea>
+            </TabsContent>
+
+            {/* LLM Models Tab */}
+            <TabsContent value="llm" className="mt-4">
+              <ScrollArea className="h-64">
+                <div className="space-y-2">
+                  {filterItems(metadata.llm_models || []).map(llm_model => (
+                    <MetadataItem
+                      key={llm_model.id}
+                      item={llm_model}
+                      isSelected={selectedContext.llm_model?.id === llm_model.id}
+                      onSelect={() => handleLLMSelect(llm_model as LLMModelMetadata)}
+                    />
+                  ))}
+                  {filterItems(metadata.llm_models || []).length === 0 && (
+                    <div className="text-center py-8 text-gray-500">
+                      <Zap className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                      <p className="text-sm">No LLM models found</p>
                     </div>
                   )}
                 </div>
@@ -546,6 +626,7 @@ export const MetadataSelector: React.FC<MetadataSelectorProps> = ({
               <p>• <strong>Workflow:</strong> Routes to workflow DNS endpoint</p>
               <p>• <strong>Agent:</strong> Direct A2A agent communication</p>
               <p>• <strong>Tools:</strong> Uses Generic A2A agent with selected tools</p>
+              <p>• <strong>LLM:</strong> Direct LLM model chat (when no workflow/agent selected)</p>
             </div>
           </div>
         </CardContent>

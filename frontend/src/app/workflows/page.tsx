@@ -1,5 +1,6 @@
 'use client';
 
+import { useLLMModels } from '@/hooks/useLLMModels';
 import { useState, useMemo } from 'react';
 import { useProject } from '@/store/projectContext';
 import { AuthGuard } from '@/components/auth/AuthGuard';
@@ -27,7 +28,7 @@ import {
   ExclamationTriangleIcon as ExclamationTriangleIconSolid,
   PencilIcon as PencilIconSolid
 } from '@heroicons/react/24/solid';
-import { useWorkflows, useWorkflowAnalytics } from '@/hooks/useWorkflows';
+import { useWorkflows, useWorkflowAnalytics, type WorkflowData } from '@/hooks/useWorkflows';
 
 const categories = [
   { value: 'all', label: 'All Categories' },
@@ -39,6 +40,21 @@ const categories = [
 ];
 
 export default function WorkflowsPage() {
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [editingWorkflow, setEditingWorkflow] = useState<WorkflowData | null>(null);
+  const [newWorkflow, setNewWorkflow] = useState({
+    name: '',
+    description: '',
+    category: 'automation',
+    complexity: 'simple',
+    llm_model_id: '',
+    version: '1.0.0',
+    timeout_seconds: 3600,
+    is_public: false,
+    triggers: [] as string[],
+    url: '',
+  });
+  const { models: llmModels, loading: llmLoading } = useLLMModels();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedStatus, setSelectedStatus] = useState('all');
@@ -52,6 +68,7 @@ export default function WorkflowsPage() {
     loading,
     error,
     createWorkflow,
+    updateWorkflow,
     deleteWorkflow,
     executeWorkflow,
     pauseWorkflow,
@@ -59,6 +76,7 @@ export default function WorkflowsPage() {
   } = useWorkflows();
   
   const analytics = useWorkflowAnalytics();
+
 
   const filteredWorkflows = useMemo(() => {
     return workflows.filter(workflow => {
@@ -69,7 +87,7 @@ export default function WorkflowsPage() {
       const matchesComplexity = selectedComplexity === 'all' || workflow.complexity === selectedComplexity;
       
       // Project filtering: if a project is selected, only show workflows that have tags matching the project tags
-      const matchesProject = !projectState.selectedProject || 
+      const matchesProject = !projectState.selectedProject || projectState.selectedProject.name === 'Default Project' ||
                              projectState.selectedProject.tags.some(projectTag => 
                                workflow.tags.includes(projectTag)
                              );
@@ -159,6 +177,13 @@ export default function WorkflowsPage() {
             });
           }
           break;
+        case 'edit':
+          const editWorkflow = workflows.find(w => w.id === workflowId);
+          if (editWorkflow) {
+            setEditingWorkflow(editWorkflow);
+            setShowCreateDialog(true);
+          }
+          break;
         default:
           console.log(`Action ${action} not implemented`);
       }
@@ -223,7 +248,10 @@ export default function WorkflowsPage() {
                 <CodeBracketIcon className="mr-2 h-4 w-4" />
                 Templates
               </Button>
-              <Button>
+              <Button onClick={() => {
+                setEditingWorkflow(null);
+                setShowCreateDialog(true);
+              }}>
                 <PlusIcon className="mr-2 h-4 w-4" />
                 Create Workflow
               </Button>
@@ -231,6 +259,151 @@ export default function WorkflowsPage() {
           </div>
         }
       >
+        {/* Main content would go here */}
+        
+        {/* Create Workflow Dialog */}
+      {showCreateDialog && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-30">
+          <div className="bg-white dark:bg-gray-900 rounded-lg shadow-lg p-8 w-full max-w-md">
+            <h2 className="text-xl font-bold mb-4">{editingWorkflow ? 'Edit Workflow' : 'Create Workflow'}</h2>
+            <div className="space-y-4">
+              <Input
+                placeholder="Workflow Name"
+                value={editingWorkflow ? editingWorkflow.name : newWorkflow.name}
+                onChange={e => {
+                  if (editingWorkflow) {
+                    setEditingWorkflow({ ...editingWorkflow, name: e.target.value });
+                  } else {
+                    setNewWorkflow({ ...newWorkflow, name: e.target.value });
+                  }
+                }}
+              />
+              <Input
+                placeholder="Description"
+                value={editingWorkflow ? editingWorkflow.description : newWorkflow.description}
+                onChange={e => {
+                  if (editingWorkflow) {
+                    setEditingWorkflow({ ...editingWorkflow, description: e.target.value });
+                  } else {
+                    setNewWorkflow({ ...newWorkflow, description: e.target.value });
+                  }
+                }}
+              />
+              <select
+                value={newWorkflow.category}
+                onChange={e => setNewWorkflow({ ...newWorkflow, category: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+              >
+                {categories.filter(category => category.value !== 'all').map(category => (
+                  <option key={category.value} value={category.value}>{category.label}</option>
+                ))}
+              </select>
+              <select
+                value={newWorkflow.complexity}
+                onChange={e => setNewWorkflow({ ...newWorkflow, complexity: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+              >
+                <option value="simple">Simple</option>
+                <option value="moderate">Moderate</option>
+                <option value="complex">Complex</option>
+              </select>
+              <select
+                value={newWorkflow.llm_model_id}
+                onChange={e => setNewWorkflow({ ...newWorkflow, llm_model_id: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+              >
+                <option value="">Select LLM Model (optional)</option>
+                {llmModels
+                  .filter(model => model.model_type === 'chat' || model.model_type === 'completion' || model.model_type === 'multimodal')
+                  .map(model => (
+                    <option key={model.id} value={model.id}>{model.display_name || model.name} ({model.provider})</option>
+                  ))}
+              </select>
+              <div className="grid grid-cols-2 gap-4">
+                <Input
+                  placeholder="Version (e.g., 1.0.0)"
+                  value={newWorkflow.version}
+                  onChange={e => setNewWorkflow({ ...newWorkflow, version: e.target.value })}
+                />
+                <Input
+                  placeholder="Timeout (seconds)"
+                  type="number"
+                  value={newWorkflow.timeout_seconds}
+                  onChange={e => setNewWorkflow({ ...newWorkflow, timeout_seconds: parseInt(e.target.value) || 3600 })}
+                />
+              </div>
+              <Input
+                placeholder="Workflow URL (optional)"
+                value={newWorkflow.url}
+                onChange={e => setNewWorkflow({ ...newWorkflow, url: e.target.value })}
+              />
+              <div className="flex items-center space-x-3">
+                <input
+                  type="checkbox"
+                  id="is_public"
+                  checked={newWorkflow.is_public}
+                  onChange={e => setNewWorkflow({ ...newWorkflow, is_public: e.target.checked })}
+                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 dark:border-gray-600 rounded"
+                />
+                <label htmlFor="is_public" className="text-sm font-medium text-gray-900 dark:text-white">
+                  Make workflow public
+                </label>
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 mt-6">
+              <Button variant="outline" onClick={() => {
+                setShowCreateDialog(false);
+                setEditingWorkflow(null);
+              }}>Cancel</Button>
+              <Button
+                onClick={async () => {
+                  const workflowData = editingWorkflow ? {
+                    name: editingWorkflow.name,
+                    description: editingWorkflow.description,
+                    category: editingWorkflow.category,
+                    complexity: editingWorkflow.complexity,
+                    llm_model_id: editingWorkflow.llm_model_id || undefined,
+                  } : {
+                    name: newWorkflow.name,
+                    description: newWorkflow.description,
+                    category: newWorkflow.category as "monitoring" | "automation" | "data-processing" | "ai-pipeline" | "integration",
+                    complexity: newWorkflow.complexity as "simple" | "moderate" | "complex",
+                    llm_model_id: newWorkflow.llm_model_id || undefined,
+                    version: newWorkflow.version,
+                    timeout_seconds: newWorkflow.timeout_seconds,
+                    is_public: newWorkflow.is_public,
+                    url: newWorkflow.url || undefined,
+                  };
+                  
+                  if (editingWorkflow) {
+                    await updateWorkflow(editingWorkflow.id, workflowData);
+                  } else {
+                    await createWorkflow(workflowData);
+                  }
+                  
+                  setShowCreateDialog(false);
+                  setEditingWorkflow(null);
+                  setNewWorkflow({ 
+                    name: '', 
+                    description: '', 
+                    category: 'automation', 
+                    complexity: 'simple', 
+                    llm_model_id: '',
+                    version: '1.0.0',
+                    timeout_seconds: 3600,
+                    is_public: false,
+                    triggers: [],
+                    url: '',
+                  });
+                }}
+                disabled={editingWorkflow ? (!editingWorkflow.name || !editingWorkflow.description) : (!newWorkflow.name || !newWorkflow.description)}
+              >
+                {editingWorkflow ? 'Update' : 'Create'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
         {/* Stats Cards */}
         <StandardSection>

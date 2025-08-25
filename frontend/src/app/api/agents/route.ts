@@ -80,32 +80,57 @@ async function fetchFromService(service: string, endpoint: string, timeout = 300
 
 export async function GET() {
   try {
-    // Try to get actual agents from the backend first
+    // Try to get actual agents from the agents service first
     try {
-      const backendAgents = await fetchFromService('gateway', '/api/v1/agents/');
-      if (backendAgents && backendAgents.agents && backendAgents.agents.length > 0) {
+      // Try agents service directly
+      const agentsServiceUrl = process.env.INTERNAL_AGENTS_URL || 'http://agents:8002';
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000);
+
+      let backendAgents;
+      try {
+        const response = await fetch(`${agentsServiceUrl}/agents/`, {
+          signal: controller.signal,
+          headers: { 'Content-Type': 'application/json' },
+        });
+        clearTimeout(timeoutId);
+        
+        if (response.ok) {
+          backendAgents = await response.json();
+        } else {
+          throw new Error(`Agents service returned ${response.status}`);
+        }
+      } catch (error) {
+        clearTimeout(timeoutId);
+        console.warn('Agents service failed, trying gateway:', error);
+        // Fallback to gateway
+        backendAgents = await fetchFromService('gateway', '/api/v1/agents/');
+      }
+
+      if (backendAgents && ((Array.isArray(backendAgents) && backendAgents.length > 0) || (backendAgents.agents && backendAgents.agents.length > 0))) {
+        const agentList = Array.isArray(backendAgents) ? backendAgents : backendAgents.agents;
         // Return actual agents from the backend
         const response = {
-          agents: backendAgents.agents.map((agent: any) => ({
-            id: agent.name,
+          agents: agentList.map((agent: any) => ({
+            id: agent.id || agent.name,
             name: agent.display_name || agent.name,
-            description: agent.description,
-            framework: agent.ai_provider || 'unknown',
-            skills: agent.tags || [],
-            status: agent.status || 'unknown',
-            version: '1.0.0',
+            description: agent.description || 'No description available',
+            framework: agent.framework || agent.ai_provider || 'custom',
+            skills: agent.capabilities || agent.tags || [],
+            status: agent.status || 'inactive',
+            version: agent.version || '1.0.0',
             createdAt: agent.created_at || new Date().toISOString(),
             updatedAt: agent.updated_at || new Date().toISOString(),
             lastExecutedAt: agent.updated_at || null,
             executionCount: agent.execution_count || 0,
-            systemPrompt: agent.description,
+            systemPrompt: agent.system_prompt || agent.description,
             tags: [...(agent.tags || []), ...(agent.project_tags || [])],
             responseTime: agent.avg_response_time || 0,
             config: {
               model: agent.model_name || 'gpt-4',
-              temperature: 0.7,
-              maxTokens: 2000,
-              systemPrompt: agent.description,
+              temperature: agent.temperature || 0.7,
+              maxTokens: agent.max_tokens || agent.maxTokens || 2000,
+              systemPrompt: agent.system_prompt || agent.description,
               tools: [],
               memory: true,
               streaming: false,
@@ -114,18 +139,18 @@ export async function GET() {
             }
           })),
           statistics: {
-            total: backendAgents.agents.length,
-            active: backendAgents.agents.filter((a: any) => a.status === 'active').length,
-            inactive: backendAgents.agents.filter((a: any) => a.status === 'inactive').length,
-            error: backendAgents.agents.filter((a: any) => a.status === 'error').length,
-            totalExecutions: backendAgents.agents.reduce((sum: number, a: any) => sum + (a.execution_count || 0), 0),
-            averageExecutions: Math.round(backendAgents.agents.reduce((sum: number, a: any) => sum + (a.execution_count || 0), 0) / backendAgents.agents.length),
-            frameworkDistribution: backendAgents.agents.reduce((acc: any, a: any) => {
-              const fw = a.ai_provider || 'unknown';
+            total: agentList.length,
+            active: agentList.filter((a: any) => a.status === 'active').length,
+            inactive: agentList.filter((a: any) => a.status === 'inactive').length,
+            error: agentList.filter((a: any) => a.status === 'error').length,
+            totalExecutions: agentList.reduce((sum: number, a: any) => sum + (a.execution_count || 0), 0),
+            averageExecutions: Math.round(agentList.reduce((sum: number, a: any) => sum + (a.execution_count || 0), 0) / agentList.length) || 0,
+            frameworkDistribution: agentList.reduce((acc: any, a: any) => {
+              const fw = a.framework || a.ai_provider || 'custom';
               acc[fw] = (acc[fw] || 0) + 1;
               return acc;
             }, {}),
-            availableSkills: [...new Set(backendAgents.agents.flatMap((a: any) => a.tags || []))],
+            availableSkills: [...new Set(agentList.flatMap((a: any) => a.capabilities || a.tags || []))],
             systemHealth: 'healthy',
           },
           lastUpdated: new Date().toISOString(),

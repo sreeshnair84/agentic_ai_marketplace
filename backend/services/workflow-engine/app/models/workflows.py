@@ -104,6 +104,9 @@ class WorkflowDefinitionBase(BaseModel):
     execution_url: Optional[str] = Field(default=None, description="Workflow execution endpoint")
     dns_name: Optional[str] = Field(default=None, description="DNS name for service discovery")
     status_url: Optional[str] = Field(default=None, description="Status monitoring endpoint")
+
+    # LLM Model linkage
+    llm_model_id: Optional[UUID] = Field(default=None, description="Linked LLM Model ID")
     
     # Input/Output Signatures
     input_signature: Optional[InputOutputSignature] = Field(default=None, description="Input signature schema")
@@ -154,8 +157,10 @@ class WorkflowDefinitionUpdate(BaseModel):
     is_public: Optional[bool] = None
     retry_config: Optional[Dict[str, Any]] = None
     notification_config: Optional[Dict[str, Any]] = None
+    llm_model_id: Optional[UUID] = Field(default=None, description="Linked LLM Model ID")
 
 class WorkflowDefinitionResponse(WorkflowDefinitionBase):
+
     id: UUID
     created_at: datetime
     updated_at: Optional[datetime] = None

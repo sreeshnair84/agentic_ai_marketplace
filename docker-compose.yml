@@ -1,23 +1,32 @@
+
 services:
-  # Frontend - Next.js Web Application
+  # -------------------
+  # Frontend - Next.js
+  # -------------------
   web:
     build:
       context: ./frontend/
       dockerfile: Dockerfile
     ports:
       - "3000:3000"
+      - "9229:9229"  # Debug port
     environment:
-      - NODE_ENV=development
-      - NEXT_PUBLIC_API_BASE_URL=http://localhost:8000/api
-      - NEXT_PUBLIC_API_URL=http://localhost:8000
-      - NEXT_PUBLIC_GATEWAY_URL=http://localhost:8000
-      - INTERNAL_GATEWAY_URL=http://gateway:8000
+      NODE_ENV: development
+      NEXT_PUBLIC_API_BASE_URL: http://localhost:8000/api
+      NEXT_PUBLIC_API_URL: http://localhost:8000
+      NEXT_PUBLIC_GATEWAY_URL: http://localhost:8000
+      INTERNAL_GATEWAY_URL: http://gateway:8000
+      DEBUG: "*"
+      NEXT_PUBLIC_LOG_LEVEL: debug
     depends_on:
-      - gateway
+      gateway:
+        condition: service_healthy
     networks:
       - agenticai-network
 
+  # -------------------
   # API Gateway - FastAPI
+  # -------------------
   gateway:
     build:
       context: ./backend/services/gateway
@@ -25,21 +34,23 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - ENVIRONMENT=development
-      - DATABASE_URL=postgresql+asyncpg://agenticai_user:agenticai_password@postgres:5432/agenticai_platform
-      - REDIS_URL=redis://redis:6379/0
-      - JWT_SECRET_KEY=your-secret-key-here
-      - 'CORS_ORIGINS_STR=http://localhost:3000,http://localhost:3001,http://web:3000,http://127.0.0.1:3000,*'
-      - ORCHESTRATOR_URL=http://orchestrator:8003
-      - AGENTS_URL=http://agents:8002
-      - TOOLS_URL=http://tools:8005
-      - RAG_URL=http://rag:8004
-      - SQLTOOL_URL=http://sqltool:8006
-      - WORKFLOW_URL=http://workflow:8007
-      - OBSERVABILITY_URL=http://observability:8008
+      ENVIRONMENT: development
+      DATABASE_URL: postgresql+asyncpg://agenticai_user:agenticai_password@postgres:5432/agenticai_platform
+      REDIS_URL: redis://redis:6379/0
+      JWT_SECRET_KEY: your-secret-key-here
+      CORS_ORIGINS_STR: http://localhost:3000,http://localhost:3001,http://web:3000,http://127.0.0.1:3000,*
+      ORCHESTRATOR_URL: http://orchestrator:8003
+      AGENTS_URL: http://agents:8002
+      TOOLS_URL: http://tools:8005
+      RAG_URL: http://rag:8004
+      SQLTOOL_URL: http://sqltool:8006
+      WORKFLOW_URL: http://workflow:8007
+      OBSERVABILITY_URL: http://observability:8008
     depends_on:
-      - postgres
-      - redis
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     networks:
       - agenticai-network
     healthcheck:
@@ -48,7 +59,9 @@ services:
       timeout: 10s
       retries: 3
 
-  # Agents Service - FastAPI with A2A Protocol
+  # -------------------
+  # Agents Service
+  # -------------------
   agents:
     build:
       context: ./backend/services/agents
@@ -56,19 +69,21 @@ services:
     ports:
       - "8002:8002"
     environment:
-      - ENVIRONMENT=development
-      - DATABASE_URL=postgresql+asyncpg://agenticai_user:agenticai_password@postgres:5432/agenticai_platform
-      - REDIS_URL=redis://redis:6379/2
-      - GOOGLE_API_KEY=${GOOGLE_API_KEY}
-      - OPENAI_API_KEY=${OPENAI_API_KEY}
-      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
-      - TOOLS_URL=http://tools:8005
-      - ORCHESTRATOR_URL=http://orchestrator:8003
-      - A2A_PROTOCOL_ENABLED=true
-      - MCP_SERVER_ENABLED=true
+      ENVIRONMENT: development
+      DATABASE_URL: postgresql+asyncpg://agenticai_user:agenticai_password@postgres:5432/agenticai_platform
+      REDIS_URL: redis://redis:6379/2
+      GOOGLE_API_KEY: ${GOOGLE_API_KEY}
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+      TOOLS_URL: http://tools:8005
+      ORCHESTRATOR_URL: http://orchestrator:8003
+      A2A_PROTOCOL_ENABLED: true
+      MCP_SERVER_ENABLED: true
     depends_on:
-      - postgres
-      - redis
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     networks:
       - agenticai-network
     healthcheck:
@@ -77,7 +92,9 @@ services:
       timeout: 10s
       retries: 3
 
-  # Multi-Agent Orchestrator - FastAPI with A2A Protocol
+  # -------------------
+  # Orchestrator
+  # -------------------
   orchestrator:
     build:
       context: ./backend/services/orchestrator
@@ -85,21 +102,23 @@ services:
     ports:
       - "8003:8003"
     environment:
-      - ENVIRONMENT=development
-      - DATABASE_URL=postgresql+asyncpg://agenticai_user:agenticai_password@postgres:5432/agenticai_platform
-      - REDIS_URL=redis://redis:6379/1
-      - GOOGLE_API_KEY=${GOOGLE_API_KEY}
-      - AGENTS_URL=http://agents:8002
-      - TOOLS_URL=http://tools:8005
-      - RAG_URL=http://rag:8004
-      - WORKFLOW_URL=http://workflow:8007
-      - A2A_PROTOCOL_ENABLED=true
-      - REMOTE_AGENTS=http://agents:8002,http://rag:8004,http://tools:8005
-      - HOST=0.0.0.0
-      - PORT=8003
+      ENVIRONMENT: development
+      DATABASE_URL: postgresql+asyncpg://agenticai_user:agenticai_password@postgres:5432/agenticai_platform
+      REDIS_URL: redis://redis:6379/1
+      GOOGLE_API_KEY: ${GOOGLE_API_KEY}
+      AGENTS_URL: http://agents:8002
+      TOOLS_URL: http://tools:8005
+      RAG_URL: http://rag:8004
+      WORKFLOW_URL: http://workflow:8007
+      A2A_PROTOCOL_ENABLED: true
+      REMOTE_AGENTS: http://agents:8002,http://rag:8004,http://tools:8005
+      HOST: 0.0.0.0
+      PORT: 8003
     depends_on:
-      - postgres
-      - redis
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     networks:
       - agenticai-network
     healthcheck:
@@ -108,7 +127,9 @@ services:
       timeout: 10s
       retries: 3
 
-  # RAG Service - FastAPI with A2A Protocol
+  # -------------------
+  # RAG Service
+  # -------------------
   rag:
     build:
       context: ./backend/services/rag
@@ -116,17 +137,19 @@ services:
     ports:
       - "8004:8004"
     environment:
-      - ENVIRONMENT=development
-      - DATABASE_URL=postgresql+asyncpg://agenticai_user:agenticai_password@postgres:5432/agenticai_platform
-      - REDIS_URL=redis://redis:6379/4
-      - VECTOR_STORE_TYPE=pgvector
-      - PGVECTOR_DATABASE_URL=postgresql+asyncpg://agenticai_user:agenticai_password@postgres:5432/agenticai_platform
-      - A2A_PROTOCOL_ENABLED=true
-      - HOST=0.0.0.0
-      - PORT=8004
+      ENVIRONMENT: development
+      DATABASE_URL: postgresql+asyncpg://agenticai_user:agenticai_password@postgres:5432/agenticai_platform
+      REDIS_URL: redis://redis:6379/4
+      VECTOR_STORE_TYPE: pgvector
+      PGVECTOR_DATABASE_URL: postgresql+asyncpg://agenticai_user:agenticai_password@postgres:5432/agenticai_platform
+      A2A_PROTOCOL_ENABLED: true
+      HOST: 0.0.0.0
+      PORT: 8004
     depends_on:
-      - postgres
-      - redis
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     networks:
       - agenticai-network
     healthcheck:
@@ -135,7 +158,9 @@ services:
       timeout: 10s
       retries: 3
 
-  # Tool Integration Service - FastAPI with A2A Protocol
+  # -------------------
+  # Tools Service
+  # -------------------
   tools:
     build:
       context: ./backend/services/tools
@@ -143,16 +168,18 @@ services:
     ports:
       - "8005:8005"
     environment:
-      - ENVIRONMENT=development
-      - DATABASE_URL=postgresql+asyncpg://agenticai_user:agenticai_password@postgres:5432/agenticai_platform
-      - REDIS_URL=redis://redis:6379/3
-      - MCP_SERVER_REGISTRY_URL=http://mcp-registry:9000
-      - A2A_PROTOCOL_ENABLED=true
-      - HOST=0.0.0.0
-      - PORT=8005
+      ENVIRONMENT: development
+      DATABASE_URL: postgresql+asyncpg://agenticai_user:agenticai_password@postgres:5432/agenticai_platform
+      REDIS_URL: redis://redis:6379/3
+      MCP_SERVER_REGISTRY_URL: http://mcp-registry:9000
+      A2A_PROTOCOL_ENABLED: true
+      HOST: 0.0.0.0
+      PORT: 8005
     depends_on:
-      - postgres
-      - redis
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     networks:
       - agenticai-network
     healthcheck:
@@ -161,7 +188,9 @@ services:
       timeout: 10s
       retries: 3
 
-  # SQL Tool Service - FastAPI
+  # -------------------
+  # SQL Tool
+  # -------------------
   sqltool:
     build:
       context: ./backend/services/sqltool
@@ -169,16 +198,18 @@ services:
     ports:
       - "8006:8006"
     environment:
-      - ENVIRONMENT=development
-      - DATABASE_URL=postgresql+asyncpg://agenticai_user:agenticai_password@postgres:5432/agenticai_platform
-      - REDIS_URL=redis://redis:6379/5
-      - ALLOWED_DB_TYPES=postgresql,mysql,sqlite,mssql
-      - MAX_QUERY_EXECUTION_TIME=30
-      - HOST=0.0.0.0
-      - PORT=8006
+      ENVIRONMENT: development
+      DATABASE_URL: postgresql+asyncpg://agenticai_user:agenticai_password@postgres:5432/agenticai_platform
+      REDIS_URL: redis://redis:6379/5
+      ALLOWED_DB_TYPES: postgresql,mysql,sqlite,mssql
+      MAX_QUERY_EXECUTION_TIME: 30
+      HOST: 0.0.0.0
+      PORT: 8006
     depends_on:
-      - postgres
-      - redis
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     networks:
       - agenticai-network
     healthcheck:
@@ -187,7 +218,9 @@ services:
       timeout: 10s
       retries: 3
 
-  # Workflow Engine - FastAPI
+  # -------------------
+  # Workflow Engine
+  # -------------------
   workflow:
     build:
       context: ./backend/services/workflow-engine
@@ -195,17 +228,19 @@ services:
     ports:
       - "8007:8007"
     environment:
-      - ENVIRONMENT=development
-      - DATABASE_URL=postgresql+asyncpg://agenticai_user:agenticai_password@postgres:5432/agenticai_platform
-      - REDIS_URL=redis://redis:6379/6
-      - ORCHESTRATOR_URL=http://orchestrator:8003
-      - AGENTS_URL=http://agents:8002
-      - TOOLS_URL=http://tools:8005
-      - HOST=0.0.0.0
-      - PORT=8007
+      ENVIRONMENT: development
+      DATABASE_URL: postgresql+asyncpg://agenticai_user:agenticai_password@postgres:5432/agenticai_platform
+      REDIS_URL: redis://redis:6379/6
+      ORCHESTRATOR_URL: http://orchestrator:8003
+      AGENTS_URL: http://agents:8002
+      TOOLS_URL: http://tools:8005
+      HOST: 0.0.0.0
+      PORT: 8007
     depends_on:
-      - postgres
-      - redis
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     networks:
       - agenticai-network
     healthcheck:
@@ -214,7 +249,9 @@ services:
       timeout: 10s
       retries: 3
 
-  # Observability Service - FastAPI
+  # -------------------
+  # Observability Service
+  # -------------------
   observability:
     build:
       context: ./backend/services/observability
@@ -222,16 +259,18 @@ services:
     ports:
       - "8008:8008"
     environment:
-      - ENVIRONMENT=development
-      - DATABASE_URL=postgresql+asyncpg://agenticai_user:agenticai_password@postgres:5432/agenticai_platform
-      - REDIS_URL=redis://redis:6379/7
-      - JAEGER_ENDPOINT=http://jaeger:14268/api/traces
-      - PROMETHEUS_GATEWAY=http://prometheus:9091
-      - HOST=0.0.0.0
-      - PORT=8008
+      ENVIRONMENT: development
+      DATABASE_URL: postgresql+asyncpg://agenticai_user:agenticai_password@postgres:5432/agenticai_platform
+      REDIS_URL: redis://redis:6379/7
+      JAEGER_ENDPOINT: http://jaeger:14268/api/traces
+      PROMETHEUS_GATEWAY: http://prometheus:9091
+      HOST: 0.0.0.0
+      PORT: 8008
     depends_on:
-      - postgres
-      - redis
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     networks:
       - agenticai-network
     healthcheck:
@@ -240,7 +279,9 @@ services:
       timeout: 10s
       retries: 3
 
-  # PostgreSQL Database with PGVector Extension
+  # -------------------
+  # PostgreSQL (PGVector)
+  # -------------------
   postgres:
     image: pgvector/pgvector:pg16
     restart: always
@@ -262,7 +303,9 @@ services:
       timeout: 5s
       retries: 5
 
-  # Redis Cache and Message Broker
+  # -------------------
+  # Redis
+  # -------------------
   redis:
     image: redis:7-alpine
     restart: always
@@ -279,8 +322,11 @@ services:
       timeout: 5s
       retries: 5
 
-  # Jaeger Tracing (Optional for development)
+  # -------------------
+  # Jaeger (Tracing)
+  # -------------------
   jaeger:
+    profiles: ["observability"]
     image: jaegertracing/all-in-one:1.57
     restart: always
     environment:
@@ -294,8 +340,11 @@ services:
     networks:
       - agenticai-network
 
-  # Prometheus Monitoring (Optional for development)
+  # -------------------
+  # Prometheus (Monitoring)
+  # -------------------
   prometheus:
+    profiles: ["observability"]
     image: prom/prometheus:latest
     restart: always
     command:
@@ -313,6 +362,29 @@ services:
     networks:
       - agenticai-network
 
+  # -------------------
+  # Phoenix (Langfuse/Phoenix Observability)
+  # -------------------
+  phoenix:
+    profiles: ["observability"]
+    image: ghcr.io/phoenix/phoenix:latest
+    container_name: phoenix-rag
+    restart: unless-stopped
+    ports:
+      - "6006:6006"
+    environment:
+      PHOENIX_DATABASE_URL: postgresql://${POSTGRES_USER:-agenticai_user}:${POSTGRES_PASSWORD:-agenticai_password}@postgres:5432/${POSTGRES_DB:-agenticai_platform}
+      PHOENIX_SECRET_KEY: ${PHOENIX_SECRET_KEY:-changeme}
+      PHOENIX_ENABLE_METRICS: true
+    networks:
+      - agenticai-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+# -------------------
+# Networks & Volumes
+# -------------------
 networks:
   agenticai-network:
     driver: bridge

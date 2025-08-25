@@ -24,12 +24,21 @@ class ChatMessage(BaseModel):
     content: str = Field(..., description="Message content")
     timestamp: Optional[datetime] = None
 
+class ContextSelection(BaseModel):
+    type: Optional[str] = Field(None, description="Context type: workflow, agent, tools, or llm")
+    workflow: Optional[Dict[str, Any]] = Field(None, description="Selected workflow metadata")
+    agent: Optional[Dict[str, Any]] = Field(None, description="Selected agent metadata")
+    tools: Optional[List[Dict[str, Any]]] = Field(None, description="Selected tools metadata")
+    llm_model_id: Optional[str] = Field(None, description="Selected LLM model ID when no workflow/agent selected")
+
 class ChatRequest(BaseModel):
     message: str = Field(..., description="User message")
     agent_id: Optional[str] = Field(None, description="Specific agent ID (optional)")
     session_id: Optional[str] = Field(None, description="Session ID for conversation continuity")
     conversation_history: List[ChatMessage] = Field(default=[], description="Previous messages")
     stream: bool = Field(default=False, description="Enable streaming response")
+    context: Optional[ContextSelection] = Field(None, description="Chat context selection")
+    attachments: Optional[List[Dict[str, Any]]] = Field(default=[], description="File attachments")
 
 class ChatResponse(BaseModel):
     success: bool
@@ -45,12 +54,137 @@ class StreamChatRequest(BaseModel):
     agent_id: Optional[str] = Field(None, description="Specific agent ID (optional)")
     session_id: Optional[str] = Field(None, description="Session ID for conversation continuity")
     conversation_history: List[ChatMessage] = Field(default=[], description="Previous messages")
+    context: Optional[ContextSelection] = Field(None, description="Chat context selection")
+    attachments: Optional[List[Dict[str, Any]]] = Field(default=[], description="File attachments")
 
 class TaskStatusResponse(BaseModel):
     task_id: str
     status: str
     created_at: str
     updated_at: str
+
+async def route_chat_request(request, executor):
+    """Enhanced routing based on context selection"""
+    
+    if request.context:
+        # Route based on context type
+        if request.context.type == "workflow" and request.context.workflow:
+            # Route to workflow - for now use default chat with context info
+            workflow_data = request.context.workflow
+            logger.info(f"Routing to workflow: {workflow_data.get('name', 'unknown')}")
+            
+            # Use default chat with workflow context annotation
+            async for response in executor.execute_default_chat(
+                message=f"[WORKFLOW:{workflow_data.get('name', 'unknown')}] {request.message}",
+                thread_id=request.session_id
+            ):
+                response["routing_info"] = {
+                    "type": "workflow",
+                    "target": workflow_data.get('name'),
+                    "dns_name": workflow_data.get('dns_name')
+                }
+                yield response
+                
+        elif request.context.type == "agent" and request.context.agent:
+            # Route to specific agent by ID
+            agent_data = request.context.agent
+            logger.info(f"Routing to agent: {agent_data.get('name', 'unknown')}")
+            
+            # Try to execute the specific agent, fallback to default if not found
+            try:
+                async for response in executor.execute(
+                    agent_id=agent_data.get('id'),
+                    message=request.message,
+                    thread_id=request.session_id
+                ):
+                    response["routing_info"] = {
+                        "type": "agent",
+                        "target": agent_data.get('name'),
+                        "a2a_address": agent_data.get('a2a_address')
+                    }
+                    yield response
+            except Exception as e:
+                logger.warning(f"Agent {agent_data.get('id')} not found, using default chat: {e}")
+                async for response in executor.execute_default_chat(
+                    message=f"[AGENT:{agent_data.get('name', 'unknown')}] {request.message}",
+                    thread_id=request.session_id
+                ):
+                    response["routing_info"] = {
+                        "type": "agent",
+                        "target": agent_data.get('name'),
+                        "fallback": True
+                    }
+                    yield response
+                
+        elif request.context.type == "tools" and request.context.tools:
+            # Route to tools-enhanced chat - use default with tools context
+            tools_list = request.context.tools
+            logger.info(f"Routing to tools-enhanced chat with {len(tools_list)} tools")
+            
+            tools_names = [tool.get('name', 'unknown') for tool in tools_list]
+            async for response in executor.execute_default_chat(
+                message=f"[TOOLS:{','.join(tools_names)}] {request.message}",
+                thread_id=request.session_id
+            ):
+                response["routing_info"] = {
+                    "type": "tools",
+                    "target": f"{len(tools_list)} tools",
+                    "tools_count": len(tools_list),
+                    "tools_list": tools_names
+                }
+                yield response
+                
+        elif request.context.type == "llm" and request.context.llm_model_id:
+            # Route to specific LLM model - temporarily disabled due to service dependency
+            model_id = request.context.llm_model_id
+            logger.info(f"Routing to LLM model (fallback): {model_id}")
+            
+            # Use default chat as fallback for now
+            async for response in executor.execute_default_chat(
+                message=f"[LLM:{model_id}] {request.message}",
+                thread_id=request.session_id
+            ):
+                response["routing_info"] = {
+                    "type": "llm",
+                    "target": model_id,
+                    "fallback": True
+                }
+                yield response
+        else:
+            # Default routing
+            async for response in executor.execute_default_chat(
+                message=request.message,
+                thread_id=request.session_id
+            ):
+                response["routing_info"] = {
+                    "type": "default",
+                    "target": "general_assistant"
+                }
+                yield response
+                
+    elif request.agent_id:
+        # Original agent-specific routing
+        async for response in executor.execute(
+            agent_id=request.agent_id,
+            message=request.message,
+            thread_id=request.session_id
+        ):
+            response["routing_info"] = {
+                "type": "agent",
+                "target": request.agent_id
+            }
+            yield response
+    else:
+        # Default chat
+        async for response in executor.execute_default_chat(
+            message=request.message,
+            thread_id=request.session_id
+        ):
+            response["routing_info"] = {
+                "type": "default", 
+                "target": "general_assistant"
+            }
+            yield response
 
 @router.get("/agents")
 async def list_a2a_agents(
@@ -111,25 +245,11 @@ async def chat_with_a2a_agent(
         
         messages = []
         
-        if request.agent_id:
-            # Chat with specific agent
-            async for response in executor.execute(
-                agent_id=request.agent_id,
-                message=request.message,
-                thread_id=request.session_id
-            ):
-                messages.append(response)
-                if response.get("final", False):
-                    break
-        else:
-            # Chat with default agent
-            async for response in executor.execute_default_chat(
-                message=request.message,
-                thread_id=request.session_id
-            ):
-                messages.append(response)
-                if response.get("final", False):
-                    break
+        # Enhanced routing based on context
+        async for response in route_chat_request(request, executor):
+            messages.append(response)
+            if response.get("final", False):
+                break
         
         # Get the final message
         final_message = messages[-1] if messages else {
@@ -164,19 +284,8 @@ async def stream_chat_with_a2a_agent(
     
     async def generate_stream():
         try:
-            if request.agent_id:
-                # Stream with specific agent
-                agent_stream = executor.execute(
-                    agent_id=request.agent_id,
-                    message=request.message,
-                    thread_id=request.session_id
-                )
-            else:
-                # Stream with default agent
-                agent_stream = executor.execute_default_chat(
-                    message=request.message,
-                    thread_id=request.session_id
-                )
+            # Enhanced routing based on context
+            agent_stream = route_chat_request(request, executor)
             
             async for response in agent_stream:
                 # Format as Server-Sent Event

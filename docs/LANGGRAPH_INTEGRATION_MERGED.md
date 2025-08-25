@@ -25,8 +25,8 @@ The enhanced implementation merges:
                            ┌─────────────────────┐
                            │  Existing Database  │
                            │                     │
-                           │ - llm_models        │
-                           │ - embedding_models  │
+                           │ - models(llm, vlm)        │
+                           │ - models(embedding)  │
                            │ - tool_templates    │
                            └─────────────────────┘
 ```

@@ -54,55 +54,67 @@ class ProjectService:
     @db_async_retry()
     async def create_project(db: AsyncSession, project: ProjectCreate, created_by: Optional[str] = None) -> Project:
         """Create a new project"""
-        db_project = Project(
-            name=project.name,
-            description=project.description,
-            tags=project.tags,
-            is_default=project.is_default,
-            created_by=created_by
-        )
-        db.add(db_project)
-        await db.commit()
-        await db.refresh(db_project)
-        return db_project
+        try:
+            db_project = Project(
+                name=project.name,
+                description=project.description,
+                tags=project.tags,
+                is_default=project.is_default,
+                created_by=created_by
+            )
+            db.add(db_project)
+            await db.commit()
+            await db.refresh(db_project)
+            return db_project
+        except Exception as e:
+            await db.rollback()
+            raise e
     
     @staticmethod
     @db_async_retry()
     async def update_project(db: AsyncSession, project_id: str, project: ProjectUpdate, updated_by: Optional[str] = None) -> Optional[Project]:
         """Update an existing project"""
-        query = select(Project).where(Project.id == project_id)
-        result = await db.execute(query)
-        db_project = result.scalar_one_or_none()
-        
-        if not db_project:
-            return None
-        
-        if project.name is not None:
-            db_project.name = project.name
-        if project.description is not None:
-            db_project.description = project.description
-        if project.tags is not None:
-            db_project.tags = project.tags
-        if project.is_default is not None:
-            db_project.is_default = project.is_default
-        
-        db_project.updated_by = updated_by
-        
-        await db.commit()
-        await db.refresh(db_project)
-        return db_project
+        try:
+            query = select(Project).where(Project.id == project_id)
+            result = await db.execute(query)
+            db_project = result.scalar_one_or_none()
+            
+            if not db_project:
+                return None
+            
+            if project.name is not None:
+                db_project.name = project.name
+            if project.description is not None:
+                db_project.description = project.description
+            if project.tags is not None:
+                db_project.tags = project.tags
+            if project.is_default is not None:
+                db_project.is_default = project.is_default
+            
+            db_project.updated_by = updated_by
+            
+            await db.commit()
+            await db.refresh(db_project)
+            return db_project
+        except Exception as e:
+            await db.rollback()
+            raise e
     
     @staticmethod
     @db_async_retry()
     async def delete_project(db: AsyncSession, project_id: str) -> bool:
         """Delete a project"""
-        query = select(Project).where(Project.id == project_id)
-        result = await db.execute(query)
-        db_project = result.scalar_one_or_none()
-        
-        if not db_project:
-            return False
-        
-        await db.delete(db_project)
-        await db.commit()
-        return True
+        try:
+            query = select(Project).where(Project.id == project_id)
+            result = await db.execute(query)
+            db_project = result.scalar_one_or_none()
+            
+            if not db_project:
+                return False
+            
+            db.delete(db_project)
+            await db.commit()
+            return True
+        except Exception as e:
+            await db.rollback()
+            raise e

@@ -58,6 +58,7 @@ class Agent(Base):
     ai_provider: Mapped[AIProvider] = mapped_column(Enum(AIProvider), default=AIProvider.GEMINI)
     model_name: Mapped[str] = mapped_column(String(100), default="gemini-1.5-pro")
     model_config: Mapped[Optional[Dict[str, Any]]] = mapped_column(JSON)
+    llm_model_id: Mapped[Optional[str]] = mapped_column(String(36), ForeignKey("llm_models.id"), nullable=True)
     
     # Agent configuration
     capabilities: Mapped[List[str]] = mapped_column(JSON, default=list)
